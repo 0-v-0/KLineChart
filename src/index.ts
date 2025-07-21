@@ -49,7 +49,7 @@ import type { IndicatorSeries } from './component/Indicator'
 import type { OverlayMode, OverlayDrawingMode } from './component/Overlay'
 import type { YAxisOverride } from './component/YAxis'
 
-import type { FormatDateType, Options, ZoomAnchor } from './Options'
+import type { FormatDateType, Options, BarSpaceLimit, ZoomAnchor } from './Options'
 import ChartImp, { type Chart, type DomPosition, type YAxisFilter } from './Chart'
 
 import { checkCoordinateOnArc } from './extension/figure/arc'
@@ -177,7 +177,7 @@ export {
   registerXAxis, registerYAxis,
   utils,
   type LineType, type PolygonType, type TooltipShowRule, type TooltipShowType, type FeatureType, type TooltipFeaturePosition, type CandleTooltipRectPosition,
-  type CandleType, type FormatDateType, type ZoomAnchor,
+  type CandleType, type FormatDateType, type BarSpaceLimit, type ZoomAnchor,
   type Chart, type DomPosition, type YAxisOverride, type YAxisFilter,
   type ActionType, type IndicatorSeries, type OverlayMode, type OverlayDrawingMode
 }

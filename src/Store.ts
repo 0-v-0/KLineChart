@@ -36,7 +36,7 @@ import { logWarn } from './common/utils/logger'
 import { UpdateLevel } from './common/Updater'
 import type { DataLoader, DataLoaderGetBarsParams, DataLoadMore, DataLoadType } from './common/DataLoader'
 
-import type { Options, Formatter, ThousandsSeparator, DecimalFold, FormatDateType, FormatDateParams, FormatBigNumber, FormatExtendText, FormatExtendTextParams, ZoomAnchor, ZoomAnchorType, Hotkey, Layout } from './Options'
+import type { Options, Formatter, ThousandsSeparator, DecimalFold, BarSpaceLimit, FormatDateType, FormatDateParams, FormatBigNumber, FormatExtendText, FormatExtendTextParams, ZoomAnchor, ZoomAnchorType, Hotkey, Layout } from './Options'
 
 import type { IndicatorOverride, IndicatorCreate, IndicatorFilter } from './component/Indicator'
 import type IndicatorImp from './component/Indicator'
@@ -53,6 +53,11 @@ import { PaneIdConstants } from './pane/types'
 import type Chart from './Chart'
 import type ExcludePickPartial from './common/ExcludePickPartial'
 import type DeepRequired from './common/DeepRequired'
+
+const DEFAULT_BAR_SPACE_LIMIT = {
+  MIN: 1,
+  MAX: 50
+}
 
 type ScrollLimitRole = 'bar_count' | 'distance'
 
@@ -113,6 +118,8 @@ export interface Store {
   setRightMinVisibleBarCount: (barCount: number) => void
   setBarSpace: (space: number) => void
   getBarSpace: () => BarSpace
+  setBarSpaceLimit: (limit: Partial<BarSpaceLimit>) => void
+  getBarSpaceLimit: () => BarSpaceLimit
   getVisibleRange: () => VisibleRange
   setDataLoader: (dataLoader: DataLoader) => void
   overrideIndicator: (override: IndicatorCreate) => boolean
@@ -253,6 +260,14 @@ export default class StoreImp implements Store {
    * Space occupied by a single piece of data
    */
   private _barSpace = DEFAULT_BAR_SPACE
+
+  /**
+   * Bar space limit
+   */
+  private readonly _barSpaceLimit: BarSpaceLimit = {
+    min: DEFAULT_BAR_SPACE_LIMIT.MIN,
+    max: DEFAULT_BAR_SPACE_LIMIT.MAX
+  }
 
   /**
    * The space of the draw bar
@@ -402,13 +417,12 @@ export default class StoreImp implements Store {
 
   constructor (chart: Chart, options?: Options) {
     this._chart = chart
-    const { styles, locale, timezone, formatter, thousandsSeparator, decimalFold, zoomAnchor, hotkey, layout } = options ?? {}
+    const { styles, locale, timezone, formatter, thousandsSeparator, decimalFold, barSpaceLimit, zoomAnchor, hotkey, layout } = options ?? {}
     if (isValid(layout)) {
       merge(this._layoutOptions, layout)
     }
     this._calcOptimalBarSpace()
     this._lastBarRightSideDiffBarCount = this._offsetRightDistance / this._barSpace
-
     if (isValid(styles)) {
       this.setStyles(styles)
     }
@@ -441,6 +455,9 @@ export default class StoreImp implements Store {
         buildYAxisTick: true
       })
     })
+    if (isValid(barSpaceLimit)) {
+      this.setBarSpaceLimit(barSpaceLimit)
+    }
   }
 
   setStyles (value: string | DeepPartial<Styles>): void {
@@ -823,12 +840,21 @@ export default class StoreImp implements Store {
     }
   }
 
+  setBarSpaceLimit (limit: Partial<BarSpaceLimit>): void {
+    if (isValid(limit.min) && isNumber(limit.min)) {
+      this._barSpaceLimit.min = Math.max(0, limit.min)
+    }
+    if (isValid(limit.max) && isNumber(limit.max)) {
+      this._barSpaceLimit.max = Math.max(this._barSpaceLimit.min, limit.max)
+    }
+  }
+
+  getBarSpaceLimit (): BarSpaceLimit {
+    return { ...this._barSpaceLimit }
+  }
+
   setBarSpace (barSpace: number, adjustBeforeFunc?: () => void): void {
-    if (
-      barSpace < this._layoutOptions.barSpaceLimit.min ||
-      barSpace > this._layoutOptions.barSpaceLimit.max ||
-      this._barSpace === barSpace
-    ) {
+    if (barSpace < this._barSpaceLimit.min || barSpace > this._barSpaceLimit.max || this._barSpace === barSpace) {
       return
     }
     this._barSpace = barSpace

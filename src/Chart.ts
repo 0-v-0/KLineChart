@@ -25,7 +25,7 @@ import type Crosshair from './common/Crosshair'
 import type { ActionType, ActionCallback } from './common/Action'
 import type { DataLoader } from './common/DataLoader'
 import type VisibleRange from './common/VisibleRange'
-import type { Formatter, DecimalFold, Options, ThousandsSeparator, ZoomAnchor, ZoomAnchorType, Hotkey } from './Options'
+import type { Formatter, DecimalFold, LayoutChild, Options, ThousandsSeparator, BarSpaceLimit, ZoomAnchor, ZoomAnchorType, Hotkey } from './Options'
 import Animation from './common/Animation'
 import { createId } from './common/utils/id'
 import { createDom } from './common/utils/dom'
@@ -731,6 +731,14 @@ export default class ChartImp implements Chart {
 
   getBarSpace (): BarSpace {
     return this._chartStore.getBarSpace()
+  }
+
+  setBarSpaceLimit (limit: Partial<BarSpaceLimit>): void {
+    this._chartStore.setBarSpaceLimit(limit)
+  }
+
+  getBarSpaceLimit (): BarSpaceLimit {
+    return this._chartStore.getBarSpaceLimit()
   }
 
   getVisibleRange (): VisibleRange {

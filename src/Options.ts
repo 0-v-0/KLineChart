@@ -96,6 +96,11 @@ export interface Hotkey {
   exclude: string[]
 }
 
+export interface BarSpaceLimit {
+  min: number
+  max: number
+}
+
 export interface Options {
   locale?: string
   timezone?: string
@@ -103,7 +108,8 @@ export interface Options {
   formatter?: Partial<Formatter>
   thousandsSeparator?: Partial<ThousandsSeparator>
   decimalFold?: Partial<DecimalFold>
-  zoomAnchor?: ZoomAnchorType | Partial<ZoomAnchor>
+  zoomAnchor?: Partial<ZoomAnchor>
   hotkey?: Partial<Hotkey>
-  layout?: DeepPartial<Layout>
+  layout?: LayoutChild[]
+  barSpaceLimit?: Partial<BarSpaceLimit>
 }
