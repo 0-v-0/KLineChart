@@ -12,6 +12,44 @@
  * limitations under the License.
  */
 
+import type Nullable from './common/Nullable'
+import type PickPartial from './common/PickPartial'
+import type DeepPartial from './common/DeepPartial'
+import type { KLineData, VisibleRangeData } from './common/Data'
+import type VisibleRange from './common/VisibleRange'
+import type Coordinate from './common/Coordinate'
+import { getDefaultVisibleRange } from './common/VisibleRange'
+import TaskScheduler from './common/TaskScheduler'
+import type Crosshair from './common/Crosshair'
+import type BarSpace from './common/BarSpace'
+import type { Period } from './common/Period'
+import { SymbolDefaultPrecisionConstants, type SymbolInfo } from './common/SymbolInfo'
+
+import Action from './common/Action'
+import type { ActionType, ActionCallback } from './common/Action'
+import { formatValue, formatTimestampByTemplate, formatBigNumber, formatThousands, formatFoldDecimal } from './common/utils/format'
+import { getDefaultStyles, type Styles, type TooltipLegend } from './common/Styles'
+import { isArray, isString, isValid, isNumber, isBoolean, merge } from './common/utils/typeChecks'
+import { createId } from './common/utils/id'
+import { binarySearchNearest } from './common/utils/number'
+import { logWarn } from './common/utils/logger'
+import { UpdateLevel } from './common/Updater'
+import type { DataLoader, DataLoaderGetBarsParams, DataLoadMore, DataLoadType } from './common/DataLoader'
+
+import type { Options, Formatter, ThousandsSeparator, DecimalFold, BarSpaceLimit, FormatDateType, FormatDateParams, FormatBigNumber, FormatExtendText, FormatExtendTextParams, ZoomAnchor, ZoomAnchorType, Hotkey, Layout } from './Options'
+
+import type { IndicatorOverride, IndicatorCreate, IndicatorFilter } from './component/Indicator'
+import type IndicatorImp from './component/Indicator'
+import { getIndicatorClass } from './extension/indicator/index'
+
+import type OverlayImp from './component/Overlay'
+import { type OverlayCreate, OVERLAY_ID_PREFIX, type OverlayFilter, type OverlayFigure, type OverlayOverride } from './component/Overlay'
+import { getOverlayInnerClass } from './extension/overlay/index'
+
+import { getStyles as getExtensionStyles } from './extension/styles/index'
+
+import { PaneIdConstants } from './pane/types'
+
 import type Chart from './Chart'
 import type { ActionCallback, ActionType } from './common/Action'
 import Action from './common/Action'
@@ -47,6 +85,11 @@ import { getOverlayInnerClass } from './extension/overlay/index'
 import { getStyles as getExtensionStyles } from './extension/styles/index'
 import type { DecimalFold, FormatBigNumber, FormatDateParams, FormatDateType, FormatExtendText, FormatExtendTextParams, Formatter, Hotkey, Layout, Options, ThousandsSeparator, ZoomAnchor, ZoomAnchorType } from './Options'
 import { PaneIdConstants } from './pane/types'
+
+const DEFAULT_BAR_SPACE_LIMIT = {
+  MIN: 1,
+  MAX: 50
+}
 
 type ScrollLimitRole = 'bar_count' | 'distance'
 
@@ -109,6 +152,8 @@ export interface Store {
   setRightMinVisibleBarCount: (barCount: number) => void
   setBarSpace: (space: number) => void
   getBarSpace: () => BarSpace
+  setBarSpaceLimit: (limit: Partial<BarSpaceLimit>) => void
+  getBarSpaceLimit: () => BarSpaceLimit
   getVisibleRange: () => VisibleRange
   setDataLoader: (dataLoader: DataLoader) => void
   overrideIndicator: (override: IndicatorCreate) => boolean
@@ -245,6 +290,14 @@ export default class StoreImp implements Store {
    * Space occupied by a single piece of data
    */
   private _barSpace = DEFAULT_BAR_SPACE
+
+  /**
+   * Bar space limit
+   */
+  private readonly _barSpaceLimit: BarSpaceLimit = {
+    min: DEFAULT_BAR_SPACE_LIMIT.MIN,
+    max: DEFAULT_BAR_SPACE_LIMIT.MAX
+  }
 
   /**
    * The space of the draw bar
@@ -401,13 +454,12 @@ export default class StoreImp implements Store {
 
   constructor(chart: Chart, options?: Options) {
     this._chart = chart
-    const { styles, locale, timezone, formatter, thousandsSeparator, decimalFold, zoomAnchor, hotkey, layout } = options ?? {}
+    const { styles, locale, timezone, formatter, thousandsSeparator, decimalFold, barSpaceLimit, zoomAnchor, hotkey, layout } = options ?? {}
     if (isValid(layout)) {
       merge(this._layoutOptions, layout)
     }
     this._calcOptimalBarSpace()
     this._lastBarRightSideDiffBarCount = this._offsetRightDistance / this._barSpace
-
     if (isValid(styles)) {
       this.setStyles(styles)
     }
@@ -440,6 +492,9 @@ export default class StoreImp implements Store {
         buildYAxisTick: true
       })
     })
+    if (isValid(barSpaceLimit)) {
+      this.setBarSpaceLimit(barSpaceLimit)
+    }
   }
 
   setStyles(value: string | DeepPartial<Styles>): void {
@@ -840,8 +895,21 @@ export default class StoreImp implements Store {
     }
   }
 
-  setBarSpace(barSpace: number, adjustBeforeFunc?: () => void): void {
-    if (barSpace < this._layoutOptions.barSpaceLimit.min || barSpace > this._layoutOptions.barSpaceLimit.max || this._barSpace === barSpace) {
+  setBarSpaceLimit (limit: Partial<BarSpaceLimit>): void {
+    if (isValid(limit.min) && isNumber(limit.min)) {
+      this._barSpaceLimit.min = Math.max(0, limit.min)
+    }
+    if (isValid(limit.max) && isNumber(limit.max)) {
+      this._barSpaceLimit.max = Math.max(this._barSpaceLimit.min, limit.max)
+    }
+  }
+
+  getBarSpaceLimit (): BarSpaceLimit {
+    return { ...this._barSpaceLimit }
+  }
+
+  setBarSpace (barSpace: number, adjustBeforeFunc?: () => void): void {
+    if (barSpace < this._barSpaceLimit.min || barSpace > this._barSpaceLimit.max || this._barSpace === barSpace) {
       return
     }
     this._barSpace = barSpace

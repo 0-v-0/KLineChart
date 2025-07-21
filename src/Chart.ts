@@ -14,7 +14,7 @@
 
 import type { ActionCallback, ActionType } from './common/Action'
 import Animation from './common/Animation'
-import type BarSpace from './common/BarSpace'
+import type BarSpace, { type BarSpaceLimit } from './common/BarSpace'
 import type Bounding from './common/Bounding'
 import { createDefaultBounding } from './common/Bounding'
 import type Coordinate from './common/Coordinate'
@@ -742,7 +742,15 @@ export default class ChartImp implements Chart {
     return this._chartStore.getBarSpace()
   }
 
-  getVisibleRange(): VisibleRange {
+  setBarSpaceLimit (limit: Partial<BarSpaceLimit>): void {
+    this._chartStore.setBarSpaceLimit(limit)
+  }
+
+  getBarSpaceLimit (): BarSpaceLimit {
+    return this._chartStore.getBarSpaceLimit()
+  }
+
+  getVisibleRange (): VisibleRange {
     return this._chartStore.getVisibleRange()
   }
 

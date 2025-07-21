@@ -24,6 +24,32 @@
  * limitations under the License.
  */
 
+import type {
+  LineType, PolygonType, TooltipShowRule, TooltipShowType, FeatureType, TooltipFeaturePosition,
+  CandleType, CandleTooltipRectPosition
+} from './common/Styles'
+import type Nullable from './common/Nullable'
+
+import { logError, logTag, logWarn } from './common/utils/logger'
+
+import {
+  clone, merge, isString, isNumber, isValid, isObject, isArray, isFunction, isBoolean
+} from './common/utils/typeChecks'
+import {
+  formatValue,
+  formatPrecision,
+  formatBigNumber,
+  formatThousands,
+  formatFoldDecimal,
+  formatTimestampByTemplate
+} from './common/utils/format'
+import { calcTextWidth } from './common/utils/canvas'
+import type { ActionType } from './common/Action'
+import type { IndicatorSeries } from './component/Indicator'
+import type { OverlayMode, OverlayDrawingMode } from './component/Overlay'
+import type { YAxisOverride } from './component/YAxis'
+
+import type { FormatDateType, Options, BarSpaceLimit, ZoomAnchor } from './Options'
 import ChartImp, { type Chart, type DomPosition, type YAxisFilter } from './Chart'
 import type { ActionType } from './common/Action'
 import type Nullable from './common/Nullable'
@@ -180,8 +206,8 @@ export {
   type TooltipShowRule,
   type TooltipShowType,
   utils,
-  version,
-  type YAxisFilter,
-  type YAxisOverride,
-  type ZoomAnchor
+  type LineType, type PolygonType, type TooltipShowRule, type TooltipShowType, type FeatureType, type TooltipFeaturePosition, type CandleTooltipRectPosition,
+  type CandleType, type FormatDateType, type BarSpaceLimit, type ZoomAnchor,
+  type Chart, type DomPosition, type YAxisOverride, type YAxisFilter,
+  type ActionType, type IndicatorSeries, type OverlayMode, type OverlayDrawingMode
 }
