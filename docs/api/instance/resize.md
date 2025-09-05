@@ -10,7 +10,11 @@ import Tip from '../../@components/Tip.vue'
 # resize()
 `resize` 调整图表尺寸。
 
+<<<<<<< HEAD
 <Tip type="warn" title="注意" :tip="['图表默认会监听容器尺寸变化并自动调整布局。此方法会重新计算整个图表各个模块的大小，通常只需要在特殊场景下手动调用，频繁调用可能会影响到性能。']"/>
+=======
+<Tip type="warn" title="注意" tip="总是会填充容器大小，此方法会重新计算整个图表各个模块的大小，频繁调用可能会影响到性能，调用请谨慎。"/>
+>>>>>>> f9e0e2ae (docs: update and rebase main into here)
 
 ## 参考 {#reference}
 <!-- @include: @/@views/api/references/instance/resize.md -->

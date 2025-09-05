@@ -26,6 +26,7 @@ function config () {
           {
             find: /^.*\/VPNavBarTitle\.vue$/,
             replacement: fileURLToPath(
+<<<<<<< HEAD
               new URL('../../@components/override/NavBarTitle.vue', import.meta.url)
             )
           },
@@ -57,6 +58,9 @@ function config () {
             find: /^.*\/VPFlyout\.vue$/,
             replacement: fileURLToPath(
               new URL('../../@components/override/Flyout.vue', import.meta.url)
+=======
+              new URL('../../@components/NavbarTitle.vue', import.meta.url)
+>>>>>>> f9e0e2ae (docs: update and rebase main into here)
             )
           }
         ]
@@ -80,7 +84,10 @@ function config () {
     },
     head: [
       ['link', { rel: 'icon', type: 'image/x-icon', href: '/images/fav.png' }],
+<<<<<<< HEAD
       ['script', {}, getThemeColorInitScript()],
+=======
+>>>>>>> f9e0e2ae (docs: update and rebase main into here)
       ['script', {}, `${klinecharts}`],
       [
         'script',
