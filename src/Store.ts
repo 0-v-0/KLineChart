@@ -495,6 +495,13 @@ export default class StoreImp implements Store {
     if (isValid(barSpaceLimit)) {
       this.setBarSpaceLimit(barSpaceLimit)
     }
+    this._taskScheduler = new TaskScheduler(() => {
+      this._chart.layout({
+        measureWidth: true,
+        update: true,
+        buildYAxisTick: true
+      })
+    })
   }
 
   setStyles(value: string | DeepPartial<Styles>): void {
