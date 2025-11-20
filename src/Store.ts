@@ -162,7 +162,7 @@ export interface Store {
   removeOverlay: (filter?: OverlayFilter) => boolean
   setZoomEnabled: (enabled: boolean) => void
   isZoomEnabled: () => boolean
-  setZoomAnchor: (anchor: ZoomAnchorType | Partial<ZoomAnchor>) => void
+  setZoomAnchor: (behavior: ZoomAnchor) => void
   getZoomAnchor: () => ZoomAnchor
   setScrollEnabled: (enabled: boolean) => void
   isScrollEnabled: () => boolean
