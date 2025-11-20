@@ -35,9 +35,10 @@ export default class CandleLastPriceLabelView extends View<YAxis> {
     const lastPriceMarkTextStyles = lastPriceMarkStyles.text
     if (priceMarkStyles.show && lastPriceMarkStyles.show && lastPriceMarkTextStyles.show) {
       const precision = chartStore.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE
-      const yAxis = (widget as unknown as YAxisWidget).getAxisComponent()
-      const dataList = chartStore.getDataList()
+      const yAxis = pane.getAxisComponent() as YAxis
+      const dataList = chartStore.getDataList(true)
       const data = dataList[dataList.length - 1]
+
       if (isValid(data)) {
         const { close, open } = data
         const comparePrice = lastPriceMarkStyles.compareRule === 'current_open' ? open : (dataList[dataList.length - 2]?.close ?? close)
