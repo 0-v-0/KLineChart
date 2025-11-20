@@ -21,11 +21,17 @@
         <path
           d="M512 64c126.72 3.328 232.192 47.168 316.48 131.456C912.832 279.872 956.672 385.344 960 512c-3.328 126.72-47.168 232.192-131.52 316.48C744.192 912.832 638.72 956.672 512 960c-126.72-3.328-232.192-47.168-316.544-131.52C111.232 744.192 67.392 638.72 64 512c3.328-126.72 47.168-232.192 131.456-316.544C279.872 111.232 385.344 67.392 512 64z m0 394.048L408 354.048a37.76 37.76 0 0 0-27.52-12.032 37.056 37.056 0 0 0-26.944 11.52c-7.68 7.68-11.52 16.64-11.52 26.944 0 10.368 4.032 19.52 12.032 27.52L458.048 512 354.048 616a37.76 37.76 0 0 0-12.032 27.52c0 10.24 3.84 19.328 11.52 26.944 7.68 7.68 16.64 11.52 26.944 11.52a37.888 37.888 0 0 0 27.52-12.032L512 566.08l104 104c10.688 9.984 23.04 13.12 36.992 9.472a34.752 34.752 0 0 0 26.496-26.496 37.184 37.184 0 0 0-9.536-36.992L566.08 512l104-104a37.76 37.76 0 0 0 11.968-27.52 37.056 37.056 0 0 0-11.52-26.944 36.8 36.8 0 0 0-26.944-11.52 37.888 37.888 0 0 0-27.52 12.032L512 458.048z" />
       </svg>
+<<<<<<< HEAD
       <strong class="title">{{ props.title }}</strong>
     </div>
     <div class="text">
       <span v-for="item in props.tip" :key="item" v-html="'• ' + item"/>
     </div>
+=======
+      <strong class="title">{{ props.title }}:&nbsp;</strong>
+    </div>
+    <span class="text" v-html="props.tip"/>
+>>>>>>> f9e0e2ae (docs: update and rebase main into here)
   </div>
 </template>
 
@@ -40,7 +46,11 @@ const props = defineProps({
     require: true
   },
   tip: {
+<<<<<<< HEAD
     type: Array,
+=======
+    type: String,
+>>>>>>> f9e0e2ae (docs: update and rebase main into here)
     require: true
   }
 })
@@ -49,14 +59,22 @@ const props = defineProps({
 <style scoped>
 .tip {
   display: flex;
+<<<<<<< HEAD
   flex-direction: column;
   justify-content: flex-start;
+=======
+  flex-direction: row;
+  align-items: flex-start;
+>>>>>>> f9e0e2ae (docs: update and rebase main into here)
   margin: 16px 0;
   padding: 12px;
   border-radius: 6px;
   border: solid 1px var(--tip-color);
   font-size: 14px;
+<<<<<<< HEAD
   gap: 4px;
+=======
+>>>>>>> f9e0e2ae (docs: update and rebase main into here)
   color: var(--vp-c-text-1);
   background-color: var(--tip-bg-color);
 }
@@ -95,6 +113,7 @@ const props = defineProps({
 }
 
 .text {
+<<<<<<< HEAD
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -105,5 +124,8 @@ const props = defineProps({
   padding-inline-start: 26px;
   white-space: wrap;
   line-height: 26px;
+=======
+  white-space: wrap;
+>>>>>>> f9e0e2ae (docs: update and rebase main into here)
 }
 </style>

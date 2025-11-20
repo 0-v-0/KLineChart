@@ -14,6 +14,45 @@ import HomeUseCases from './home/UseCases.vue'
 import HomeUsers from './home/Users.vue'
 // import AsideSponsor from './AsideSponsor.vue'
 import NotFound from './NotFound.vue'
+<<<<<<< HEAD
+=======
+import ColorPalette from './ColorPalette.vue'
+
+const { isDark } = useData()
+
+const enableTransitions = () =>
+  'startViewTransition' in document &&
+  window.matchMedia('(prefers-reduced-motion: no-preference)').matches
+
+provide('toggle-appearance', async ({ clientX: x, clientY: y }) => {
+  if (!enableTransitions()) {
+    isDark.value = !isDark.value
+    return
+  }
+
+  const clipPath = [
+    `circle(0px at ${x}px ${y}px)`,
+    `circle(${Math.hypot(
+      Math.max(x, innerWidth - x),
+      Math.max(y, innerHeight - y)
+    )}px at ${x}px ${y}px)`
+  ]
+
+  await document.startViewTransition(async () => {
+    isDark.value = !isDark.value
+    await nextTick()
+  }).ready
+ 
+  document.documentElement.animate(
+    { clipPath: isDark.value ? clipPath.reverse() : clipPath },
+    {
+      duration: 300,
+      easing: 'ease-in',
+      pseudoElement: `::view-transition-${isDark.value ? 'old' : 'new'}(root)`
+    }
+  )
+})
+>>>>>>> f9e0e2ae (docs: update and rebase main into here)
 </script>
 
 <template>
@@ -38,6 +77,9 @@ import NotFound from './NotFound.vue'
     </template> -->
     <template #not-found>
       <NotFound/>
+    </template>
+    <template #layout-bottom>
+      <ColorPalette/>
     </template>
   </DefaultTheme.Layout>
 </template>
