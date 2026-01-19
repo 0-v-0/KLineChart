@@ -54,7 +54,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         }
         const index = overlay.points.length - 1
         if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
-          overlay.stepDrawingModeEventMoveForDrawing(this._coordinateToPoint(overlay, event))
+          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
           overlay.onDrawing?.({ chart, overlay, ...event })
         }
         return this._figureMouseMoveEvent(overlay, 'point', index, { key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`, type: 'circle', attrs: {} })(event)
@@ -72,45 +72,44 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       )
       widget.setForceCursor(null)
       return false
-    })
-      .registerEvent('mouseClickEvent', (event) => {
-        const progressOverlayInfo = chartStore.getProgressOverlayInfo()
-        if (progressOverlayInfo !== null) {
-          const overlay = progressOverlayInfo.overlay
-          let progressOverlayPaneId = progressOverlayInfo.paneId
-          if (overlay.isStart()) {
-            chartStore.updateProgressOverlayInfo(paneId, true)
-            progressOverlayPaneId = paneId
-          }
-          const index = overlay.points.length - 1
-          if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
-            overlay.stepDrawingModeEventMoveForDrawing(this._coordinateToPoint(overlay, event))
-            overlay.onDrawing?.({ chart, overlay, ...event })
-            overlay.nextStep()
-            if (!overlay.isDrawing()) {
-              chartStore.progressOverlayComplete()
-              overlay.onDrawEnd?.({ chart, overlay, ...event })
-            }
-          }
-          return this._figureMouseClickEvent(overlay, 'point', index, {
-            key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
-            type: 'circle',
-            attrs: {}
-          })(event)
+    }).registerEvent('mouseClickEvent', event => {
+      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
+      if (progressOverlayInfo !== null) {
+        const overlay = progressOverlayInfo.overlay
+        let progressOverlayPaneId = progressOverlayInfo.paneId
+        if (overlay.isStart()) {
+          chartStore.updateProgressOverlayInfo(paneId, true)
+          progressOverlayPaneId = paneId
         }
-        chartStore.setClickOverlayInfo(
-          {
-            paneId,
-            overlay: null,
-            figureType: 'none',
-            figureIndex: -1,
-            figure: null
-          },
-          (o, f) => this._processOverlaySelectedEvent(o, f, event),
-          (o, f) => this._processOverlayDeselectedEvent(o, f, event)
-        )
-        return false
-      })
+        const index = overlay.points.length - 1
+        if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
+          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
+          overlay.onDrawing?.({ chart, overlay, ...event })
+          overlay.nextStep()
+          if (!overlay.isDrawing()) {
+            chartStore.progressOverlayComplete()
+            overlay.onDrawEnd?.({ chart, overlay, ...event })
+          }
+        }
+        return this._figureMouseClickEvent(overlay, 'point', index, {
+          key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
+          type: 'circle',
+          attrs: {}
+        })(event)
+      }
+      chartStore.setClickOverlayInfo(
+        {
+          paneId,
+          overlay: null,
+          figureType: 'none',
+          figureIndex: -1,
+          figure: null
+        },
+        (o, f) => this._processOverlaySelectedEvent(o, f, event),
+        (o, f) => this._processOverlayDeselectedEvent(o, f, event)
+      )
+      return false
+    })
       .registerEvent('mouseDoubleClickEvent', (event) => {
         const progressOverlayInfo = chartStore.getProgressOverlayInfo()
         if (progressOverlayInfo !== null) {
@@ -186,54 +185,139 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
           figureType: 'none',
           figureIndex: -1,
           figure: null
-        })
-        return false
+        },
+        (o, f) => this._processOverlaySelectedEvent(o, f, event),
+        (o, f) => this._processOverlayDeselectedEvent(o, f, event)
+      )
+      return false
+    }).registerEvent('mouseDoubleClickEvent', event => {
+      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
+      if (progressOverlayInfo !== null) {
+        const overlay = progressOverlayInfo.overlay
+        const progressOverlayPaneId = progressOverlayInfo.paneId
+        if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
+          overlay.forceComplete()
+          if (!overlay.isDrawing()) {
+            chartStore.progressOverlayComplete()
+            overlay.onDrawEnd?.({ chart, overlay, ...event })
+          }
+        }
+        const index = overlay.points.length - 1
+        return this._figureMouseClickEvent(
+          overlay,
+          'point',
+          index,
+          {
+            key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
+            type: 'circle',
+            attrs: {}
+          }
+        )(event)
+      }
+      return false
+    }).registerEvent('mouseRightClickEvent', event => {
+      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
+      if (progressOverlayInfo !== null) {
+        const overlay = progressOverlayInfo.overlay
+        if (overlay.isDrawing()) {
+          const index = overlay.points.length - 1
+          return this._figureMouseRightClickEvent(
+            overlay,
+            'point',
+            index,
+            {
+              key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
+              type: 'circle',
+              attrs: {}
+            }
+          )(event)
+        }
+      }
+      return false
+    }).registerEvent('mouseDownEvent', event => {
+      // Handle continuous drawing mode - start drawing on mouse down
+      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
+      if (progressOverlayInfo !== null) {
+        const overlay = progressOverlayInfo.overlay
+        if (overlay.isContinuousDrawing() && overlay.isStart()) {
+          chartStore.updateProgressOverlayInfo(paneId, true)
+          const point = this._coordinateToPoint(overlay, event)
+          overlay.startContinuousDrawing(point)
+          overlay.onDrawStart?.({ chart, overlay, ...event })
+          return true
+        }
+      }
+      return false
+    }).registerEvent('mouseUpEvent', event => {
+      // Handle continuous drawing mode - complete on mouse up
+      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
+      if (progressOverlayInfo !== null) {
+        const overlay = progressOverlayInfo.overlay
+        if (overlay.isContinuousDrawing() && overlay.isDrawing() && !overlay.isStart()) {
+          overlay.completeContinuousDrawing()
+          chartStore.progressOverlayComplete()
+          overlay.onDrawEnd?.({ chart, overlay, ...event })
+          return true
+        }
+      }
+      const { overlay, figure } = chartStore.getPressedOverlayInfo()
+      if (overlay !== null) {
+        if (checkOverlayFigureEvent('onPressedMoveEnd', figure)) {
+          overlay.onPressedMoveEnd?.({ chart, overlay, figure: figure ?? undefined, ...event })
+        }
+      }
+      chartStore.setPressedOverlayInfo({
+        paneId,
+        overlay: null,
+        figureType: 'none',
+        figureIndex: -1,
+        figure: null
       })
-      .registerEvent('pressedMouseMoveEvent', (event) => {
-        // Handle continuous drawing mode - accumulate points while mouse is pressed
-        const progressOverlayInfo = chartStore.getProgressOverlayInfo()
-        if (progressOverlayInfo !== null) {
-          const overlay = progressOverlayInfo.overlay
-          if (overlay.isContinuousDrawingMode() && overlay.isDrawing() && !overlay.isStart()) {
+      return false
+    }).registerEvent('pressedMouseMoveEvent', event => {
+      // Handle continuous drawing mode - accumulate points while mouse is pressed
+      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
+      if (progressOverlayInfo !== null) {
+        const overlay = progressOverlayInfo.overlay
+        if (overlay.isContinuousDrawing() && overlay.isDrawing() && !overlay.isStart()) {
+          const point = this._coordinateToPoint(overlay, event)
+          overlay.addPointForContinuousDrawing(point)
+          overlay.onDrawing?.({ chart, overlay, ...event })
+          return true
+        }
+      }
+      const { overlay, figureType, figureIndex, figure } = chartStore.getPressedOverlayInfo()
+      if (overlay !== null) {
+        if (checkOverlayFigureEvent('onPressedMoving', figure)) {
+          if (!overlay.lock) {
             const point = this._coordinateToPoint(overlay, event)
-            overlay.continuousDrawingModeEventMoveForDrawing(point)
-            overlay.onDrawing?.({ chart, overlay, ...event })
-            this.getWidget().setForceCursor('pointer')
+            if (figureType === 'point') {
+              overlay.eventPressedPointMove(point, figureIndex)
+            } else {
+              overlay.eventPressedOtherMove(point, this.getWidget().getPane().getChart().getChartStore())
+            }
+            let prevented = false
+            overlay.onPressedMoving?.({
+              chart,
+              overlay,
+              figure: figure ?? undefined,
+              ...event,
+              preventDefault: () => {
+                prevented = true
+              }
+            })
+            if (prevented) {
+              this.getWidget().setForceCursor(null)
+            } else {
+              this.getWidget().setForceCursor('pointer')
+            }
             return true
           }
         }
-        const { overlay, figureType, figureIndex, figure } = chartStore.getPressedOverlayInfo()
-        if (overlay !== null) {
-          if (checkOverlayFigureEvent('onPressedMoving', figure)) {
-            if (!overlay.lock) {
-              const point = this._coordinateToPoint(overlay, event)
-              if (figureType === 'point') {
-                overlay.eventPressedPointMove(point, figureIndex)
-              } else {
-                overlay.eventPressedOtherMove(point, this.getWidget().getPane().getChart().getChartStore())
-              }
-              let prevented = false
-              overlay.onPressedMoving?.({
-                chart,
-                overlay,
-                figure: figure ?? undefined,
-                ...event,
-                preventDefault: () => {
-                  prevented = true
-                }
-              })
-              if (prevented) {
-                this.getWidget().setForceCursor(null)
-              } else {
-                this.getWidget().setForceCursor('pointer')
-              }
-              return true
-            }
-          }
-        }
-        this.getWidget().setForceCursor(null)
-        return false
-      })
+      }
+      this.getWidget().setForceCursor(null)
+      return false
+    })
   }
 
   private _createFigureEvents(overlay: OverlayImp, figureType: EventOverlayInfoFigureType, figureIndex: number, figure: OverlayFigure): Nullable<EventHandler> {
@@ -392,14 +476,14 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     const chartStore = chart.getChartStore()
     if (this.coordinateToPointTimestampDataIndexFlag()) {
       const overlayImp = o as OverlayImp
-      if (overlayImp.isContinuousDrawingMode()) {
+      if (overlayImp.isContinuousDrawing() && !overlayImp.isStart()) {
         // For continuous drawing, store precise timestamp for sub-bar positioning
         const floatIndex = chartStore.coordinateToFloatIndex(coordinate.x)
         point.dataIndex = floatIndex
         point.timestamp = chartStore.floatIndexToTimestamp(floatIndex) ?? undefined
       } else {
         // For step-based drawing, snap to candle boundaries
-        const xAxis = chart.getXAxisPane().getXAxisComponent()
+        const xAxis = chart.getXAxisPane().getAxisComponent()
         const dataIndex = xAxis.convertFromPixel(coordinate.x)
         point.dataIndex = dataIndex
         point.timestamp = chartStore.dataIndexToTimestamp(dataIndex) ?? undefined
@@ -496,10 +580,10 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     const pane = this.getWidget().getPane()
     const chart = pane.getChart()
     const chartStore = chart.getChartStore()
-    const yAxis = pane.getYAxisComponentById() as unknown as Nullable<YAxis>
+    const yAxis = pane.getAxisComponent() as unknown as Nullable<YAxis>
     // For continuous drawing overlays, use float indices for smooth rendering
-    const isContinuous = overlay.isContinuousDrawingMode()
-    const coordinates = points.map((point) => {
+    const isContinuous = overlay.isContinuousDrawing()
+    const coordinates = points.map(point => {
       let dataIndex: Nullable<number> = null
       if (isContinuous && isNumber(point.timestamp)) {
         // Use timestampToFloatIndex for sub-bar precision

@@ -1956,8 +1956,12 @@ export default class StoreImp implements Store {
     return this._overlays.size === 0 && this._progressOverlayInfo === null
   }
 
-  isOverlayDrawing(): boolean {
-    return this._progressOverlayInfo?.overlay.isDrawing() ?? false
+  isOverlayDrawing (): boolean {
+    const info = this._progressOverlayInfo
+    if (info !== null) {
+      return info.overlay.isDrawing()
+    }
+    return false
   }
 
   private _clearLastPriceMarkExtendTextUpdateTimer(): void {

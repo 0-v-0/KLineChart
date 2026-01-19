@@ -32,9 +32,18 @@ import verticalRayLine from './verticalRayLine'
 import verticalSegment from './verticalSegment'
 import verticalStraightLine from './verticalStraightLine'
 
+import simpleAnnotation from './simpleAnnotation'
+import simpleTag from './simpleTag'
+import freePath from './freePath'
+
 const overlays: Record<string, OverlayInnerConstructor> = {}
 
-const extensions = [fibonacciLine, horizontalRayLine, horizontalSegment, horizontalStraightLine, parallelStraightLine, priceChannelLine, priceLine, rayLine, segment, straightLine, verticalRayLine, verticalSegment, verticalStraightLine, simpleAnnotation, simpleTag, brush]
+const extensions = [
+  fibonacciLine, horizontalRayLine, horizontalSegment, horizontalStraightLine,
+  parallelStraightLine, priceChannelLine, priceLine, rayLine, segment,
+  straightLine, verticalRayLine, verticalSegment, verticalStraightLine,
+  simpleAnnotation, simpleTag, freePath
+]
 
 extensions.forEach((template: OverlayTemplate) => {
   overlays[template.name] = OverlayImp.extend(template)
