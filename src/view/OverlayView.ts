@@ -56,7 +56,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         }
         const index = overlay.points.length - 1
         if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
-          overlay.stepDrawingModeEventMoveForDrawing(this._coordinateToPoint(overlay, event))
+          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
           overlay.onDrawing?.({ chart, overlay, ...event })
         }
         return this._figureMouseMoveEvent(
@@ -90,7 +90,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         }
         const index = overlay.points.length - 1
         if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
-          overlay.stepDrawingModeEventMoveForDrawing(this._coordinateToPoint(overlay, event))
+          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
           overlay.onDrawing?.({ chart, overlay, ...event })
           overlay.nextStep()
           if (!overlay.isDrawing()) {
@@ -170,7 +170,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       const progressOverlayInfo = chartStore.getProgressOverlayInfo()
       if (progressOverlayInfo !== null) {
         const overlay = progressOverlayInfo.overlay
-        if (overlay.isContinuousDrawingMode() && overlay.isStart()) {
+        if (overlay.isContinuousDrawing() && overlay.isStart()) {
           chartStore.updateProgressOverlayInfo(paneId, true)
           const point = this._coordinateToPoint(overlay, event)
           overlay.startContinuousDrawing(point)
@@ -184,8 +184,8 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       const progressOverlayInfo = chartStore.getProgressOverlayInfo()
       if (progressOverlayInfo !== null) {
         const overlay = progressOverlayInfo.overlay
-        if (overlay.isContinuousDrawingMode() && overlay.isDrawing() && !overlay.isStart()) {
-          overlay.forceComplete()
+        if (overlay.isContinuousDrawing() && overlay.isDrawing() && !overlay.isStart()) {
+          overlay.completeContinuousDrawing()
           chartStore.progressOverlayComplete()
           overlay.onDrawEnd?.({ chart, overlay, ...event })
           return true
@@ -210,11 +210,10 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       const progressOverlayInfo = chartStore.getProgressOverlayInfo()
       if (progressOverlayInfo !== null) {
         const overlay = progressOverlayInfo.overlay
-        if (overlay.isContinuousDrawingMode() && overlay.isDrawing() && !overlay.isStart()) {
+        if (overlay.isContinuousDrawing() && overlay.isDrawing() && !overlay.isStart()) {
           const point = this._coordinateToPoint(overlay, event)
-          overlay.continuousDrawingModeEventMoveForDrawing(point)
+          overlay.addPointForContinuousDrawing(point)
           overlay.onDrawing?.({ chart, overlay, ...event })
-          this.getWidget().setForceCursor('pointer')
           return true
         }
       }
@@ -386,14 +385,14 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     const chartStore = chart.getChartStore()
     if (this.coordinateToPointTimestampDataIndexFlag()) {
       const overlayImp = o as OverlayImp
-      if (overlayImp.isContinuousDrawingMode()) {
+      if (overlayImp.isContinuousDrawing() && !overlayImp.isStart()) {
         // For continuous drawing, store precise timestamp for sub-bar positioning
         const floatIndex = chartStore.coordinateToFloatIndex(coordinate.x)
         point.dataIndex = floatIndex
         point.timestamp = chartStore.floatIndexToTimestamp(floatIndex) ?? undefined
       } else {
         // For step-based drawing, snap to candle boundaries
-        const xAxis = chart.getXAxisPane().getXAxisComponent()
+        const xAxis = chart.getXAxisPane().getAxisComponent()
         const dataIndex = xAxis.convertFromPixel(coordinate.x)
         point.dataIndex = dataIndex
         point.timestamp = chartStore.dataIndexToTimestamp(dataIndex) ?? undefined
@@ -493,9 +492,9 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     const pane = this.getWidget().getPane()
     const chart = pane.getChart()
     const chartStore = chart.getChartStore()
-    const yAxis = pane.getYAxisComponentById() as unknown as Nullable<YAxis>
+    const yAxis = pane.getAxisComponent() as unknown as Nullable<YAxis>
     // For continuous drawing overlays, use float indices for smooth rendering
-    const isContinuous = overlay.isContinuousDrawingMode()
+    const isContinuous = overlay.isContinuousDrawing()
     const coordinates = points.map(point => {
       let dataIndex: Nullable<number> = null
       if (isContinuous && isNumber(point.timestamp)) {

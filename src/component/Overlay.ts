@@ -367,23 +367,14 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
     return this.currentStep === OVERLAY_DRAW_STEP_START
   }
 
-  isContinuousDrawingMode (): boolean {
+  isContinuousDrawing (): boolean {
     return this.drawingMode === 'continuous'
-  }
-
-  /**
-   * Start continuous drawing - set first point
-   */
-  startContinuousDrawing (point: Partial<Point>): void {
-    this.points = []
-    this.continuousDrawingModeEventMoveForDrawing(point)
-    this.currentStep = 2 // Mark as actively drawing
   }
 
   /**
    * Add a point during continuous drawing mode
    */
-  continuousDrawingModeEventMoveForDrawing (point: Partial<Point>): boolean {
+  addPointForContinuousDrawing (point: Partial<Point>): boolean {
     const newPoint: Partial<Point> = {}
     if (isNumber(point.timestamp)) {
       newPoint.timestamp = point.timestamp
@@ -398,7 +389,23 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
     return true
   }
 
-  stepDrawingModeEventMoveForDrawing (point: Partial<Point>): void {
+  /**
+   * Start continuous drawing - set first point
+   */
+  startContinuousDrawing (point: Partial<Point>): void {
+    this.points = []
+    this.addPointForContinuousDrawing(point)
+    this.currentStep = 2 // Mark as actively drawing
+  }
+
+  /**
+   * Complete continuous drawing
+   */
+  completeContinuousDrawing (): void {
+    this.currentStep = OVERLAY_DRAW_STEP_FINISHED
+  }
+
+  eventMoveForDrawing (point: Partial<Point>): void {
     const pointIndex = this.currentStep - 1
     const newPoint: Partial<Point> = {}
     if (isNumber(point.timestamp)) {
@@ -456,12 +463,12 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
         const newPoint = { ...p }
         if (isNumber(difDataIndex) && (isNumber(p.dataIndex) || isNumber(p.timestamp))) {
           const dataIndex = isNumber(p.timestamp)
-            ? this.isContinuousDrawingMode()
+            ? this.isContinuousDrawing()
               ? chartStore.timestampToFloatIndex(p.timestamp)
               : chartStore.timestampToDataIndex(p.timestamp)
             : p.dataIndex!
           newPoint.dataIndex = dataIndex + difDataIndex
-          newPoint.timestamp = this.isContinuousDrawingMode()
+          newPoint.timestamp = this.isContinuousDrawing()
             ? chartStore.floatIndexToTimestamp(newPoint.dataIndex) ?? undefined
             : chartStore.dataIndexToTimestamp(newPoint.dataIndex) ?? undefined
         }
