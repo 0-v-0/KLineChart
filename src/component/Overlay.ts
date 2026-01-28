@@ -198,6 +198,14 @@ export interface Overlay<E = unknown> extends OverlayEventCollection<E> {
   styles: Nullable<DeepPartial<OverlayStyle>>
 
   /**
+   * Per-figure-key style overrides.
+   * Keys match figure.key or individual attr.key values for granular styling.
+   * Example: { 'fib_0.618': { color: 'gold' }, 'fib_1': { color: 'red' } }
+   * This enables TradingView-like per-level styling for Fibonacci, waves, etc.
+   */
+  figureStyles: Record<string, unknown>
+
+  /**
    * Create figures corresponding to points
    */
   createPointFigures: Nullable<OverlayCreateFiguresCallback<E>>
@@ -260,6 +268,7 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
   points: Array<Partial<Point>> = []
   extendData: E
   styles: Nullable<DeepPartial<OverlayStyle>> = null
+  figureStyles: Record<string, unknown> = {}
   createPointFigures: Nullable<OverlayCreateFiguresCallback<E>> = null
   createXAxisFigures: Nullable<OverlayCreateFiguresCallback<E>> = null
   createYAxisFigures: Nullable<OverlayCreateFiguresCallback<E>> = null
@@ -298,7 +307,15 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
       _prevOverlay: null
     })
 
-    const { id, name, currentStep: _, points, styles, ...others } = overlay
+    const {
+      id,
+      name,
+      currentStep: _,
+      points,
+      styles,
+      figureStyles,
+      ...others
+    } = overlay
 
     merge(this, others)
 
@@ -313,6 +330,10 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
     if (isValid(styles)) {
       this.styles ??= {}
       merge(this.styles, styles)
+    }
+
+    if (isValid(figureStyles)) {
+      merge(this.figureStyles, figureStyles)
     }
 
     if (isArray(points) && points.length > 0) {
@@ -342,7 +363,12 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
 
   shouldUpdate(): { draw: boolean; sort: boolean } {
     const sort = this._prevOverlay.zLevel !== this.zLevel
-    const draw = sort || JSON.stringify(this._prevOverlay.points) !== JSON.stringify(this.points) || this._prevOverlay.visible !== this.visible || this._prevOverlay.extendData !== this.extendData || this._prevOverlay.styles !== this.styles
+    const draw = sort ||
+      JSON.stringify(this._prevOverlay.points) !== JSON.stringify(this.points) ||
+      this._prevOverlay.visible !== this.visible ||
+      this._prevOverlay.extendData !== this.extendData ||
+      this._prevOverlay.styles !== this.styles ||
+      JSON.stringify(this._prevOverlay.figureStyles) !== JSON.stringify(this.figureStyles)
 
     return { sort, draw }
   }

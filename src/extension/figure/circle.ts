@@ -70,6 +70,8 @@ export function drawCircle(ctx: CanvasRenderingContext2D, attrs: CircleAttrs | C
 }
 
 export interface CircleAttrs {
+  /** Optional key for per-figure styling via overlay.figureStyles */
+  key?: string
   x: number
   y: number
   r: number

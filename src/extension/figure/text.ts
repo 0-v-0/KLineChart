@@ -95,6 +95,8 @@ export function drawText(ctx: CanvasRenderingContext2D, attrs: TextAttrs | TextA
 }
 
 export interface TextAttrs {
+  /** Optional key for per-figure styling via overlay.figureStyles */
+  key?: string
   x: number
   y: number
   text: string

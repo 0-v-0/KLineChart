@@ -615,21 +615,35 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
   protected drawFigures(ctx: CanvasRenderingContext2D, overlay: OverlayImp, figures: OverlayFigure[]): void {
     const defaultStyles = this.getWidget().getPane().getChart().getStyles().overlay
     figures.forEach((figure, figureIndex) => {
-      const { type, styles, attrs } = figure
-      // @ts-ignore
+      const { type, key: figureKey, styles, attrs } = figure
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- ignore
+      // @ts-expect-error
       const attrsArray = [].concat(attrs)
       attrsArray.forEach((ats) => {
         const events = this._createFigureEvents(overlay, 'other', figureIndex, figure)
-        // @ts-ignore
-        const ss = { ...defaultStyles[type], ...overlay.styles?.[type], ...styles }
-        this.createFigure(
-          {
-            name: type,
-            attrs: ats,
-            styles: ss
-          },
-          events ?? undefined
-        )?.draw(ctx)
+        // Support per-attr key for granular styling (e.g., each Fibonacci level)
+        // Attr key takes precedence over figure key
+        const attrKey = (ats as { key?: string }).key
+        const effectiveKey = attrKey ?? figureKey
+        let keyedStyles = effectiveKey != null && effectiveKey !== '' ? overlay.figureStyles[effectiveKey] as Record<string, unknown> | undefined : undefined
+        // Prefix-match fallback: for composite keys like 'fan_0.5_grid_x', check 'fan_0.5'
+        if (keyedStyles == null && effectiveKey != null && effectiveKey !== '') {
+          for (const fKey of Object.keys(overlay.figureStyles)) {
+            if (effectiveKey.startsWith(fKey + '_')) {
+              keyedStyles = overlay.figureStyles[fKey] as Record<string, unknown> | undefined
+              break
+            }
+          }
+        }
+        // Style merge order: defaults < instance styles < figure styles < keyed figureStyles
+        // figureStyles override inline styles so per-figure customization always wins
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- ignore
+        // @ts-expect-error
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- ignore
+        const ss = { ...defaultStyles[type], ...overlay.styles?.[type], ...styles, ...keyedStyles }
+        this.createFigure({
+          name: type, attrs: ats, styles: ss
+        }, events ?? undefined)?.draw(ctx)
       })
     })
   }
@@ -666,7 +680,17 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       if ((hoverOverlayInfo.overlay?.id === overlay.id && hoverOverlayInfo.figureType !== 'none') || (clickOverlayInfo.overlay?.id === overlay.id && clickOverlayInfo.figureType !== 'none')) {
         const defaultStyles = chartStore.getStyles().overlay
         const styles = overlay.styles
-        const pointStyles = { ...defaultStyles.point, ...styles?.point }
+        // Derive point color from overlay's line/border color so points match the overlay
+        const overlayAny = overlay as unknown as Record<string, unknown>
+        let baseColor: string | undefined = (styles?.line as Record<string, unknown> | undefined)?.color as string | undefined
+        if (baseColor == null && typeof overlayAny.getProperties === 'function') {
+          const props = (overlayAny.getProperties as (id: string) => Record<string, unknown>)(overlay.id)
+          baseColor = (props.lineColor ?? props.borderColor) as string | undefined
+        }
+        const pointColorOverride = baseColor != null
+          ? { color: baseColor, activeColor: baseColor, borderColor: baseColor }
+          : {}
+        const pointStyles = { ...defaultStyles.point, ...pointColorOverride, ...styles?.point }
         coordinates.forEach(({ x, y }, index) => {
           let radius = pointStyles.radius
           let color = pointStyles.color

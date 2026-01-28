@@ -68,10 +68,20 @@ import { checkCoordinateOnLine, getLinearSlopeIntercept, getLinearYFromCoordinat
 import { checkCoordinateOnPolygon } from './extension/figure/polygon'
 import { checkCoordinateOnRect } from './extension/figure/rect'
 import { checkCoordinateOnText } from './extension/figure/text'
-import { getHotkey, getSupportedHotkeys, registerHotkey } from './extension/hotkey/index'
-import { getSupportedLocales, registerLocale } from './extension/i18n/index'
-import { getSupportedIndicators, registerIndicator } from './extension/indicator/index'
-import { getOverlayClass, getSupportedOverlays, registerOverlay } from './extension/overlay/index'
+
+import { registerFigure, getSupportedFigures, getFigureClass } from './extension/figure/index'
+import { registerIndicator, getSupportedIndicators } from './extension/indicator/index'
+import { registerLocale, getSupportedLocales } from './extension/i18n/index'
+import {
+  registerOverlay, getOverlayClass, getSupportedOverlays,
+  createOrderLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
+  FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS
+} from './extension/overlay/index'
+import type {
+  OverlayProperties, ProOverlayTemplate, OverlayPropertiesStore,
+  FigureLevel,
+  OrderLineProperties, OrderLine, OrderLineStyle, OrderLineEventListener
+} from './extension/overlay/index'
 import { registerStyles } from './extension/styles/index'
 import { registerXAxis } from './extension/x-axis'
 import { registerYAxis } from './extension/y-axis'
@@ -206,8 +216,16 @@ export {
   type TooltipShowRule,
   type TooltipShowType,
   utils,
+  // Pro overlay utilities
+  createOrderLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
+  // Default fibonacci levels
+  FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS,
+  // Types
   type LineType, type PolygonType, type TooltipShowRule, type TooltipShowType, type FeatureType, type TooltipFeaturePosition, type CandleTooltipRectPosition,
   type CandleType, type FormatDateType, type BarSpaceLimit, type ZoomAnchor,
   type Chart, type DomPosition, type YAxisOverride, type YAxisFilter,
-  type ActionType, type IndicatorSeries, type OverlayMode, type OverlayDrawingMode
+  type ActionType, type IndicatorSeries, type OverlayMode, type OverlayDrawingMode,
+  // Pro overlay types
+  type OverlayProperties, type ProOverlayTemplate, type OverlayPropertiesStore, type FigureLevel,
+  type OrderLineProperties, type OrderLine, type OrderLineStyle, type OrderLineEventListener
 }

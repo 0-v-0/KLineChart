@@ -12,34 +12,66 @@
  * limitations under the License.
  */
 
-import type { OverlayTemplate } from '../../component/Overlay'
+import type DeepPartial from '../../common/DeepPartial'
+import type { LineStyle } from '../../common/Styles'
+import { merge, clone } from '../../common/utils/typeChecks'
+import type { OverlayProperties, ProOverlayTemplate } from './types'
+import { DEFAULT_OVERLAY_PROPERTIES } from './types'
 
 /**
- * brush overlay - freehand drawing with click and drag
- * Uses continuous drawing mode for smooth path creation
+ * Brush overlay - freehand drawing tool
+ * Collects mouse points during drag to create a smooth path
+ * Uses continuous drawing mode for collecting points during mouse move
  */
-const brush: OverlayTemplate = {
-  name: 'brush',
-  totalStep: 2,
-  drawingMode: 'continuous',
-  needDefaultPointFigure: false,
-  needDefaultXAxisFigure: false,
-  needDefaultYAxisFigure: false,
-  createPointFigures: ({ coordinates }) => {
-    if (coordinates.length < 2) {
-      return []
+const brush = (): ProOverlayTemplate => {
+  const properties = new Map<string, DeepPartial<OverlayProperties>>()
+
+  const lineStyle = (id: string): Partial<LineStyle> & { smooth?: boolean; lineCap?: CanvasLineCap; lineJoin?: CanvasLineJoin } => {
+    const props = properties.get(id) ?? {}
+    return {
+      style: props.lineStyle ?? DEFAULT_OVERLAY_PROPERTIES.lineStyle,
+      color: props.lineColor ?? DEFAULT_OVERLAY_PROPERTIES.lineColor,
+      size: props.lineWidth ?? DEFAULT_OVERLAY_PROPERTIES.lineWidth,
+      dashedValue: props.lineDashedValue ?? DEFAULT_OVERLAY_PROPERTIES.lineDashedValue,
+      smooth: false,
+      lineCap: 'round',
+      lineJoin: 'round'
     }
-    return [
-      {
-        type: 'line',
-        attrs: { coordinates },
-        styles: {
-          smooth: false,
-          lineCap: 'round',
-          lineJoin: 'round'
-        }
+  }
+
+  const setProperties = (_properties: DeepPartial<OverlayProperties>, id: string): void => {
+    const current = properties.get(id) ?? {}
+    const newProps = clone(current) as Record<string, unknown>
+    merge(newProps, _properties)
+    properties.set(id, newProps as DeepPartial<OverlayProperties>)
+  }
+
+  const getProperties = (id: string): DeepPartial<OverlayProperties> => properties.get(id) ?? {}
+
+  return {
+    name: 'brush',
+    totalStep: 2,
+    drawingMode: 'continuous',
+    needDefaultPointFigure: false,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    createPointFigures: ({ coordinates, overlay }) => {
+      if (coordinates.length < 2) {
+        return []
       }
-    ]
+
+      const id = overlay.id
+
+      return [
+        {
+          type: 'line',
+          attrs: { coordinates },
+          styles: lineStyle(id)
+        }
+      ]
+    },
+    setProperties,
+    getProperties
   }
 }
 

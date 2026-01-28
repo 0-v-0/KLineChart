@@ -14,9 +14,9 @@
 
 import type Nullable from '../../common/Nullable'
 
-import OverlayImp, { type OverlayConstructor, type OverlayInnerConstructor, type OverlayTemplate } from '../../component/Overlay'
-import brush from './brush'
-import fibonacciLine from './fibonacciLine'
+import OverlayImp, { type OverlayTemplate, type OverlayConstructor, type OverlayInnerConstructor } from '../../component/Overlay'
+
+// Basic line overlays
 import horizontalRayLine from './horizontalRayLine'
 import horizontalSegment from './horizontalSegment'
 import horizontalStraightLine from './horizontalStraightLine'
@@ -32,20 +32,71 @@ import verticalRayLine from './verticalRayLine'
 import verticalSegment from './verticalSegment'
 import verticalStraightLine from './verticalStraightLine'
 
+// Annotation overlays
 import simpleAnnotation from './simpleAnnotation'
 import simpleTag from './simpleTag'
 import freePath from './freePath'
 
+// Basic shape overlays (Pro overlays with factory pattern)
+import arrow from './arrow'
+import circle from './circle'
+import rect from './rect'
+import triangle from './triangle'
+import parallelogram from './parallelogram'
+import brush from './brush'
+
+// Fibonacci overlays (Pro overlays with factory pattern)
+import fibonacciLine from './fibonacciLine'
+import fibonacciCircle from './fibonacciCircle'
+import fibonacciSegment from './fibonacciSegment'
+import fibonacciSpiral from './fibonacciSpiral'
+import fibonacciSpeedResistanceFan from './fibonacciSpeedResistanceFan'
+import fibonacciExtension from './fibonacciExtension'
+
+// Wave pattern overlays (Pro overlays with factory pattern)
+import threeWaves from './threeWaves'
+import fiveWaves from './fiveWaves'
+import eightWaves from './eightWaves'
+import anyWaves from './anyWaves'
+
+// Harmonic pattern overlays (Pro overlays with factory pattern)
+import abcd from './abcd'
+import xabcd from './xabcd'
+
+// Gann overlays (Pro overlays with factory pattern)
+import gannBox from './gannBox'
+
+// Order line overlay (Pro overlay with factory pattern)
+import orderLine from './orderLine'
+
 const overlays: Record<string, OverlayInnerConstructor> = {}
 
-const extensions = [
-  fibonacciLine, horizontalRayLine, horizontalSegment, horizontalStraightLine,
+// Standard overlays (direct templates)
+const standardExtensions = [
+  horizontalRayLine, horizontalSegment, horizontalStraightLine,
   parallelStraightLine, priceChannelLine, priceLine, rayLine, segment,
   straightLine, verticalRayLine, verticalSegment, verticalStraightLine,
   simpleAnnotation, simpleTag, freePath
 ]
 
-extensions.forEach((template: OverlayTemplate) => {
+// Pro overlays (factory functions that return templates)
+const proExtensions = [
+  arrow, circle, rect, triangle, parallelogram, brush,
+  fibonacciLine, fibonacciCircle, fibonacciSegment, fibonacciSpiral, fibonacciSpeedResistanceFan, fibonacciExtension,
+  threeWaves, fiveWaves, eightWaves, anyWaves,
+  abcd, xabcd,
+  gannBox,
+  orderLine
+]
+
+// Register standard overlays (direct templates)
+standardExtensions.forEach((template: OverlayTemplate) => {
+  overlays[template.name] = OverlayImp.extend(template)
+})
+
+// Register pro overlays (call factory functions to get templates)
+proExtensions.forEach((factory) => {
+  const template = factory()
   overlays[template.name] = OverlayImp.extend(template)
 })
 
@@ -66,4 +117,18 @@ function getSupportedOverlays(): string[] {
   return Object.keys(overlays)
 }
 
-export { getOverlayClass, getOverlayInnerClass, getSupportedOverlays, registerOverlay }
+export { registerOverlay, getOverlayClass, getOverlayInnerClass, getSupportedOverlays }
+
+// Export Pro overlay types and utilities
+export type { OverlayProperties, ProOverlayTemplate, OverlayPropertiesStore, FigureLevel, DeepPartial } from './types'
+export { DEFAULT_OVERLAY_PROPERTIES, isProOverlayTemplate, createPropertiesStore } from './types'
+
+// Export default levels for fibonacci overlays
+export { FIBONACCI_RETRACEMENT_LEVELS } from './fibonacciLine'
+export { FIBONACCI_EXTENSION_LEVELS } from './fibonacciExtension'
+export { FIBONACCI_CIRCLE_LEVELS } from './fibonacciCircle'
+export { FIBONACCI_FAN_LEVELS } from './fibonacciSpeedResistanceFan'
+
+// Export order line types and fluent API
+export type { OrderLineProperties, OrderLine, OrderLineStyle, OrderLineEventListener } from './order'
+export { createOrderLine } from './order'
