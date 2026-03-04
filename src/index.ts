@@ -69,10 +69,12 @@ import { registerIndicator, getSupportedIndicators } from './extension/indicator
 import { registerLocale, getSupportedLocales } from './extension/i18n/index'
 import {
   registerOverlay, getOverlayClass, getSupportedOverlays,
-  createOrderLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES
+  createOrderLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
+  FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS
 } from './extension/overlay/index'
 import type {
   OverlayProperties, ProOverlayTemplate, OverlayPropertiesStore,
+  FigureLevel,
   OrderLineProperties, OrderLine, OrderLineStyle, OrderLineEventListener
 } from './extension/overlay/index'
 import { registerStyles } from './extension/styles/index'
@@ -185,12 +187,14 @@ export {
   utils,
   // Pro overlay utilities
   createOrderLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
+  // Default fibonacci levels
+  FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS,
   // Types
   type LineType, type PolygonType, type TooltipShowRule, type TooltipShowType, type FeatureType, type TooltipFeaturePosition, type CandleTooltipRectPosition,
   type CandleType, type FormatDateType, type BarSpaceLimit, type ZoomAnchor,
   type Chart, type DomPosition, type YAxisOverride, type YAxisFilter,
   type ActionType, type IndicatorSeries, type OverlayMode, type OverlayDrawingMode,
   // Pro overlay types
-  type OverlayProperties, type ProOverlayTemplate, type OverlayPropertiesStore,
+  type OverlayProperties, type ProOverlayTemplate, type OverlayPropertiesStore, type FigureLevel,
   type OrderLineProperties, type OrderLine, type OrderLineStyle, type OrderLineEventListener
 }

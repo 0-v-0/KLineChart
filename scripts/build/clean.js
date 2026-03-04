@@ -2,7 +2,6 @@ import fs from 'fs'
 import { styleText } from 'node:util'
 
 import { resolvePath } from '../utils.js'
-import { start, success } from './logger.js'
 
 const buildDir = resolvePath('dist')
 
@@ -33,12 +32,12 @@ function deleteFiles (dir) {
       } else {
         fs.unlinkSync(path)
         deletedFileCount++
-        if (process.stdout.isTTY) {
-          process.stdout.clearLine(process.stdout)
+        if (typeof process.stdout.clearLine === 'function') {
+          process.stdout.clearLine(0)
           process.stdout.cursorTo(0)
-          const percent = `${Math.round(deletedFileCount / totalFileCount * 100)}%`
-          process.stdout.write(`${styleText('blue', `${percent}(${deletedFileCount}/${totalFileCount}): ${file}`)}`, 'utf-8')
         }
+        const percent = `${Math.round(deletedFileCount / totalFileCount * 100)}%`
+        process.stdout.write(`${styleText('blue', `${percent}(${deletedFileCount}/${totalFileCount}): ${file}`)}`, 'utf-8')
       }
     })
     fs.rmdirSync(dir)
@@ -46,25 +45,10 @@ function deleteFiles (dir) {
 }
 
 function clean () {
-  const startTime = Date.now()
-
-  start('Cleaning build output...', [
-    `target: ${buildDir}`
-  ])
-
-  if (!fs.existsSync(buildDir)) {
-    success('No build output to clean', startTime, [
-      'deleted: 0 files'
-    ])
-    return
-  }
-
   eachFiles(buildDir)
   deleteFiles(buildDir)
 
-  success('Cleaned build output', startTime, [
-    `deleted: ${deletedFileCount} files`
-  ])
+  console.log(styleText('green', '\n\n✔ Clean successfully.\n'))
 }
 
 clean()
