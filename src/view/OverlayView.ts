@@ -17,6 +17,8 @@ import type Coordinate from '../common/Coordinate'
 import type Point from '../common/Point'
 import type { EventHandler, EventName, MouseTouchEvent, MouseTouchEventCallback } from '../common/EventHandler'
 import { isFunction, isNumber, isValid } from '../common/utils/typeChecks'
+import type { TextStyle } from '../common/Styles'
+import { createFont } from '../common/utils/canvas'
 
 import type { Axis } from '../component/Axis'
 import type { YAxis } from '../component/YAxis'
@@ -31,9 +33,19 @@ import { PaneIdConstants } from '../pane/types'
 import type DrawWidget from '../widget/DrawWidget'
 import type DrawPane from '../pane/DrawPane'
 
+import type { TextAttrs } from '../extension/figure/text'
+import { getTextRect } from '../extension/figure/text'
+
 import View from './View'
 
 export default class OverlayView<C extends Axis = YAxis> extends View<C> {
+  private _activeTextEditor: Nullable<{
+    input: HTMLInputElement
+    overlay: OverlayImp
+    figure: OverlayFigure
+    cleanup: () => void
+  }> = null
+
   constructor (widget: DrawWidget<DrawPane<C>>) {
     super(widget)
     this._initEvent()
@@ -244,6 +256,111 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     })
   }
 
+  private _stopTextEdit (commit: boolean): void {
+    if (this._activeTextEditor === null) return
+    const { input, overlay, figure, cleanup } = this._activeTextEditor
+    if (commit && isFunction(overlay.onTextChange)) {
+      const text = input.value
+      const chart = this.getWidget().getPane().getChart()
+      const figureKey = figure.key
+      overlay.onTextChange({ chart, overlay, figure, figureKey, text })
+    }
+    cleanup()
+    this._activeTextEditor = null
+  }
+
+  private _startTextEdit (overlay: OverlayImp, figure: OverlayFigure, styles: Partial<TextStyle>): void {
+    // Stop any existing edit
+    this._stopTextEdit(false)
+
+    const attrs = figure.attrs as TextAttrs
+    const rect = getTextRect(attrs, styles)
+
+    const container = this.getWidget().getContainer()
+
+    const input = document.createElement('input')
+    input.type = 'text'
+    input.value = attrs.text
+
+    const {
+      size = 12,
+      weight = 'normal',
+      family,
+      color = '#000000',
+      paddingLeft = 0,
+      paddingTop = 0,
+      paddingRight = 0,
+      paddingBottom = 0,
+      backgroundColor
+    } = styles
+
+    const font = createFont(size, weight, family)
+
+    Object.assign(input.style, {
+      position: 'absolute',
+      left: `${rect.x}px`,
+      top: `${rect.y}px`,
+      width: `${Math.max(rect.width, 60)}px`,
+      height: `${rect.height}px`,
+      padding: `${paddingTop}px ${paddingRight}px ${paddingBottom}px ${paddingLeft}px`,
+      margin: '0',
+      border: 'none',
+      outline: 'none',
+      font,
+      color,
+      backgroundColor: backgroundColor ?? 'transparent',
+      boxSizing: 'border-box',
+      zIndex: '1000',
+      caretColor: color
+    })
+
+    const onKeyDown = (e: KeyboardEvent): void => {
+      e.stopPropagation()
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        this._stopTextEdit(true)
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        this._stopTextEdit(false)
+      }
+    }
+
+    const onBlur = (): void => {
+      // Use setTimeout to avoid conflict with Enter key handling
+      setTimeout(() => {
+        if (this._activeTextEditor?.input === input) {
+          this._stopTextEdit(true)
+        }
+      }, 0)
+    }
+
+    input.addEventListener('keydown', onKeyDown)
+    input.addEventListener('blur', onBlur)
+
+    // Prevent chart from handling mouse events on the input
+    const stopPropagation = (e: Event): void => { e.stopPropagation() }
+    input.addEventListener('mousedown', stopPropagation)
+    input.addEventListener('mouseup', stopPropagation)
+    input.addEventListener('click', stopPropagation)
+
+    const cleanup = (): void => {
+      input.removeEventListener('keydown', onKeyDown)
+      input.removeEventListener('blur', onBlur)
+      input.removeEventListener('mousedown', stopPropagation)
+      input.removeEventListener('mouseup', stopPropagation)
+      input.removeEventListener('click', stopPropagation)
+      if (input.parentElement != null) {
+        input.parentElement.removeChild(input)
+      }
+    }
+
+    this._activeTextEditor = { input, overlay, figure, cleanup }
+
+    container.appendChild(input)
+    input.focus()
+    input.select()
+  }
+
   private _createFigureEvents (
     overlay: OverlayImp,
     figureType: EventOverlayInfoFigureType,
@@ -355,6 +472,27 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
   private _figureMouseDoubleClickEvent (overlay: OverlayImp, _figureType: EventOverlayInfoFigureType, _figureIndex: number, figure: OverlayFigure): MouseTouchEventCallback {
     return (event: MouseTouchEvent) => {
       if (checkOverlayFigureEvent('onDoubleClick', figure)) {
+        // If the figure is editableText and the overlay has onTextChange, start inline editing
+        if (figure.type === 'editableText' && isFunction(overlay.onTextChange)) {
+          const defaultStyles = this.getWidget().getPane().getChart().getStyles().overlay
+          const figureKey = figure.key ?? ((figure.attrs as TextAttrs).key)
+          let keyedStyles = figureKey != null && figureKey !== '' ? overlay.figureStyles[figureKey] as Record<string, unknown> | undefined : undefined
+          if (keyedStyles == null && figureKey != null && figureKey !== '') {
+            for (const fKey of Object.keys(overlay.figureStyles)) {
+              if (figureKey.startsWith(fKey + '_')) {
+                keyedStyles = overlay.figureStyles[fKey] as Record<string, unknown> | undefined
+                break
+              }
+            }
+          }
+          const styles: Partial<TextStyle> = {
+            ...(defaultStyles.text as Partial<TextStyle>),
+            ...(overlay.styles?.text as Partial<TextStyle>),
+            ...(figure.styles as Partial<TextStyle>),
+            ...keyedStyles
+          }
+          this._startTextEdit(overlay, figure, styles)
+        }
         overlay.onDoubleClick?.({ ...event, chart: this.getWidget().getPane().getChart(), figure, overlay })
         return !overlay.isDrawing()
       }

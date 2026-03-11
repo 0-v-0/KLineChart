@@ -15,6 +15,32 @@
 import type { OverlayTemplate } from '../../component/Overlay'
 import { isFunction, isValid } from '../../common/utils/typeChecks'
 
+interface SimpleAnnotationData {
+  text?: string
+  direction?: 'up' | 'down'
+  color?: string
+  textColor?: string
+}
+
+function parseExtendData (extendData: unknown, overlay: Parameters<NonNullable<OverlayTemplate['createPointFigures']>>[0]['overlay']): SimpleAnnotationData {
+  if (!isValid(extendData)) {
+    return { text: '', direction: 'up' }
+  }
+  if (isFunction(extendData)) {
+    return { text: (extendData(overlay)) as string, direction: 'up' }
+  }
+  if (typeof extendData === 'object' && extendData !== null) {
+    const data = extendData as SimpleAnnotationData
+    return {
+      text: data.text ?? '',
+      direction: data.direction ?? 'up',
+      color: data.color,
+      textColor: data.textColor
+    }
+  }
+  return { text: (extendData ?? '') as string, direction: 'up' }
+}
+
 const simpleAnnotation: OverlayTemplate = {
   name: 'simpleAnnotation',
   totalStep: 2,
@@ -22,35 +48,62 @@ const simpleAnnotation: OverlayTemplate = {
     line: { style: 'dashed' }
   },
   createPointFigures: ({ overlay, coordinates }) => {
-    let text = ''
-    if (isValid(overlay.extendData)) {
-      if (!isFunction(overlay.extendData)) {
-        text = (overlay.extendData ?? '') as string
-      } else {
-        text = (overlay.extendData(overlay)) as string
-      }
-    }
+    const { text = '', direction = 'up', color, textColor } = parseExtendData(overlay.extendData, overlay)
+
     const startX = coordinates[0].x
-    const startY = coordinates[0].y - 6
-    const lineEndY = startY - 50
-    const arrowEndY = lineEndY - 5
-    return [
-      {
+    const figures: Array<{ type: string; attrs: unknown; styles?: unknown; ignoreEvent?: boolean }> = []
+
+    if (direction === 'down') {
+      const startY = coordinates[0].y + 6
+      const lineEndY = startY + 50
+      const arrowEndY = lineEndY + 5
+
+      figures.push({
         type: 'line',
         attrs: { coordinates: [{ x: startX, y: startY }, { x: startX, y: lineEndY }] },
+        styles: isValid(color) ? { style: 'dashed', color } : undefined,
         ignoreEvent: true
-      },
-      {
+      })
+      figures.push({
         type: 'polygon',
         attrs: { coordinates: [{ x: startX, y: lineEndY }, { x: startX - 4, y: arrowEndY }, { x: startX + 4, y: arrowEndY }] },
+        styles: isValid(color) ? { style: 'fill', color, borderColor: color } : undefined,
         ignoreEvent: true
-      },
-      {
-        type: 'text',
-        attrs: { x: startX, y: arrowEndY, text, align: 'center', baseline: 'bottom' },
-        ignoreEvent: true
+      })
+      if (text.length > 0) {
+        figures.push({
+          type: 'editableText',
+          attrs: { x: startX, y: arrowEndY, text, align: 'center', baseline: 'top' },
+          styles: isValid(textColor) ? { color: textColor } : undefined
+        })
       }
-    ]
+    } else {
+      const startY = coordinates[0].y - 6
+      const lineEndY = startY - 50
+      const arrowEndY = lineEndY - 5
+
+      figures.push({
+        type: 'line',
+        attrs: { coordinates: [{ x: startX, y: startY }, { x: startX, y: lineEndY }] },
+        styles: isValid(color) ? { style: 'dashed', color } : undefined,
+        ignoreEvent: true
+      })
+      figures.push({
+        type: 'polygon',
+        attrs: { coordinates: [{ x: startX, y: lineEndY }, { x: startX - 4, y: arrowEndY }, { x: startX + 4, y: arrowEndY }] },
+        styles: isValid(color) ? { style: 'fill', color, borderColor: color } : undefined,
+        ignoreEvent: true
+      })
+      if (text.length > 0) {
+        figures.push({
+          type: 'editableText',
+          attrs: { x: startX, y: arrowEndY, text, align: 'center', baseline: 'bottom' },
+          styles: isValid(textColor) ? { color: textColor } : undefined
+        })
+      }
+    }
+
+    return figures
   }
 }
 

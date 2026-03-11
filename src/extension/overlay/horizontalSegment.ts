@@ -12,36 +12,100 @@
  * limitations under the License.
  */
 
-import type { OverlayTemplate } from '../../component/Overlay'
-
+import type DeepPartial from '../../common/DeepPartial'
+import type { LineStyle, TextStyle } from '../../common/Styles'
+import { merge, clone } from '../../common/utils/typeChecks'
+import type { OverlayProperties, ProOverlayTemplate } from './types'
+import { DEFAULT_OVERLAY_PROPERTIES } from './types'
 import type { LineAttrs } from '../figure/line'
 
-const horizontalSegment: OverlayTemplate = {
-  name: 'horizontalSegment',
-  totalStep: 3,
-  needDefaultPointFigure: true,
-  needDefaultXAxisFigure: true,
-  needDefaultYAxisFigure: true,
-  createPointFigures: ({ coordinates }) => {
-    const lines: LineAttrs[] = []
-    if (coordinates.length === 2) {
-      lines.push({ coordinates })
+const horizontalSegment = (): ProOverlayTemplate => {
+  const properties = new Map<string, DeepPartial<OverlayProperties>>()
+
+  const lineStyle = (id: string): Partial<LineStyle> => {
+    const props = properties.get(id) ?? {}
+    return {
+      style: props.lineStyle ?? DEFAULT_OVERLAY_PROPERTIES.lineStyle,
+      color: props.lineColor ?? DEFAULT_OVERLAY_PROPERTIES.lineColor,
+      size: props.lineWidth ?? DEFAULT_OVERLAY_PROPERTIES.lineWidth,
+      dashedValue: props.lineDashedValue ?? DEFAULT_OVERLAY_PROPERTIES.lineDashedValue
     }
-    return [
-      {
-        type: 'line',
-        attrs: lines
+  }
+
+  const textStyle = (id: string): Partial<TextStyle> => {
+    const props = properties.get(id) ?? {}
+    return {
+      color: props.textColor ?? DEFAULT_OVERLAY_PROPERTIES.textColor,
+      size: props.textFontSize ?? DEFAULT_OVERLAY_PROPERTIES.textFontSize,
+      weight: props.textFontWeight ?? DEFAULT_OVERLAY_PROPERTIES.textFontWeight,
+      family: props.textFont ?? DEFAULT_OVERLAY_PROPERTIES.textFont,
+      paddingLeft: props.textPaddingLeft ?? DEFAULT_OVERLAY_PROPERTIES.textPaddingLeft,
+      paddingRight: props.textPaddingRight ?? DEFAULT_OVERLAY_PROPERTIES.textPaddingRight,
+      paddingTop: props.textPaddingTop ?? DEFAULT_OVERLAY_PROPERTIES.textPaddingTop,
+      paddingBottom: props.textPaddingBottom ?? DEFAULT_OVERLAY_PROPERTIES.textPaddingBottom,
+      backgroundColor: props.textBackgroundColor ?? DEFAULT_OVERLAY_PROPERTIES.textBackgroundColor
+    }
+  }
+
+  const setProperties = (_properties: DeepPartial<OverlayProperties>, id: string): void => {
+    const current = properties.get(id) ?? {}
+    const newProps = clone(current) as Record<string, unknown>
+    merge(newProps, _properties)
+    properties.set(id, newProps as DeepPartial<OverlayProperties>)
+  }
+
+  const getProperties = (id: string): DeepPartial<OverlayProperties> => properties.get(id) ?? {}
+
+  return {
+    name: 'horizontalSegment',
+    totalStep: 3,
+    needDefaultPointFigure: true,
+    needDefaultXAxisFigure: true,
+    needDefaultYAxisFigure: true,
+    createPointFigures: ({ coordinates, overlay }) => {
+      const id = overlay.id
+      const lines: LineAttrs[] = []
+      if (coordinates.length === 2) {
+        lines.push({ coordinates })
       }
-    ]
-  },
-  performEventPressedMove: ({ points, performPoint }) => {
-    points[0].value = performPoint.value
-    points[1].value = performPoint.value
-  },
-  performEventMoveForDrawing: ({ currentStep, points, performPoint }) => {
-    if (currentStep === 2) {
+
+      const figures: Array<{
+        type: string
+        attrs: unknown
+        styles?: Partial<LineStyle> | Partial<TextStyle>
+      }> = [
+        {
+          type: 'line',
+          attrs: lines,
+          styles: lineStyle(id)
+        }
+      ]
+
+      const props = properties.get(id) ?? {}
+      const text = props.text ?? ''
+      if (text.length > 0 && coordinates.length === 2) {
+        const midX = (coordinates[0].x + coordinates[1].x) / 2
+        const midY = coordinates[0].y
+        figures.push({
+          type: 'editableText',
+          attrs: { x: midX, y: midY, text, align: 'center', baseline: 'bottom' },
+          styles: textStyle(id)
+        })
+      }
+
+      return figures
+    },
+    performEventPressedMove: ({ points, performPoint }) => {
       points[0].value = performPoint.value
-    }
+      points[1].value = performPoint.value
+    },
+    performEventMoveForDrawing: ({ currentStep, points, performPoint }) => {
+      if (currentStep === 2) {
+        points[0].value = performPoint.value
+      }
+    },
+    setProperties,
+    getProperties
   }
 }
 

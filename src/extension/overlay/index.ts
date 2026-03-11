@@ -15,6 +15,7 @@
 import type Nullable from '../../common/Nullable'
 
 import OverlayImp, { type OverlayTemplate, type OverlayConstructor, type OverlayInnerConstructor } from '../../component/Overlay'
+import { isProOverlayTemplate } from './types'
 
 // Basic line overlays
 import horizontalRayLine from './horizontalRayLine'
@@ -71,15 +72,17 @@ const overlays: Record<string, OverlayInnerConstructor> = {}
 
 // Standard overlays (direct templates)
 const standardExtensions = [
-  horizontalRayLine, horizontalSegment, horizontalStraightLine,
-  parallelStraightLine, priceChannelLine, priceLine, rayLine, segment,
-  straightLine, verticalRayLine, verticalSegment, verticalStraightLine,
   simpleAnnotation, simpleTag, freePath
 ]
 
 // Pro overlays (factory functions that return templates)
 const proExtensions = [
+  horizontalRayLine, horizontalSegment, horizontalStraightLine,
+  rayLine, segment, straightLine,
+  priceLine,
   arrow, circle, rect, triangle, parallelogram, brush,
+  parallelStraightLine, priceChannelLine,
+  verticalRayLine, verticalSegment, verticalStraightLine,
   fibonacciLine, fibonacciCircle, fibonacciSegment, fibonacciSpiral, fibonacciSpeedResistanceFan, fibonacciExtension,
   threeWaves, fiveWaves, eightWaves, anyWaves,
   abcd, xabcd,
@@ -93,8 +96,14 @@ standardExtensions.forEach((template: OverlayTemplate) => {
 })
 
 // Register pro overlays (call factory functions to get templates)
+// Auto-wire onTextChange for Pro overlays to update their properties store
 proExtensions.forEach((factory) => {
   const template = factory()
+  if (isProOverlayTemplate(template) && template.onTextChange == null) {
+    template.onTextChange = ({ overlay, text }) => {
+      template.setProperties?.({ text }, overlay.id)
+    }
+  }
   overlays[template.name] = OverlayImp.extend(template)
 })
 
@@ -127,5 +136,9 @@ export { FIBONACCI_CIRCLE_LEVELS } from './fibonacciCircle'
 export { FIBONACCI_FAN_LEVELS } from './fibonacciSpeedResistanceFan'
 
 // Export order line types and fluent API
-export type { OrderLineProperties, OrderLine, OrderLineStyle, OrderLineEventListener } from './order'
-export { createOrderLine } from './order'
+export type { OrderLineProperties, OrderLine, OrderLineStyle, OrderLineEventListener } from './orderLineApi'
+export { createOrderLine } from './orderLineApi'
+
+// Export price line types and fluent API
+export type { PriceLineProperties, PriceLine, PriceLineEventListener } from './priceLineApi'
+export { createPriceLine } from './priceLineApi'
