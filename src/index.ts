@@ -46,7 +46,7 @@ import {
 import { calcTextWidth } from './common/utils/canvas'
 import type { ActionType } from './common/Action'
 import type { IndicatorSeries } from './component/Indicator'
-import type { OverlayMode, OverlayDrawingMode } from './component/Overlay'
+import type { OverlayMode, OverlayDrawingMode, OverlayTextChangeEvent, OverlayTextChangeCallback } from './component/Overlay'
 import type { YAxisOverride } from './component/YAxis'
 
 import type { FormatDateType, Options, BarSpaceLimit, ZoomAnchor } from './Options'
@@ -74,13 +74,14 @@ import { registerIndicator, getSupportedIndicators } from './extension/indicator
 import { registerLocale, getSupportedLocales } from './extension/i18n/index'
 import {
   registerOverlay, getOverlayClass, getSupportedOverlays,
-  createOrderLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
+  createOrderLine, createPriceLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
   FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS
 } from './extension/overlay/index'
 import type {
   OverlayProperties, ProOverlayTemplate, OverlayPropertiesStore,
   FigureLevel,
-  OrderLineProperties, OrderLine, OrderLineStyle, OrderLineEventListener
+  OrderLineProperties, OrderLine, OrderLineStyle, OrderLineEventListener,
+  PriceLineProperties, PriceLine, PriceLineEventListener
 } from './extension/overlay/index'
 import { registerStyles } from './extension/styles/index'
 import { registerXAxis } from './extension/x-axis'
@@ -217,7 +218,7 @@ export {
   type TooltipShowType,
   utils,
   // Pro overlay utilities
-  createOrderLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
+  createOrderLine, createPriceLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
   // Default fibonacci levels
   FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS,
   // Types
@@ -225,7 +226,9 @@ export {
   type CandleType, type FormatDateType, type BarSpaceLimit, type ZoomAnchor,
   type Chart, type DomPosition, type YAxisOverride, type YAxisFilter,
   type ActionType, type IndicatorSeries, type OverlayMode, type OverlayDrawingMode,
+  type OverlayTextChangeEvent, type OverlayTextChangeCallback,
   // Pro overlay types
   type OverlayProperties, type ProOverlayTemplate, type OverlayPropertiesStore, type FigureLevel,
-  type OrderLineProperties, type OrderLine, type OrderLineStyle, type OrderLineEventListener
+  type OrderLineProperties, type OrderLine, type OrderLineStyle, type OrderLineEventListener,
+  type PriceLineProperties, type PriceLine, type PriceLineEventListener
 }

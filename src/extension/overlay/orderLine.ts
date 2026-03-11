@@ -24,7 +24,7 @@ import type DeepPartial from '../../common/DeepPartial'
 import { merge, clone } from '../../common/utils/typeChecks'
 
 import type { ProOverlayTemplate } from './types'
-import type { OrderLineProperties } from './order'
+import type { OrderLineProperties } from './orderLineApi'
 
 // ---------------------------------------------------------------------------
 // Default style constants
@@ -79,9 +79,18 @@ const QUANTITY_WIDTH = 60
 const orderLine = (): ProOverlayTemplate => {
   let properties: DeepPartial<OrderLineProperties> = {}
 
-  const prop = <K extends keyof OrderLineProperties>(key: K): OrderLineProperties[K] =>
-    ((properties as Record<string, unknown>)[key] as OrderLineProperties[K] ??
-      (defaultOrderLineStyle as Record<string, unknown>)[key] as OrderLineProperties[K])
+  /**
+   * Resolve a property value from: extendData (createOrderLine API) → closure (setProperties) → defaults.
+   * createOrderLine stores data via overlay.extendData, while direct usage uses setProperties.
+   */
+  const _extRef: { data: DeepPartial<OrderLineProperties> | null } = { data: null }
+
+  const prop = <K extends keyof OrderLineProperties>(key: K): OrderLineProperties[K] => {
+    const ext = _extRef.data as Record<string, unknown> | null
+    const props = properties as Record<string, unknown>
+    const defaults = defaultOrderLineStyle as Record<string, unknown>
+    return (ext?.[key] ?? props[key] ?? defaults[key]) as OrderLineProperties[K]
+  }
 
   return {
     name: 'orderLine',
@@ -93,7 +102,7 @@ const orderLine = (): ProOverlayTemplate => {
     // -----------------------------------------------------------------------
     // createPointFigures
     // -----------------------------------------------------------------------
-    createPointFigures: ({ coordinates, bounding }) => {
+    createPointFigures: ({ coordinates, bounding, overlay }) => {
       const figures: Array<{
         type: string
         key?: string
@@ -103,6 +112,12 @@ const orderLine = (): ProOverlayTemplate => {
       }> = []
 
       if (coordinates.length === 0) return []
+
+      // Sync extendData from createOrderLine API into the resolution chain
+      _extRef.data = (overlay.extendData != null && typeof overlay.extendData === 'object')
+        ? overlay.extendData as DeepPartial<OrderLineProperties>
+        : null
+
       const y = coordinates[0].y
 
       const marginRight = prop('marginRight') ?? defaultOrderLineStyle.marginRight
@@ -137,9 +152,9 @@ const orderLine = (): ProOverlayTemplate => {
       })
 
       // -- b. Body label --
-      const isBodyVisible = properties.isBodyVisible
+      const isBodyVisible = prop('isBodyVisible')
       if (isBodyVisible !== false) {
-        const bodyText = properties.text ?? 'Position Line'
+        const bodyText = prop('text') ?? 'Position Line'
         const bodyTextColor = prop('bodyTextColor') ?? defaultOrderLineStyle.bodyTextColor
         const bodyBgColor = prop('bodyBackgroundColor') ?? defaultOrderLineStyle.bodyBackgroundColor
         const bodyBorderColor = prop('bodyBorderColor') ?? defaultOrderLineStyle.bodyBorderColor
@@ -178,9 +193,9 @@ const orderLine = (): ProOverlayTemplate => {
       }
 
       // -- c. Quantity label --
-      const isQuantityVisible = properties.isQuantityVisible
+      const isQuantityVisible = prop('isQuantityVisible')
       if (isQuantityVisible !== false) {
-        const quantityText = String(properties.quantity ?? 'Size')
+        const quantityText = String(prop('quantity') ?? 'Size')
         const quantityColor = prop('quantityColor') ?? defaultOrderLineStyle.quantityColor
         const quantityBgColor = prop('quantityBackgroundColor') ?? defaultOrderLineStyle.quantityBackgroundColor
         const quantityBorderColor = prop('quantityBorderColor') ?? defaultOrderLineStyle.quantityBorderColor
@@ -221,7 +236,7 @@ const orderLine = (): ProOverlayTemplate => {
       }
 
       // -- d. Cancel button --
-      const isCancelButtonVisible = properties.isCancelButtonVisible
+      const isCancelButtonVisible = prop('isCancelButtonVisible')
       if (isCancelButtonVisible !== false) {
         const cancelIconColor = prop('cancelButtonIconColor') ?? defaultOrderLineStyle.cancelButtonIconColor
         const cancelBgColor = prop('cancelButtonBackgroundColor') ?? defaultOrderLineStyle.cancelButtonBackgroundColor
@@ -267,15 +282,22 @@ const orderLine = (): ProOverlayTemplate => {
     // -----------------------------------------------------------------------
     // createYAxisFigures
     // -----------------------------------------------------------------------
-    createYAxisFigures: ({ overlay, coordinates }) => {
+    createYAxisFigures: ({ overlay, coordinates, chart }) => {
       const y = coordinates.length > 0 ? coordinates[0].y : 0
-      const price = properties.price
+
+      // Resolve price: extendData (createOrderLine API) → closure → overlay points
+      const ext = (overlay.extendData != null && typeof overlay.extendData === 'object')
+        ? overlay.extendData as DeepPartial<OrderLineProperties>
+        : null
+      _extRef.data = ext
+      const price = ext?.price ?? properties.price ?? overlay.points[0]?.value
 
       let priceText = ''
       if (typeof overlay.extendData === 'function') {
         priceText = String((overlay.extendData as (v: unknown) => string)(price))
       } else if (price !== undefined) {
-        priceText = String(price)
+        const precision = chart.getSymbol()?.pricePrecision ?? 2
+        priceText = Number(price).toFixed(precision)
       }
 
       const lineColor = prop('lineColor') ?? defaultOrderLineStyle.lineColor
@@ -321,8 +343,12 @@ const orderLine = (): ProOverlayTemplate => {
     onRightClick: () => false,
 
     onPressedMoveStart: (event) => {
-      if (properties.onMoveStart?.callback != null) {
-        properties.onMoveStart.callback(properties.onMoveStart.params, event)
+      const ext = (event.overlay.extendData != null && typeof event.overlay.extendData === 'object')
+        ? event.overlay.extendData as DeepPartial<OrderLineProperties>
+        : null
+      const listener = ext?.onMoveStart ?? properties.onMoveStart
+      if (listener?.callback != null) {
+        listener.callback(listener.params, event)
       }
       return false
     },
@@ -333,25 +359,42 @@ const orderLine = (): ProOverlayTemplate => {
       if (points.length > 0 && points[0].value !== undefined) {
         properties.price = points[0].value
       }
-      if (properties.onMove?.callback != null) {
-        properties.onMove.callback(properties.onMove.params, event)
+      const ext = (event.overlay.extendData != null && typeof event.overlay.extendData === 'object')
+        ? event.overlay.extendData as DeepPartial<OrderLineProperties>
+        : null
+      const listener = ext?.onMove ?? properties.onMove
+      if (listener?.callback != null) {
+        listener.callback(listener.params, event)
       }
       return false
     },
 
     onPressedMoveEnd: (event) => {
-      if (properties.onMoveEnd?.callback != null) {
-        properties.onMoveEnd.callback(properties.onMoveEnd.params, event)
+      const ext = (event.overlay.extendData != null && typeof event.overlay.extendData === 'object')
+        ? event.overlay.extendData as DeepPartial<OrderLineProperties>
+        : null
+      const listener = ext?.onMoveEnd ?? properties.onMoveEnd
+      if (listener?.callback != null) {
+        listener.callback(listener.params, event)
       }
       return false
     },
 
     onClick: (event) => {
+      const ext = (event.overlay.extendData != null && typeof event.overlay.extendData === 'object')
+        ? event.overlay.extendData as DeepPartial<OrderLineProperties>
+        : null
       const figureKey = event.figure?.key
-      if (figureKey === 'cancel-button' && properties.onCancel?.callback != null) {
-        properties.onCancel.callback(properties.onCancel.params, event)
-      } else if (figureKey === 'quantity' && properties.onModify?.callback != null) {
-        properties.onModify.callback(properties.onModify.params, event)
+      if (figureKey === 'cancel-button') {
+        const listener = ext?.onCancel ?? properties.onCancel
+        if (listener?.callback != null) {
+          listener.callback(listener.params, event)
+        }
+      } else if (figureKey === 'quantity') {
+        const listener = ext?.onModify ?? properties.onModify
+        if (listener?.callback != null) {
+          listener.callback(listener.params, event)
+        }
       }
       return false
     },

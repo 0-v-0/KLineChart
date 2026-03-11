@@ -13,10 +13,11 @@
  */
 
 import type DeepPartial from '../../common/DeepPartial'
-import type { PolygonStyle } from '../../common/Styles'
+import type { PolygonStyle, TextStyle } from '../../common/Styles'
 import { merge, clone } from '../../common/utils/typeChecks'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
+import { computeTextPosition } from './textUtils'
 
 /**
  * Rectangle overlay - rectangle defined by two corner points
@@ -37,6 +38,21 @@ const rect = (): ProOverlayTemplate => {
     }
   }
 
+  const textStyle = (id: string): Partial<TextStyle> => {
+    const props = properties.get(id) ?? {}
+    return {
+      color: props.textColor ?? DEFAULT_OVERLAY_PROPERTIES.textColor,
+      size: props.textFontSize ?? DEFAULT_OVERLAY_PROPERTIES.textFontSize,
+      weight: props.textFontWeight ?? DEFAULT_OVERLAY_PROPERTIES.textFontWeight,
+      family: props.textFont ?? DEFAULT_OVERLAY_PROPERTIES.textFont,
+      paddingLeft: props.textPaddingLeft ?? DEFAULT_OVERLAY_PROPERTIES.textPaddingLeft,
+      paddingRight: props.textPaddingRight ?? DEFAULT_OVERLAY_PROPERTIES.textPaddingRight,
+      paddingTop: props.textPaddingTop ?? DEFAULT_OVERLAY_PROPERTIES.textPaddingTop,
+      paddingBottom: props.textPaddingBottom ?? DEFAULT_OVERLAY_PROPERTIES.textPaddingBottom,
+      backgroundColor: props.textBackgroundColor ?? DEFAULT_OVERLAY_PROPERTIES.textBackgroundColor
+    }
+  }
+
   const setProperties = (_properties: DeepPartial<OverlayProperties>, id: string): void => {
     const current = properties.get(id) ?? {}
     const newProps = clone(current) as Record<string, unknown>
@@ -52,7 +68,7 @@ const rect = (): ProOverlayTemplate => {
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,
     needDefaultYAxisFigure: true,
-    createPointFigures: ({ coordinates, overlay }) => {
+    createPointFigures: ({ coordinates, bounding, overlay }) => {
       if (coordinates.length < 2) {
         return []
       }
@@ -69,13 +85,25 @@ const rect = (): ProOverlayTemplate => {
         { x: topLeft.x, y: bottomRight.y }
       ]
 
-      return [
+      const figures: Array<{ type: string; attrs: unknown; styles?: unknown }> = [
         {
           type: 'polygon',
           attrs: { coordinates: rectCoordinates },
           styles: rectStyle(id)
         }
       ]
+
+      const props = properties.get(id) ?? {}
+      const text = props.text ?? ''
+      figures.push({
+        type: 'editableText',
+        attrs: {
+          ...computeTextPosition((topLeft.x + bottomRight.x) / 2, (topLeft.y + bottomRight.y) / 2, props, bounding.width, 'center', 'middle'), text
+        },
+        styles: textStyle(id)
+      })
+
+      return figures
     },
     setProperties,
     getProperties

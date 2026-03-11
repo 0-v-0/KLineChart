@@ -43,6 +43,8 @@ export interface OverlayPerformEventParams {
  */
 export type OverlayDrawingMode = 'step' | 'continuous'
 
+export type OverlayTextChangeCallback<E> = (event: OverlayTextChangeEvent<E>) => void
+
 export interface OverlayEventCollection<E> {
   onDrawStart: Nullable<OverlayEventCallback<E>>
   onDrawing: Nullable<OverlayEventCallback<E>>
@@ -59,9 +61,13 @@ export interface OverlayEventCollection<E> {
   onMouseLeave: Nullable<OverlayEventCallback<E>>
   onSelected: Nullable<OverlayEventCallback<E>>
   onDeselected: Nullable<OverlayEventCallback<E>>
+  onTextChange: Nullable<OverlayTextChangeCallback<E>>
 }
 
-export function checkOverlayFigureEvent(targetEventType: keyof Omit<OverlayEventCollection<unknown>, 'onDrawStart' | 'onDrawing' | 'onDrawEnd' | 'onRemoved'>, figure: Nullable<OverlayFigure>): boolean {
+export function checkOverlayFigureEvent (
+  targetEventType: keyof Omit<OverlayEventCollection<unknown>, 'onDrawStart' | 'onDrawing' | 'onDrawEnd' | 'onRemoved' | 'onTextChange'>,
+  figure: Nullable<OverlayFigure>
+): boolean {
   const ignoreEvent = figure?.ignoreEvent ?? false
   if (isBoolean(ignoreEvent)) {
     return !ignoreEvent
@@ -74,7 +80,7 @@ export interface OverlayFigure {
   type: string
   attrs: unknown
   styles?: unknown
-  ignoreEvent?: boolean | Array<keyof Omit<OverlayEventCollection<unknown>, 'onDrawStart' | 'onDrawing' | 'onDrawEnd' | 'onRemoved'>>
+  ignoreEvent?: boolean | Array<keyof Omit<OverlayEventCollection<unknown>, 'onDrawStart' | 'onDrawing' | 'onDrawEnd' | 'onRemoved' | 'onTextChange'>>
 }
 
 export interface OverlayCreateFiguresCallbackParams<E> {
@@ -90,6 +96,14 @@ export interface OverlayEvent<E> extends Partial<MouseTouchEvent> {
   figure?: OverlayFigure
   overlay: Overlay<E>
   chart: Chart
+}
+
+export interface OverlayTextChangeEvent<E> {
+  figure?: OverlayFigure
+  figureKey?: string
+  overlay: Overlay<E>
+  chart: Chart
+  text: string
 }
 
 export type OverlayEventCallback<E> = (event: OverlayEvent<E>) => void
@@ -289,6 +303,7 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
   onRemoved: Nullable<OverlayEventCallback<E>> = null
   onSelected: Nullable<OverlayEventCallback<E>> = null
   onDeselected: Nullable<OverlayEventCallback<E>> = null
+  onTextChange: Nullable<OverlayTextChangeCallback<E>> = null
 
   private _prevZLevel = 0
 
