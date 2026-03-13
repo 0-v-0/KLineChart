@@ -313,7 +313,10 @@ export interface CrosshairStyle {
   vertical: CrosshairDirectionStyle
 }
 
+export type OverlayPointMode = 'solid' | 'stroke'
+
 export interface OverlayPointStyle {
+  mode: OverlayPointMode
   color: string
   borderColor: string
   borderSize: number
@@ -726,7 +729,6 @@ function getDefaultCrosshairStyle (): CrosshairStyle {
 }
 
 function getDefaultOverlayStyle (): OverlayStyle {
-  const pointBorderColor = hexToRgb(Color.BLUE, 0.35)
   const alphaBg = hexToRgb(Color.BLUE, 0.25)
   function text (): TextStyle {
     return {
@@ -749,13 +751,14 @@ function getDefaultOverlayStyle (): OverlayStyle {
   }
   return {
     point: {
+      mode: 'stroke',
       color: Color.BLUE,
-      borderColor: pointBorderColor,
+      borderColor: Color.BLUE,
       borderSize: 1,
       radius: 5,
       activeColor: Color.BLUE,
-      activeBorderColor: pointBorderColor,
-      activeBorderSize: 3,
+      activeBorderColor: Color.BLUE,
+      activeBorderSize: 2,
       activeRadius: 5
     },
     line: {
