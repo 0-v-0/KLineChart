@@ -25,10 +25,14 @@
  */
 
 import type {
+  Styles,
   LineType, PolygonType, TooltipShowRule, TooltipShowType, FeatureType, TooltipFeaturePosition,
   CandleType, CandleTooltipRectPosition
 } from './common/Styles'
 import type Nullable from './common/Nullable'
+import type DeepPartial from './common/DeepPartial'
+import type { KLineData } from './common/Data'
+import type Point from './common/Point'
 
 import { logError, logTag, logWarn } from './common/utils/logger'
 
@@ -45,8 +49,9 @@ import {
 } from './common/utils/format'
 import { calcTextWidth } from './common/utils/canvas'
 import type { ActionType } from './common/Action'
-import type { IndicatorSeries } from './component/Indicator'
-import type { OverlayMode, OverlayDrawingMode, OverlayTextChangeEvent, OverlayTextChangeCallback } from './component/Overlay'
+import type { Indicator, IndicatorCreate, IndicatorSeries, IndicatorTemplate } from './component/Indicator'
+import type { Overlay, OverlayCreate, OverlayEvent, OverlayTemplate, OverlayMode, OverlayDrawingMode, OverlayTextChangeEvent, OverlayTextChangeCallback } from './component/Overlay'
+import type { FigureTemplate } from './component/Figure'
 import type { YAxisOverride } from './component/YAxis'
 
 import type { FormatDateType, Options, BarSpaceLimit, ZoomAnchor } from './Options'
@@ -74,14 +79,14 @@ import { registerIndicator, getSupportedIndicators } from './extension/indicator
 import { registerLocale, getSupportedLocales } from './extension/i18n/index'
 import {
   registerOverlay, getOverlayClass, getSupportedOverlays,
-  createOrderLine, createPriceLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
+  createPriceLine, createTradeLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
   FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS
 } from './extension/overlay/index'
 import type {
   OverlayProperties, ProOverlayTemplate, OverlayPropertiesStore,
   FigureLevel,
-  OrderLineProperties, OrderLine, OrderLineStyle, OrderLineEventListener,
-  PriceLineProperties, PriceLine, PriceLineEventListener
+  PriceLineProperties, PriceLine, PriceLineEventListener,
+  TradeLineProperties, TradeLine
 } from './extension/overlay/index'
 import { registerStyles } from './extension/styles/index'
 import { registerXAxis } from './extension/x-axis'
@@ -218,10 +223,15 @@ export {
   type TooltipShowType,
   utils,
   // Pro overlay utilities
-  createOrderLine, createPriceLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
+  createPriceLine, createTradeLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
   // Default fibonacci levels
   FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS,
-  // Types
+  // Core consumer types
+  type Chart, type Nullable, type DeepPartial, type KLineData, type Point, type Styles, type Options,
+  type Overlay, type OverlayCreate, type OverlayEvent, type OverlayTemplate,
+  type Indicator, type IndicatorCreate, type IndicatorTemplate,
+  type FigureTemplate,
+  // Style / enum types
   type LineType, type PolygonType, type TooltipShowRule, type TooltipShowType, type FeatureType, type TooltipFeaturePosition, type CandleTooltipRectPosition,
   type CandleType, type FormatDateType, type BarSpaceLimit, type ZoomAnchor,
   type Chart, type DomPosition, type YAxisOverride, type YAxisFilter,
@@ -229,6 +239,6 @@ export {
   type OverlayTextChangeEvent, type OverlayTextChangeCallback,
   // Pro overlay types
   type OverlayProperties, type ProOverlayTemplate, type OverlayPropertiesStore, type FigureLevel,
-  type OrderLineProperties, type OrderLine, type OrderLineStyle, type OrderLineEventListener,
-  type PriceLineProperties, type PriceLine, type PriceLineEventListener
+  type PriceLineProperties, type PriceLine, type PriceLineEventListener,
+  type TradeLineProperties, type TradeLine
 }

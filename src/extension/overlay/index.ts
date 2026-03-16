@@ -67,8 +67,14 @@ import xabcd from './xabcd'
 // Gann overlays (Pro overlays with factory pattern)
 import gannBox from './gannBox'
 
-// Order line overlay (Pro overlay with factory pattern)
-import orderLine from './orderLine'
+// Trade line overlay (Pro overlay with factory pattern)
+import tradeLine from './tradeLine'
+
+// Generic primitive overlays (Pro overlays with factory pattern)
+import timeLine from './timeLine'
+import priceLevelLine from './priceLevelLine'
+import styledSegment from './styledSegment'
+import box from './box'
 
 const overlays: Record<string, OverlayInnerConstructor> = {}
 
@@ -89,7 +95,11 @@ const proExtensions = [
   threeWaves, fiveWaves, eightWaves, anyWaves,
   abcd, xabcd,
   gannBox,
-  orderLine
+  tradeLine,
+  timeLine,
+  priceLevelLine,
+  styledSegment,
+  box
 ]
 
 // Register standard overlays (direct templates)
@@ -138,10 +148,10 @@ export { FIBONACCI_EXTENSION_LEVELS } from './fibonacciExtension'
 export { FIBONACCI_CIRCLE_LEVELS } from './fibonacciCircle'
 export { FIBONACCI_FAN_LEVELS } from './fibonacciSpeedResistanceFan'
 
-// Export order line types and fluent API
-export type { OrderLineProperties, OrderLine, OrderLineStyle, OrderLineEventListener } from './orderLineApi'
-export { createOrderLine } from './orderLineApi'
-
 // Export price line types and fluent API
 export type { PriceLineProperties, PriceLine, PriceLineEventListener } from './priceLineApi'
 export { createPriceLine } from './priceLineApi'
+
+// Export trade line types and fluent API
+export type { TradeLineProperties, TradeLine } from './tradeLineApi'
+export { createTradeLine } from './tradeLineApi'
