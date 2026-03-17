@@ -25,10 +25,14 @@
  */
 
 import type {
+  Styles,
   LineType, PolygonType, TooltipShowRule, TooltipShowType, FeatureType, TooltipFeaturePosition,
   CandleType, CandleTooltipRectPosition
 } from './common/Styles'
 import type Nullable from './common/Nullable'
+import type DeepPartial from './common/DeepPartial'
+import type { KLineData } from './common/Data'
+import type Point from './common/Point'
 
 import { logError, logTag, logWarn } from './common/utils/logger'
 
@@ -45,8 +49,8 @@ import {
 } from './common/utils/format'
 import { calcTextWidth } from './common/utils/canvas'
 import type { ActionType } from './common/Action'
-import type { IndicatorSeries } from './component/Indicator'
-import type { OverlayMode, OverlayDrawingMode, OverlayTextChangeEvent, OverlayTextChangeCallback } from './component/Overlay'
+import type { Indicator, IndicatorCreate, IndicatorSeries } from './component/Indicator'
+import type { Overlay, OverlayCreate, OverlayEvent, OverlayMode, OverlayDrawingMode, OverlayTextChangeEvent, OverlayTextChangeCallback } from './component/Overlay'
 import type { YAxisOverride } from './component/YAxis'
 
 import type { FormatDateType, Options, BarSpaceLimit, ZoomAnchor } from './Options'
@@ -191,7 +195,11 @@ export {
   createOrderLine, createPriceLine, createTradeLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
   // Default fibonacci levels
   FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS,
-  // Types
+  // Core consumer types
+  type Chart, type Nullable, type DeepPartial, type KLineData, type Point, type Styles, type Options,
+  type Overlay, type OverlayCreate, type OverlayEvent,
+  type Indicator, type IndicatorCreate,
+  // Style / enum types
   type LineType, type PolygonType, type TooltipShowRule, type TooltipShowType, type FeatureType, type TooltipFeaturePosition, type CandleTooltipRectPosition,
   type CandleType, type FormatDateType, type BarSpaceLimit, type ZoomAnchor,
   type Chart, type DomPosition, type YAxisOverride, type YAxisFilter,
