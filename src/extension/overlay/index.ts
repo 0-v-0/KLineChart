@@ -68,6 +68,11 @@ import gannBox from './gannBox'
 // Trade line overlay (Pro overlay with factory pattern)
 import tradeLine from './tradeLine'
 
+// Alert overlays (Pro overlays with factory pattern)
+import timeAlertLine from './timeAlertLine'
+import breakEvenLine from './breakEvenLine'
+import trendlineAlertLine from './trendlineAlertLine'
+
 const overlays: Record<string, OverlayInnerConstructor> = {}
 
 // Standard overlays (direct templates)
@@ -87,7 +92,10 @@ const proExtensions = [
   threeWaves, fiveWaves, eightWaves, anyWaves,
   abcd, xabcd,
   gannBox,
-  tradeLine
+  tradeLine,
+  timeAlertLine,
+  breakEvenLine,
+  trendlineAlertLine
 ]
 
 // Register standard overlays (direct templates)

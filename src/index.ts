@@ -49,8 +49,9 @@ import {
 } from './common/utils/format'
 import { calcTextWidth } from './common/utils/canvas'
 import type { ActionType } from './common/Action'
-import type { Indicator, IndicatorCreate, IndicatorSeries } from './component/Indicator'
-import type { Overlay, OverlayCreate, OverlayEvent, OverlayMode, OverlayDrawingMode, OverlayTextChangeEvent, OverlayTextChangeCallback } from './component/Overlay'
+import type { Indicator, IndicatorCreate, IndicatorSeries, IndicatorTemplate } from './component/Indicator'
+import type { Overlay, OverlayCreate, OverlayEvent, OverlayTemplate, OverlayMode, OverlayDrawingMode, OverlayTextChangeEvent, OverlayTextChangeCallback } from './component/Overlay'
+import type { FigureTemplate } from './component/Figure'
 import type { YAxisOverride } from './component/YAxis'
 
 import type { FormatDateType, Options, BarSpaceLimit, ZoomAnchor } from './Options'
@@ -196,8 +197,9 @@ export {
   FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS,
   // Core consumer types
   type Chart, type Nullable, type DeepPartial, type KLineData, type Point, type Styles, type Options,
-  type Overlay, type OverlayCreate, type OverlayEvent,
-  type Indicator, type IndicatorCreate,
+  type Overlay, type OverlayCreate, type OverlayEvent, type OverlayTemplate,
+  type Indicator, type IndicatorCreate, type IndicatorTemplate,
+  type FigureTemplate,
   // Style / enum types
   type LineType, type PolygonType, type TooltipShowRule, type TooltipShowType, type FeatureType, type TooltipFeaturePosition, type CandleTooltipRectPosition,
   type CandleType, type FormatDateType, type BarSpaceLimit, type ZoomAnchor,

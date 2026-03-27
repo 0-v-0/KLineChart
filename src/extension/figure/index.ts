@@ -24,10 +24,11 @@ import text from './text'
 import editableText from './editableText'
 import arc from './arc'
 import path from './path'
+import rotatedText from './rotatedText'
 
 const figures: Record<string, FigureInnerConstructor> = {}
 
-const extensions = [circle, line, polygon, rect, text, editableText, arc, path]
+const extensions = [circle, line, polygon, rect, text, editableText, arc, path, rotatedText]
 extensions.forEach((figure: FigureTemplate) => {
   figures[figure.name] = FigureImp.extend(figure)
 })
