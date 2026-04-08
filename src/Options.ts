@@ -112,4 +112,5 @@ export interface Options {
   hotkey?: Partial<Hotkey>
   layout?: LayoutChild[]
   barSpaceLimit?: Partial<BarSpaceLimit>
+  debug?: boolean
 }

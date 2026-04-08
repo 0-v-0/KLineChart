@@ -48,6 +48,9 @@ import { getOverlayInnerClass } from './extension/overlay/index'
 
 import { getStyles as getExtensionStyles } from './extension/styles/index'
 
+import { ReplayEngine as ReplayEngineImp } from './replay/ReplayEngine'
+import type { ReplayStatus, ReplayEngine } from './replay/types'
+
 import { PaneIdConstants } from './pane/types'
 
 import type Chart from './Chart'
@@ -121,6 +124,8 @@ export const SCALE_MULTIPLIER = 10
 
 export const DEFAULT_MIN_TIME_SPAN = 15 * 60 * 1000
 
+export type { ReplayStatus }
+
 export interface Store {
   setStyles: (value: string | DeepPartial<Styles>) => void
   getStyles: () => Styles
@@ -167,6 +172,7 @@ export interface Store {
   setScrollEnabled: (enabled: boolean) => void
   isScrollEnabled: () => boolean
   resetData: () => void
+  getReplayEngine: () => ReplayEngine
 }
 
 export default class StoreImp implements Store {
@@ -242,6 +248,11 @@ export default class StoreImp implements Store {
    * Data source
    */
   private _dataList: KLineData[] = []
+
+  /**
+   * Replay engine — owns all playback state and logic
+   */
+  private readonly _replayEngine: ReplayEngineImp
 
   /**
    * Load more data callback
@@ -502,6 +513,45 @@ export default class StoreImp implements Store {
         buildYAxisTick: true
       })
     })
+
+    this._replayEngine = new ReplayEngineImp({
+      getDataList: () => this._dataList,
+      getSymbol: () => this._symbol,
+      getPeriod: () => this._period,
+      getDataLoader: () => this._dataLoader,
+      spliceDataList: (start, count) => this._dataList.splice(start, count ?? this._dataList.length - start),
+      popDataList: () => this._dataList.pop(),
+      setDataListEntry: (i, candle) => { this._dataList[i] = candle },
+      adjustVisibleRange: () => { this._adjustVisibleRange() },
+      resetCrosshair: () => {
+        this._crosshair = {}
+        this.setCrosshair(this._crosshair, { notInvalidate: true })
+      },
+      triggerLayout: (opts) => {
+        this._chart.layout({ measureWidth: true, update: true, buildYAxisTick: true, cacheYAxisWidth: opts.cacheYAxisWidth })
+      },
+      addData: (data, type) => {
+        // Save/restore _currentTimeLimit to bypass the _addData guard
+        const savedLimit = this._replayEngine.getCurrentTimeLimit()
+        this._replayEngine.setCurrentTimeLimitRaw(null)
+        this._addData(data, type)
+        this._replayEngine.setCurrentTimeLimitRaw(savedLimit)
+      },
+      processDataLoad: (type) => {
+        this._loading = false
+        this._processDataLoad(type)
+      },
+      recalcIndicators: () => {
+        const filterIndicators = this.getIndicatorsByFilter({})
+        if (filterIndicators.length > 0) {
+          this._calcIndicator(filterIndicators)
+        }
+      },
+      processDataUnsubscribe: () => { this._processDataUnsubscribe() },
+      resetData: (fn) => { this.resetData(fn) },
+      getCurrentTimeLimit: () => this._replayEngine.getCurrentTimeLimit(),
+      setPeriodRaw: (period) => { this._period = period }
+    })
   }
 
   setStyles(value: string | DeepPartial<Styles>): void {
@@ -631,7 +681,11 @@ export default class StoreImp implements Store {
     return this._hotKey
   }
 
-  setSymbol(symbol: PickPartial<SymbolInfo, 'pricePrecision' | 'volumePrecision'>): void {
+  setSymbol (symbol: PickPartial<SymbolInfo, 'pricePrecision' | 'volumePrecision'>): void {
+    if (this._replayEngine.isInReplay()) {
+      // Exit playback mode before changing symbol
+      this._replayEngine.exitPlayback()
+    }
     this.resetData(() => {
       // @ts-ignore
       this._symbol = {
@@ -648,10 +702,17 @@ export default class StoreImp implements Store {
     return this._symbol
   }
 
-  setPeriod(period: Period): void {
-    this.resetData(() => {
-      this._period = period
-    })
+  setPeriod (period: Period): void {
+    if (this._replayEngine.isInReplay()) {
+      // Playback mode: delegate to engine which handles period change logic
+      this._replayEngine.handlePeriodChange(period, () => {
+        this.resetData(() => { this._period = period })
+      })
+    } else {
+      this.resetData(() => {
+        this._period = period
+      })
+    }
   }
 
   getPeriod(): Nullable<Period> {
@@ -793,6 +854,13 @@ export default class StoreImp implements Store {
       }
       success = true
     } else {
+      // Block live updates when a time limit is set (replay mode).
+      // Only block the subscribeBar callback path — drawCandle() uses 'draw' type to bypass.
+      // isInReplay() checks _currentTimeLimit !== null. The addData host wrapper
+      // temporarily sets the limit to null to bypass this guard for drawCandle calls.
+      if (this._replayEngine.isInReplay() && type === 'update') {
+        return
+      }
       const dataCount = this._dataList.length
       // Determine where individual data should be added
       const timestamp = data.timestamp
@@ -932,7 +1000,7 @@ export default class StoreImp implements Store {
         callback: (data: KLineData[], more?: DataLoadMore) => {
           this._loading = false
           this._addData(data, type, more)
-          if (type === 'init') {
+          if (type === 'init' && !this._replayEngine.isInReplay()) {
             this._dataLoader?.subscribeBar?.({
               symbol: this._symbol!,
               period: this._period!,
@@ -941,9 +1009,19 @@ export default class StoreImp implements Store {
               }
             })
           }
+          if (type === 'init') {
+            this._replayEngine.notifyInitComplete()
+          }
         }
       }
       switch (type) {
+        case 'init': {
+          // In replay mode, fetch history ending at the current cursor position
+          if (this._replayEngine.isInReplay()) {
+            params.timestamp = this._replayEngine.getCurrentTimeLimit()
+          }
+          break
+        }
         case 'backward': {
           params.timestamp = this._dataList[this._dataList.length - 1]?.timestamp ?? null
           break
@@ -976,7 +1054,15 @@ export default class StoreImp implements Store {
     this._processDataLoad('init')
   }
 
-  getBarSpace(): BarSpace {
+  // ---------------------------------------------------------------------------
+  // Replay engine accessor
+  // ---------------------------------------------------------------------------
+
+  getReplayEngine (): ReplayEngine {
+    return this._replayEngine
+  }
+
+  getBarSpace (): BarSpace {
     return {
       bar: this._barSpace,
       halfBar: this._barSpace / 2,
@@ -2037,5 +2123,6 @@ export default class StoreImp implements Store {
     this._overlays.clear()
     this._indicators.clear()
     this._actions.clear()
+    this._replayEngine.destroy()
   }
 }

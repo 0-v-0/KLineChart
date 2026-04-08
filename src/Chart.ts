@@ -37,8 +37,24 @@ import { createDom } from './common/utils/dom'
 import { createId } from './common/utils/id'
 import { logWarn } from './common/utils/logger'
 import { binarySearchNearest } from './common/utils/number'
-import { isArray, isNumber, isString, isValid } from './common/utils/typeChecks'
-import type VisibleRange from './common/VisibleRange'
+import type { Styles } from './common/Styles'
+import type BarSpace from './common/BarSpace'
+import type PickRequired from './common/PickRequired'
+import type { SymbolInfo } from './common/SymbolInfo'
+import type { Period } from './common/Period'
+import type ExcludePickPartial from './common/ExcludePickPartial'
+
+import ChartStore, { SCALE_MULTIPLIER, type Store } from './Store'
+import type { ReplayEngine } from './replay/types'
+
+import CandlePane from './pane/CandlePane'
+import IndicatorPane from './pane/IndicatorPane'
+import XAxisPane from './pane/XAxisPane'
+import type DrawPane from './pane/DrawPane'
+import SeparatorPane from './pane/SeparatorPane'
+
+import { type PaneOptions, PaneIdConstants } from './pane/types'
+
 import type AxisImp from './component/Axis'
 import type { Indicator, IndicatorCreate, IndicatorFilter, IndicatorOverride } from './component/Indicator'
 import type { Overlay, OverlayCreate, OverlayFilter, OverlayOverride } from './component/Overlay'
@@ -107,6 +123,7 @@ export interface Chart extends Store {
   unsubscribeAction: (type: ActionType, callback?: ActionCallback) => void
   getConvertPictureUrl: (includeOverlay?: boolean, type?: 'png' | 'jpeg' | 'bmp', backgroundColor?: string) => string
   resize: () => void
+  getReplayEngine: () => ReplayEngine
 }
 
 export default class ChartImp implements Chart {
@@ -821,6 +838,10 @@ export default class ChartImp implements Chart {
 
   resetData (): void {
     this._chartStore.resetData()
+  }
+
+  getReplayEngine (): ReplayEngine {
+    return this._chartStore.getReplayEngine()
   }
 
   getDataList (mutateToCandleType = false): KLineData[] {
