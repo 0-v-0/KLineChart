@@ -98,6 +98,9 @@ export default class Event implements EventHandler {
 
   private _mouseMoveTriggerWidgetInfo: EventTriggerWidgetInfo = { pane: null, widget: null }
 
+  // Defer single-click action so a following double-click can cancel it.
+  private _pendingClickTimer: ReturnType<typeof setTimeout> | null = null
+
   private readonly _boundKeyBoardDownEvent: ((event: KeyboardEvent) => void) = (event: KeyboardEvent) => {
     const target = event.target as Nullable<HTMLElement>
     const tagName = target?.tagName.toLowerCase()
@@ -444,16 +447,32 @@ export default class Event implements EventHandler {
   }
 
   mouseClickEvent (e: MouseTouchEvent): boolean {
-    const { widget } = this._findWidgetByEvent(e)
+    const { pane, widget } = this._findWidgetByEvent(e)
     if (widget !== null) {
       const event = this._makeWidgetEvent(e, widget)
-      return widget.dispatchEvent('mouseClickEvent', event)
+      const consumed = widget.dispatchEvent('mouseClickEvent', event)
+      // Fire onChartClick only when no overlay consumed the click
+      const widgetName = widget.getName()
+      if (!consumed && pane !== null && widgetName === WidgetNameConstants.MAIN) {
+        const chartStore = this._chart.getChartStore()
+        if (chartStore.hasAction('onChartClick')) {
+          const crosshair = chartStore.getCrosshair()
+          const payload = { x: event.x, y: event.y, ...crosshair }
+          // Defer so a following double-click can cancel it
+          if (this._pendingClickTimer !== null) clearTimeout(this._pendingClickTimer)
+          this._pendingClickTimer = setTimeout(() => {
+            this._pendingClickTimer = null
+            chartStore.executeAction('onChartClick', payload)
+          }, 250)
+        }
+      }
+      return consumed
     }
     return false
   }
 
   mouseRightClickEvent (e: MouseTouchEvent): boolean {
-    const { widget } = this._findWidgetByEvent(e)
+    const { pane, widget } = this._findWidgetByEvent(e)
     let consumed = false
     if (widget !== null) {
       const event = this._makeWidgetEvent(e, widget)
@@ -464,6 +483,18 @@ export default class Event implements EventHandler {
         case WidgetNameConstants.Y_AXIS: {
           consumed = widget.dispatchEvent('mouseRightClickEvent', event)
           break
+        }
+      }
+      // Fire onChartRightClick only when no overlay consumed the right-click
+      if (!consumed && pane !== null && name === WidgetNameConstants.MAIN) {
+        const chartStore = this._chart.getChartStore()
+        if (chartStore.hasAction('onChartRightClick')) {
+          const crosshair = chartStore.getCrosshair()
+          chartStore.executeAction('onChartRightClick', {
+            x: event.x,
+            y: event.y,
+            ...crosshair
+          })
         }
       }
       if (consumed) {
@@ -480,7 +511,25 @@ export default class Event implements EventHandler {
       switch (name) {
         case WidgetNameConstants.MAIN: {
           const event = this._makeWidgetEvent(e, widget)
-          return widget.dispatchEvent('mouseDoubleClickEvent', event)
+          // Cancel any pending single-click dispatch — this is a double-click
+          if (this._pendingClickTimer !== null) {
+            clearTimeout(this._pendingClickTimer)
+            this._pendingClickTimer = null
+          }
+          const consumed = widget.dispatchEvent('mouseDoubleClickEvent', event)
+          // Fire onChartDoubleClick only when no overlay consumed the double-click
+          if (!consumed && pane !== null) {
+            const chartStore = this._chart.getChartStore()
+            if (chartStore.hasAction('onChartDoubleClick')) {
+              const crosshair = chartStore.getCrosshair()
+              chartStore.executeAction('onChartDoubleClick', {
+                x: event.x,
+                y: event.y,
+                ...crosshair
+              })
+            }
+          }
+          return consumed
         }
         case WidgetNameConstants.Y_AXIS: {
           const yAxisWidget = widget as Widget<DrawPane<YAxisImp>>
