@@ -2,6 +2,18 @@ import { FlatCompat } from '@eslint/eslintrc'
 import love from 'eslint-config-love'
 
 export default [
+  // Global ignores — must be in a config object with ONLY `ignores` to apply globally.
+  {
+    ignores: [
+      'eslint.config.js',
+      'scripts/**/*',
+      'dist/**/*',
+      'docs/**/*',
+      'index.js',
+      'src/__tests__/**/*',
+      'vitest.config.ts'
+    ]
+  },
   ...new FlatCompat().extends('eslint-config-standard'),
   {
     ...love,
