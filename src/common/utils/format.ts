@@ -159,12 +159,18 @@ export function formatFoldDecimal(value: string | number, threshold: number): st
   return vl
 }
 
-export function formatTemplateString(template: string, params: Record<string, unknown>): string {
-  return template.replace(/\{(\w+)\}/g, (_, key) => {
-    const value = params[key as string]
-    if (isValid(value)) {
-      return value as string
+export function formatTemplateString (template: string, params: Record<string, unknown>): string {
+  // Supports fallback syntax: {keyA||keyB||keyC} resolves to the first key
+  // whose value is valid. Useful for optional display fields — e.g.
+  // `{shortName||ticker}` shows shortName when set, otherwise ticker.
+  return template.replace(/\{([\w|]+)\}/g, (_, expr) => {
+    const keys = (expr as string).split('||')
+    for (const key of keys) {
+      const value = params[key]
+      if (isValid(value)) {
+        return value as string
+      }
     }
-    return `{${key}}`
+    return `{${keys[0]}}`
   })
 }
