@@ -165,6 +165,16 @@ export default class ChartImp implements Chart {
 
   private readonly _cacheYAxisWidth = { left: 0, right: 0 }
 
+  private _pendingVisibleRange: Nullable<{
+    range: { from: number, to: number }
+    resolve: () => void
+    reject: (err: Error) => void
+  }> = null
+
+  private readonly _onInitLoadCompleteHandler: ActionCallback = () => {
+    void this._drainPendingVisibleRange()
+  }
+
   constructor (container: HTMLElement, options?: Options) {
     this._initContainer(container)
     this._chartEvent = new Event(this._chartContainer, this)
@@ -176,6 +186,7 @@ export default class ChartImp implements Chart {
     this._xAxisPane = this._createPane<XAxisPane>(XAxisPane, { ...paneOptions, id: PaneIdConstants.X_AXIS, order: Number.MAX_SAFE_INTEGER })
     this._layout()
     this._initResizeListener()
+    this._chartStore.subscribeAction('onInitLoadComplete', this._onInitLoadCompleteHandler)
   }
 
   private _initContainer (container: HTMLElement): void {
@@ -1247,6 +1258,10 @@ export default class ChartImp implements Chart {
   }
 
   async setVisibleRange (range: { from: number; to: number }): Promise<void> {
+    if (this._chartStore.isInitLoadInFlight()) {
+      await this._queueVisibleRange(range)
+      return
+    }
     const dataList = this.getDataList()
     if (dataList.length === 0) return
     const firstTimestamp = dataList[0].timestamp
@@ -1268,6 +1283,25 @@ export default class ChartImp implements Chart {
         resolve()
       })
     })
+  }
+
+  private async _queueVisibleRange (range: { from: number, to: number }): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      this._pendingVisibleRange?.resolve()
+      this._pendingVisibleRange = { range, resolve, reject }
+    })
+  }
+
+  private async _drainPendingVisibleRange (): Promise<void> {
+    const pending = this._pendingVisibleRange
+    if (pending === null) return
+    this._pendingVisibleRange = null
+    try {
+      await this.setVisibleRange(pending.range)
+      pending.resolve()
+    } catch (err) {
+      pending.reject(err instanceof Error ? err : new Error(String(err)))
+    }
   }
 
   private _applyVisibleRange (range: { from: number; to: number }): void {
@@ -1425,6 +1459,11 @@ export default class ChartImp implements Chart {
     } else {
       window.removeEventListener('resize', this._scheduleResize)
     }
+    if (this._pendingVisibleRange !== null) {
+      this._pendingVisibleRange.reject(createSetVisibleRangeError('aborted', { reason: 'chart_destroyed' }))
+      this._pendingVisibleRange = null
+    }
+    this._chartStore.unsubscribeAction('onInitLoadComplete', this._onInitLoadCompleteHandler)
     this._chartEvent.destroy()
     this._drawPanes.forEach(pane => {
       pane.destroy()
