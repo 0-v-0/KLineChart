@@ -56,6 +56,7 @@ import type { YAxisOverride } from './component/YAxis'
 
 import type { FormatDateType, Options, BarSpaceLimit, ZoomAnchor } from './Options'
 import ChartImp, { type Chart, type DomPosition, type YAxisFilter } from './Chart'
+import { isSetVisibleRangeError, type SetVisibleRangeError, type SetVisibleRangeErrorCode } from './common/Errors'
 import type { ReplayStatus, ReplayEngine } from './replay/types'
 
 import { checkCoordinateOnArc } from './extension/figure/arc'
@@ -222,6 +223,7 @@ export {
   FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS,
   // Replay engine type — exported for consumer type annotations (sc.replay: ReplayEngine | null)
   type ReplayEngine,
+  isSetVisibleRangeError, type SetVisibleRangeError, type SetVisibleRangeErrorCode,
   // Core consumer types
   type Chart, type Nullable, type DeepPartial, type KLineData, type Point, type Styles, type Options,
   type Overlay, type OverlayCreate, type OverlayEvent, type OverlayTemplate,

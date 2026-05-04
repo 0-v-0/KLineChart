@@ -37,6 +37,7 @@ import { createDom } from './common/utils/dom'
 import { createId } from './common/utils/id'
 import { logWarn } from './common/utils/logger'
 import { binarySearchNearest } from './common/utils/number'
+import { createSetVisibleRangeError } from './common/Errors'
 import type { Styles } from './common/Styles'
 import type BarSpace from './common/BarSpace'
 import type PickRequired from './common/PickRequired'
@@ -114,7 +115,8 @@ export interface Chart extends Store {
   zoomAtCoordinate: (scale: number, coordinate?: Coordinate, animationDuration?: number) => void
   zoomAtDataIndex: (scale: number, dataIndex: number, animationDuration?: number) => void
   zoomAtTimestamp: (scale: number, timestamp: number, animationDuration?: number) => void
-  setVisibleRange: (range: { from: number; to: number }) => void
+  setVisibleRange: (range: { from: number; to: number }) => Promise<void>
+  resetView: () => Promise<void>
   getVisibleRangeTimestamps: () => Nullable<{ from: number; to: number }>
   convertToPixel: (points: Partial<Point> | Array<Partial<Point>>, filter?: ConvertFilter) => Partial<Coordinate> | Array<Partial<Coordinate>>
   convertFromPixel: (coordinates: Array<Partial<Coordinate>>, filter?: ConvertFilter) => Partial<Point> | Array<Partial<Point>>
@@ -166,6 +168,18 @@ export default class ChartImp implements Chart {
     }
   }
 
+  private readonly _cacheYAxisWidth = { left: 0, right: 0 }
+
+  private _pendingInitAction: Nullable<{
+    apply: () => Promise<void>
+    resolve: () => void
+    reject: (err: Error) => void
+  }> = null
+
+  private readonly _onInitLoadCompleteHandler: ActionCallback = () => {
+    void this._drainPendingInitAction()
+  }
+
   constructor(container: HTMLElement, options?: Options) {
     this._initContainer(container)
     this._chartEvent = new Event(this._chartContainer, this)
@@ -177,6 +191,7 @@ export default class ChartImp implements Chart {
     this._xAxisPane = this._createPane<XAxisPane>(XAxisPane, { ...paneOptions, id: PaneIdConstants.X_AXIS, order: Number.MAX_SAFE_INTEGER })
     this._layout()
     this._initResizeListener()
+    this._chartStore.subscribeAction('onInitLoadComplete', this._onInitLoadCompleteHandler)
   }
 
   private _initContainer(container: HTMLElement): void {
@@ -1268,7 +1283,66 @@ export default class ChartImp implements Chart {
     this.zoomAtDataIndex(scale, dataIndex, animationDuration)
   }
 
-  setVisibleRange (range: { from: number; to: number }): void {
+  async setVisibleRange (range: { from: number; to: number }): Promise<void> {
+    if (this._chartStore.isInitLoadInFlight()) {
+      await this._queueInitAction(async () => { await this.setVisibleRange(range) })
+      return
+    }
+    const dataList = this.getDataList()
+    if (dataList.length === 0) return
+    const firstTimestamp = dataList[0].timestamp
+    if (range.from >= firstTimestamp) {
+      this._applyVisibleRange(range)
+      return
+    }
+    const firstCandleTime = await this._chartStore.fetchFirstCandleTime()
+    if (firstCandleTime !== null && range.from < firstCandleTime) {
+      throw createSetVisibleRangeError('no_data_at_time', {
+        timestamp: range.from,
+        firstCandleTime,
+        period: this._chartStore.getPeriod()
+      })
+    }
+    await new Promise<void>(resolve => {
+      this._chartStore.loadRangeBackward(range.from, firstTimestamp, () => {
+        this._applyVisibleRange(range)
+        resolve()
+      })
+    })
+  }
+
+  async resetView (): Promise<void> {
+    if (this._chartStore.isInitLoadInFlight()) {
+      await this._queueInitAction(async () => { await this.resetView() })
+      return
+    }
+    this._chartStore.setBarSpace(this._chartStore.getDefaultBarSpace())
+    this._chartStore.setOffsetRightDistance(this._chartStore.getDefaultOffsetRightDistance(), true)
+  }
+
+  // Single-slot queue shared by setVisibleRange and resetView. Latest call
+  // wins: enqueueing supersedes any pending action, resolving its promise
+  // cleanly without applying. Drained on `onInitLoadComplete`.
+  private async _queueInitAction (apply: () => Promise<void>): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      this._pendingInitAction?.resolve()
+      this._pendingInitAction = { apply, resolve, reject }
+    })
+  }
+
+  private async _drainPendingInitAction (): Promise<void> {
+    const pending = this._pendingInitAction
+    if (pending === null) return
+    this._pendingInitAction = null
+    try {
+      await pending.apply()
+      pending.resolve()
+    } catch (err) {
+      pending.reject(err instanceof Error ? err : new Error(String(err)))
+    }
+  }
+
+  private _applyVisibleRange (range: { from: number; to: number }): void {
     const dataList = this.getDataList()
     if (dataList.length === 0) return
     const fromIndex = binarySearchNearest(dataList, 'timestamp', range.from)
@@ -1277,7 +1351,6 @@ export default class ChartImp implements Chart {
     const totalBarSpace = this._chartStore.getTotalBarSpace()
     const newBarSpace = totalBarSpace / barCount
     this._chartStore.setBarSpace(newBarSpace)
-    // After bar space is set, scroll so the right edge aligns with toIndex
     this.scrollToDataIndex(toIndex)
   }
 
@@ -1418,6 +1491,11 @@ export default class ChartImp implements Chart {
     } else {
       window.removeEventListener('resize', this._scheduleResize)
     }
+    if (this._pendingInitAction !== null) {
+      this._pendingInitAction.reject(createSetVisibleRangeError('aborted', { reason: 'chart_destroyed' }))
+      this._pendingInitAction = null
+    }
+    this._chartStore.unsubscribeAction('onInitLoadComplete', this._onInitLoadCompleteHandler)
     this._chartEvent.destroy()
     this._drawPanes.forEach((pane) => {
       pane.destroy()

@@ -265,7 +265,24 @@ export default class StoreImp implements Store {
   private _loading = false
 
   /**
-   * Whether there are forward and backward more flag
+   * Init-type load specifically — distinct from `_loading` because only
+   * init resets scroll offset (`_addData` case 'init') and consumers gate
+   * deferred operations like `setVisibleRange` on this.
+   */
+  private _initLoadInFlight = false
+
+  /**
+   * Monotonically incremented on every `_processDataLoad('init')` call.
+   * Captured by each init-load callback closure; if the captured value no
+   * longer matches when the callback fires, that load was superseded by a
+   * later setSymbol/setPeriod/resetData and the callback bails out without
+   * touching state. Prevents stale data from a slow first request from
+   * clobbering the buffer or firing onInitLoadComplete prematurely.
+   */
+  private _initLoadGeneration = 0
+
+  /**
+  * Whether there are forward and backward more flag
    */
   private readonly _dataLoadMore = { forward: false, backward: false }
 
@@ -794,6 +811,8 @@ export default class StoreImp implements Store {
           this._dataLoadMore.forward = realMore.forward
           this.setOffsetRightDistance(this._offsetRightDistance)
           adjustFlag = true
+          this._initLoadInFlight = false
+          this.executeAction('onInitLoadComplete', undefined)
           break
         }
         case 'backward': {
@@ -862,7 +881,65 @@ export default class StoreImp implements Store {
     })
   }
 
-  private _calcOptimalBarSpace(): void {
+  isInitLoadInFlight (): boolean {
+    return this._initLoadInFlight
+  }
+
+  getDefaultBarSpace (): number {
+    return DEFAULT_BAR_SPACE
+  }
+
+  getDefaultOffsetRightDistance (): number {
+    return DEFAULT_OFFSET_RIGHT_DISTANCE
+  }
+
+  async fetchFirstCandleTime (): Promise<number | null> {
+    const dataLoader = this._dataLoader
+    const symbol = this._symbol
+    const period = this._period
+    if (dataLoader?.getFirstCandleTime == null || symbol === null || period === null) {
+      return null
+    }
+    const getFirstCandleTime = dataLoader.getFirstCandleTime
+    return await new Promise<number | null>(resolve => {
+      void getFirstCandleTime({ symbol, period, callback: resolve })
+    })
+  }
+
+  loadRangeBackward (from: number, to: number, callback: () => void): void {
+    if (
+      !isValid(this._dataLoader) ||
+      !isValid(this._symbol) ||
+      !isValid(this._period) ||
+      this._dataLoader.getRange == null ||
+      this._replayEngine.isInReplay()
+    ) {
+      callback()
+      return
+    }
+    const symbol = this._symbol
+    const period = this._period
+    void this._dataLoader.getRange({
+      symbol,
+      period,
+      from,
+      to,
+      callback: (data: KLineData[]) => {
+        if (this._symbol !== symbol || this._period !== period || this._dataList.length === 0) {
+          callback()
+          return
+        }
+        const firstTimestamp = this._dataList[0].timestamp
+        const filtered = data.filter(d => d.timestamp < firstTimestamp)
+        if (filtered.length > 0) {
+          this._addData(filtered, 'forward', { forward: true, backward: this._dataLoadMore.backward })
+        }
+        callback()
+      }
+    })
+  }
+
+  private _calcOptimalBarSpace (): void {
     const specialBarSpace = 4
     const ratio = 1 - (BAR_GAP_RATIO * Math.atan(Math.max(specialBarSpace, this._barSpace) - specialBarSpace)) / (Math.PI * 0.5)
     let gapBarSpace = Math.min(Math.floor(this._barSpace * ratio), Math.floor(this._barSpace))
@@ -953,12 +1030,21 @@ export default class StoreImp implements Store {
   private _processDataLoad(type: DataLoadType): void {
     if (!this._loading && isValid(this._dataLoader) && isValid(this._symbol) && isValid(this._period)) {
       this._loading = true
+      let loadGen = 0
+      if (type === 'init') {
+        this._initLoadInFlight = true
+        loadGen = ++this._initLoadGeneration
+      }
       const params: DataLoaderGetBarsParams = {
         type,
         symbol: this._symbol,
         period: this._period,
         timestamp: null,
         callback: (data: KLineData[], more?: DataLoadMore) => {
+          if (type === 'init' && loadGen !== this._initLoadGeneration) {
+            // Superseded by a newer init-load; drop this callback entirely.
+            return
+          }
           this._loading = false
           this._addData(data, type, more)
           if (type === 'init' && !this._replayEngine.isInReplay()) {
@@ -1437,11 +1523,17 @@ export default class StoreImp implements Store {
 
     if (position === 'xAxis') {
       if (this._zoomAnchor.xAxis === 'last_bar') {
-        zoomCoordinate.x = this.dataIndexToCoordinate(this._dataList.length - 1)
+        const lastBarX = this.dataIndexToCoordinate(this._dataList.length - 1)
+        if (lastBarX >= 0 && lastBarX <= this._totalBarSpace) {
+          zoomCoordinate.x = lastBarX
+        }
       }
     } else {
       if (this._zoomAnchor.main === 'last_bar') {
-        zoomCoordinate.x = this.dataIndexToCoordinate(this._dataList.length - 1)
+        const lastBarX = this.dataIndexToCoordinate(this._dataList.length - 1)
+        if (lastBarX >= 0 && lastBarX <= this._totalBarSpace) {
+          zoomCoordinate.x = lastBarX
+        }
       }
     }
     const x = zoomCoordinate.x!
