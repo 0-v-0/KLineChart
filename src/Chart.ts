@@ -1279,7 +1279,6 @@ export default class ChartImp implements Chart {
     const totalBarSpace = this._chartStore.getTotalBarSpace()
     const newBarSpace = totalBarSpace / barCount
     this._chartStore.setBarSpace(newBarSpace)
-    // After bar space is set, scroll so the right edge aligns with toIndex
     this.scrollToDataIndex(toIndex)
   }
 
