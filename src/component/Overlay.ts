@@ -487,17 +487,20 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
         difValue = point.value - this._prevPressedPoint.value
       }
       this.points = this._prevPressedPoints.map(p => {
+        // Only derive dataIndex from timestamp when missing (e.g. after restore).
+        // Continuous-drawing overlays like brush already carry float-precision
+        // dataIndexes from the initial draw; overwriting them via
+        // `timestampToDataIndex` (which floors to integer bar boundaries) would
+        // quantize the curve to candle x-coords on every drag.
+        if (!isNumber(p.dataIndex) && isNumber(p.timestamp)) {
+          p.dataIndex = chartStore.timestampToDataIndex(p.timestamp)
+        }
         const newPoint = { ...p }
-        if (isNumber(difDataIndex) && (isNumber(p.dataIndex) || isNumber(p.timestamp))) {
-          const dataIndex = isNumber(p.timestamp)
-            ? this.isContinuousDrawing()
-              ? chartStore.timestampToFloatIndex(p.timestamp)
-              : chartStore.timestampToDataIndex(p.timestamp)
-            : p.dataIndex!
-          newPoint.dataIndex = dataIndex + difDataIndex
-          newPoint.timestamp = this.isContinuousDrawing()
-            ? chartStore.floatIndexToTimestamp(newPoint.dataIndex) ?? undefined
-            : chartStore.dataIndexToTimestamp(newPoint.dataIndex) ?? undefined
+        if (isNumber(difDataIndex) && isNumber(p.dataIndex)) {
+          newPoint.dataIndex = p.dataIndex + difDataIndex
+          // Float-aware helper — `dataIndexToTimestamp` returns null for
+          // fractional indexes within range.
+          newPoint.timestamp = chartStore.floatIndexToTimestamp(newPoint.dataIndex) ?? undefined
         }
         if (isNumber(difValue) && isNumber(p.value)) {
           newPoint.value = p.value + difValue
