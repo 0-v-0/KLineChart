@@ -87,13 +87,22 @@ export function checkCoordinateOnText(coordinate: Coordinate, attrs: TextAttrs |
 export function drawText(ctx: CanvasRenderingContext2D, attrs: TextAttrs | TextAttrs[], styles: Partial<TextStyle>): void {
   let texts: TextAttrs[] = []
   texts = texts.concat(attrs)
-  const { color = 'currentColor', size = 12, family, weight, paddingLeft = 0, paddingTop = 0, paddingRight = 0 } = styles
-  const rects = texts.map((text) => getTextRect(text, styles))
+  const {
+    color = 'currentColor',
+    size = 12,
+    family,
+    weight,
+    fontStyle,
+    paddingLeft = 0,
+    paddingTop = 0,
+    paddingRight = 0
+  } = styles
+  const rects = texts.map(text => getTextRect(text, styles))
   drawRect(ctx, rects, { ...styles, color: styles.backgroundColor })
 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
-  ctx.font = createFont(size, weight, family)
+  ctx.font = createFont(size, weight, family, fontStyle)
   ctx.fillStyle = color
 
   texts.forEach((text, index) => {

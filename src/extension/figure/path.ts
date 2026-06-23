@@ -390,7 +390,7 @@ function replayPath(ctx: CanvasRenderingContext2D, commands: CompiledPathCommand
 
 export function drawPath(ctx: CanvasRenderingContext2D, attrs: PathAttrs | PathAttrs[], styles: Partial<PathStyle>): void {
   const paths = Array.isArray(attrs) ? attrs : [attrs]
-  const { style = 'stroke', lineWidth = 1, color = 'currentColor' } = styles
+  const { style = 'stroke', lineWidth = 1, color = 'currentColor', fillRule = 'nonzero' } = styles
   ctx.lineWidth = lineWidth
   ctx.setLineDash([])
   if (style === 'fill') {
@@ -404,7 +404,7 @@ export function drawPath(ctx: CanvasRenderingContext2D, attrs: PathAttrs | PathA
     if (commands.length > 0) {
       replayPath(ctx, commands, x, y)
       if (style === 'fill') {
-        ctx.fill()
+        ctx.fill(fillRule)
       } else {
         ctx.stroke()
       }
