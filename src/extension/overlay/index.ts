@@ -46,6 +46,8 @@ import priceNote from './priceNote'
 import signpost from './signpost'
 import flagMark from './flagMark'
 import pin from './pin'
+import table from './table'
+import image from './image'
 
 // Basic shape overlays (Pro overlays with factory pattern)
 import arrow from './arrow'
@@ -89,7 +91,7 @@ const overlays: Record<string, OverlayInnerConstructor> = {}
 
 // Standard overlays (direct templates)
 const standardExtensions = [
-  simpleAnnotation, simpleTag, freePath, text, note, callout, comment, priceLabel, priceNote, signpost, flagMark, pin
+  simpleAnnotation, simpleTag, freePath, text, note, callout, comment, priceLabel, priceNote, signpost, flagMark, pin, table, image
 ]
 
 // Pro overlays (factory functions that return templates)
