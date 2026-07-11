@@ -12,11 +12,11 @@
  * limitations under the License.
  */
 
-import type Nullable from '../common/Nullable'
 import type { KLineData } from '../common/Data'
+import type { DataLoader } from '../common/DataLoader'
+import type Nullable from '../common/Nullable'
 import type { Period } from '../common/Period'
 import type { SymbolInfo } from '../common/SymbolInfo'
-import type { DataLoader } from '../common/DataLoader'
 import type StoreImp from '../Store'
 
 import type { ReplayStatus } from './types'
@@ -34,12 +34,7 @@ interface StoreAccess {
   _crosshair: Record<string, unknown>
   _loading: boolean
   _chart: {
-    layout: (opts: {
-      measureWidth?: boolean
-      update?: boolean
-      buildYAxisTick?: boolean
-      cacheYAxisWidth?: boolean
-    }) => void
+    layout: (opts: { measureWidth?: boolean; update?: boolean; buildYAxisTick?: boolean; cacheYAxisWidth?: boolean }) => void
   }
   _addData: (data: KLineData, type: string) => void
   _adjustVisibleRange: () => void
@@ -135,7 +130,7 @@ export class ReplayEngine {
    */
   private _generation = 0
 
-  constructor (store: StoreImp) {
+  constructor(store: StoreImp) {
     this._s = store as unknown as StoreAccess
   }
 
@@ -143,19 +138,19 @@ export class ReplayEngine {
   // Accessors used by Store
   // ---------------------------------------------------------------------------
 
-  getCurrentTimeLimit (): Nullable<number> {
+  getCurrentTimeLimit(): Nullable<number> {
     return this._currentTimeLimit
   }
 
-  isInReplay (): boolean {
+  isInReplay(): boolean {
     return this._currentTimeLimit !== null
   }
 
-  getReplayEndTime (): Nullable<number> {
+  getReplayEndTime(): Nullable<number> {
     return this._replayEndTime
   }
 
-  getReplayBufferLength (): number {
+  getReplayBufferLength(): number {
     return this._replayBuffer.length
   }
 
@@ -163,7 +158,7 @@ export class ReplayEngine {
   // Init complete notification — called by Store._processDataLoad
   // ---------------------------------------------------------------------------
 
-  notifyInitComplete (): void {
+  notifyInitComplete(): void {
     if (this._onInitComplete !== null) {
       const cb = this._onInitComplete
       this._onInitComplete = null
@@ -175,7 +170,7 @@ export class ReplayEngine {
   // Period change handling — called by Store.setPeriod when in playback mode
   // ---------------------------------------------------------------------------
 
-  handlePeriodChange (period: Period, resetFn: () => void): void {
+  handlePeriodChange(period: Period, resetFn: () => void): void {
     this._clearPlayInterval()
     this._updateStatus('loading')
 
@@ -184,7 +179,9 @@ export class ReplayEngine {
 
     // A period change during replay when no period is set is invalid — bail out.
     const savedPeriod = this._s.getPeriod()
-    if (savedPeriod === null) return
+    if (savedPeriod === null) {
+      return
+    }
 
     // Reject second-resolution — not supported for replay
     if (period.type === 'second') {
@@ -213,7 +210,9 @@ export class ReplayEngine {
       void (async () => {
         try {
           // Abort if a newer operation (setCurrentTime or another handlePeriodChange) superseded this one
-          if (this._generation !== gen) return
+          if (this._generation !== gen) {
+            return
+          }
 
           const dataList = this._s._dataList
           // Check if fetched data covers the cursor position.
@@ -230,7 +229,9 @@ export class ReplayEngine {
               errorType = 'no_data_at_time'
             } else {
               const firstCandleTime = await this._s.fetchFirstCandleTime()
-              if (this._generation !== gen) return
+              if (this._generation !== gen) {
+                return
+              }
               if (firstCandleTime !== null && cursorLimit !== null && cursorLimit < firstCandleTime) {
                 errorType = 'no_data_at_time'
               }
@@ -244,7 +245,9 @@ export class ReplayEngine {
             this._onInitComplete = () => {
               this._updateStatus('ready')
             }
-            this._s.resetData(() => { this._s._period = savedPeriod })
+            this._s.resetData(() => {
+              this._s._period = savedPeriod
+            })
 
             if (errorType === 'unsupported_resolution') {
               this._emitReplayError('unsupported_resolution', { period })
@@ -258,16 +261,22 @@ export class ReplayEngine {
           // Order matters: _postProcessDataBoundary may push the partial to _drawnFromBuffer,
           // and _trackExtraCandlesBeyondStart reads it to avoid duplicate tracking.
           await this._fetchReplayBuffer()
-          if (this._generation !== gen) return
+          if (this._generation !== gen) {
+            return
+          }
           await this._postProcessDataBoundary(gen)
-          if (this._generation !== gen) return
+          if (this._generation !== gen) {
+            return
+          }
           this._trackExtraCandlesBeyondStart()
           this._replayCurrentTime = cursorLimit
           this._updateStatus('ready')
         } catch (err) {
           // Resolution change failed (e.g., unsupported resolution in datafeed).
           // Revert to previous period/state so the session is not lost.
-          if (this._generation !== gen) return // superseded — don't revert
+          if (this._generation !== gen) {
+            return // superseded — don't revert
+          }
           console.error('[ReplayEngine] handlePeriodChange failed, reverting:', err)
           this._currentTimeLimit = savedLimit
           this._replayBuffer = savedBuffer
@@ -275,7 +284,9 @@ export class ReplayEngine {
           this._onInitComplete = () => {
             this._updateStatus('ready')
           }
-          this._s.resetData(() => { this._s._period = savedPeriod })
+          this._s.resetData(() => {
+            this._s._period = savedPeriod
+          })
           this._emitReplayError('resolution_change_failed', { period, error: err instanceof Error ? err.message : String(err) })
         }
       })()
@@ -288,7 +299,7 @@ export class ReplayEngine {
   // Exit playback — called by Store.setSymbol when in playback mode
   // ---------------------------------------------------------------------------
 
-  exitPlayback (): void {
+  exitPlayback(): void {
     this._clearPlayInterval()
     this._currentTimeLimit = null
     this._replayEndTime = null
@@ -303,7 +314,7 @@ export class ReplayEngine {
   // Public replay API — delegated from Store
   // ---------------------------------------------------------------------------
 
-  async setCurrentTime (timestamp: Nullable<number>, endTime?: Nullable<number>): Promise<void> {
+  async setCurrentTime(timestamp: Nullable<number>, endTime?: Nullable<number>): Promise<void> {
     if (timestamp !== null) {
       // Increment generation counter — any in-flight setCurrentTime will see stale gen and abort
       const gen = ++this._generation
@@ -337,7 +348,9 @@ export class ReplayEngine {
       // Validate start time against first available candle
       const firstCandleTime = await this._s.fetchFirstCandleTime()
       // Abort if superseded by a newer setCurrentTime call
-      if (this._generation !== gen) return
+      if (this._generation !== gen) {
+        return
+      }
       if (firstCandleTime !== null && timestamp < firstCandleTime) {
         this._emitReplayError('no_data_at_time', { timestamp, firstCandleTime, period: this._s.getPeriod() })
         // Restore previous state
@@ -356,7 +369,9 @@ export class ReplayEngine {
       // caused live candles to remain visible until the user interacted with the chart.
       this._replayBuffer = []
       await this._waitForInit()
-      if (this._generation !== gen) return
+      if (this._generation !== gen) {
+        return
+      }
 
       // Phase: populate drawn history
       // Order matters: _postProcessDataBoundary may push the partial to _drawnFromBuffer,
@@ -364,9 +379,13 @@ export class ReplayEngine {
       this._clearDrawnHistory()
 
       await this._fetchReplayBuffer()
-      if (this._generation !== gen) return
+      if (this._generation !== gen) {
+        return
+      }
       await this._postProcessDataBoundary(gen)
-      if (this._generation !== gen) return
+      if (this._generation !== gen) {
+        return
+      }
       // Check if the init fetch returned any data. Empty dataList after all processing
       // likely means the resolution is unsupported (e.g., 1W/1M).
       if (this._s._dataList.length === 0 && this._replayBuffer.length === 0) {
@@ -403,7 +422,7 @@ export class ReplayEngine {
     }
   }
 
-  play (speed?: number): void {
+  play(speed?: number): void {
     if (this._replayStatus !== 'ready' && this._replayStatus !== 'paused' && this._replayStatus !== 'playing') {
       return
     }
@@ -429,26 +448,28 @@ export class ReplayEngine {
       const now = performance.now()
       const elapsed = now - lastTick
       lastTick = now
-      debt += elapsed * playSpeed / 1000
+      debt += (elapsed * playSpeed) / 1000
       const steps = Math.floor(debt)
       debt -= steps
       for (let i = 0; i < steps; i++) {
         this.step()
         // step() may change status (e.g. to 'finished'); re-read to avoid stale narrowing
         const status: string = this._replayStatus
-        if (status !== 'playing') break
+        if (status !== 'playing') {
+          break
+        }
       }
     }, interval)
   }
 
-  pause (): void {
+  pause(): void {
     this._clearPlayInterval()
     if (this._replayStatus === 'playing') {
       this._updateStatus('paused')
     }
   }
 
-  step (): void {
+  step(): void {
     if (this._replayStatus === 'idle' || this._replayStatus === 'loading' || this._replayStatus === 'finished') {
       return
     }
@@ -476,16 +497,13 @@ export class ReplayEngine {
     // Update effective current time to candle close
     const period = this._s.getPeriod()
     if (period !== null) {
-      this._replayCurrentTime = Math.min(
-        candle.timestamp + this._getPeriodDurationMs(period),
-        this._replayEndTime ?? Date.now()
-      )
+      this._replayCurrentTime = Math.min(candle.timestamp + this._getPeriodDurationMs(period), this._replayEndTime ?? Date.now())
     }
 
     this._emitReplayStep(candle, 'forward')
   }
 
-  async stepBack (): Promise<void> {
+  async stepBack(): Promise<void> {
     if (this._drawnFromBuffer.length === 0) {
       return
     }
@@ -550,11 +568,7 @@ export class ReplayEngine {
    * Returns null if prerequisites are missing or no sub-candles fall in the window.
    * If gen is provided, aborts and returns null after each await if the generation has changed.
    */
-  private async _fetchSubResolutionPartial (
-    anchorCandle: KLineData,
-    truncateAt: number,
-    gen?: number
-  ): Promise<KLineData | null> {
+  private async _fetchSubResolutionPartial(anchorCandle: KLineData, truncateAt: number, gen?: number): Promise<KLineData | null> {
     const dataLoader = this._s._dataLoader
     const symbol = this._s.getSymbol()
     const period = this._s.getPeriod()
@@ -576,7 +590,9 @@ export class ReplayEngine {
         const coarseCandles = await new Promise<KLineData[]>((resolve) => {
           void getRange({ symbol, period: coarsePeriod, from: anchorCandle.timestamp, to: coarseEnd, callback: resolve })
         })
-        if (gen !== undefined && this._generation !== gen) return null
+        if (gen !== undefined && this._generation !== gen) {
+          return null
+        }
         subCandles = subCandles.concat(coarseCandles)
       }
 
@@ -585,18 +601,22 @@ export class ReplayEngine {
         const fineCandles = await new Promise<KLineData[]>((resolve) => {
           void getRange({ symbol, period: tiers.fine, from: fineStart, to: truncateAt, callback: resolve })
         })
-        if (gen !== undefined && this._generation !== gen) return null
+        if (gen !== undefined && this._generation !== gen) {
+          return null
+        }
         subCandles = subCandles.concat(fineCandles)
       }
     } else {
       const fineCandles = await new Promise<KLineData[]>((resolve) => {
         void getRange({ symbol, period: tiers.fine, from: anchorCandle.timestamp, to: truncateAt, callback: resolve })
       })
-      if (gen !== undefined && this._generation !== gen) return null
+      if (gen !== undefined && this._generation !== gen) {
+        return null
+      }
       subCandles = fineCandles
     }
 
-    subCandles = subCandles.filter(c => c.timestamp >= anchorCandle.timestamp && c.timestamp < truncateAt)
+    subCandles = subCandles.filter((c) => c.timestamp >= anchorCandle.timestamp && c.timestamp < truncateAt)
 
     if (subCandles.length === 0) {
       return null
@@ -607,14 +627,14 @@ export class ReplayEngine {
     return {
       timestamp: anchorCandle.timestamp,
       open: subCandles[0].open,
-      high: Math.max(...subCandles.map(c => c.high)),
-      low: Math.min(...subCandles.map(c => c.low)),
+      high: Math.max(...subCandles.map((c) => c.high)),
+      low: Math.min(...subCandles.map((c) => c.low)),
       close: subCandles[subCandles.length - 1].close,
       volume: subCandles.reduce((sum, c) => sum + (c.volume ?? 0), 0)
     }
   }
 
-  playUntil (timestamp: number, speed?: number): void {
+  playUntil(timestamp: number, speed?: number): void {
     if (this._replayStatus !== 'ready' && this._replayStatus !== 'paused') {
       return
     }
@@ -643,34 +663,40 @@ export class ReplayEngine {
     }, 1000 / this._replaySpeed)
   }
 
-  getReplayStatus (): ReplayStatus {
+  getReplayStatus(): ReplayStatus {
     return this._replayStatus
   }
 
-  getReplayCurrentTime (): Nullable<number> {
+  getReplayCurrentTime(): Nullable<number> {
     return this._replayCurrentTime
   }
 
-  onReplayStatusChange (callback: (status: ReplayStatus) => void): () => void {
+  onReplayStatusChange(callback: (status: ReplayStatus) => void): () => void {
     this._replayStatusCallbacks.add(callback)
-    return () => { this._replayStatusCallbacks.delete(callback) }
+    return () => {
+      this._replayStatusCallbacks.delete(callback)
+    }
   }
 
-  onReplayStep (callback: (candle: KLineData, direction: 'forward' | 'back') => void): () => void {
+  onReplayStep(callback: (candle: KLineData, direction: 'forward' | 'back') => void): () => void {
     this._replayStepCallbacks.add(callback)
-    return () => { this._replayStepCallbacks.delete(callback) }
+    return () => {
+      this._replayStepCallbacks.delete(callback)
+    }
   }
 
-  onReplayError (callback: (error: { type: string; detail?: unknown }) => void): () => void {
+  onReplayError(callback: (error: { type: string; detail?: unknown }) => void): () => void {
     this._replayErrorCallbacks.add(callback)
-    return () => { this._replayErrorCallbacks.delete(callback) }
+    return () => {
+      this._replayErrorCallbacks.delete(callback)
+    }
   }
 
   /**
    * Clean up all resources — called from Store.destroy().
    * Clears the play interval, all callback sets, pending init promise, and internal caches.
    */
-  destroy (): void {
+  destroy(): void {
     this._clearPlayInterval()
     this._replayStatusCallbacks.clear()
     this._replayStepCallbacks.clear()
@@ -684,7 +710,7 @@ export class ReplayEngine {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  private _updateStatus (status: ReplayStatus): void {
+  private _updateStatus(status: ReplayStatus): void {
     this._replayStatus = status
     for (const cb of this._replayStatusCallbacks) {
       cb(this._replayStatus)
@@ -699,7 +725,7 @@ export class ReplayEngine {
     }
   }
 
-  private _clearDrawnHistory (): void {
+  private _clearDrawnHistory(): void {
     this._drawnFromBuffer = []
   }
 
@@ -709,10 +735,12 @@ export class ReplayEngine {
    * advanced past startTime (e.g., by setPeriod). They need to be in _drawnFromBuffer
    * so stepBack can remove them.
    */
-  private _trackExtraCandlesBeyondStart (): void {
+  private _trackExtraCandlesBeyondStart(): void {
     const startTime = this._replayStartTime
     const period = this._s.getPeriod()
-    if (startTime === null || period === null) return
+    if (startTime === null || period === null) {
+      return
+    }
 
     const periodMs = this._getPeriodDurationMs(period)
     const dataList = this._s._dataList
@@ -720,7 +748,7 @@ export class ReplayEngine {
     // _postProcessDataBoundary may have already pushed the partial to _drawnFromBuffer.
     // We need to track any OTHER candles between the partial and the start boundary.
     // Walk from the end of _dataList backwards, skip any already tracked.
-    const alreadyTracked = new Set(this._drawnFromBuffer.map(c => c.timestamp))
+    const alreadyTracked = new Set(this._drawnFromBuffer.map((c) => c.timestamp))
 
     for (let i = dataList.length - 1; i >= 0; i--) {
       const c = dataList[i]
@@ -733,7 +761,7 @@ export class ReplayEngine {
     }
   }
 
-  private _finalizeStepBack (): void {
+  private _finalizeStepBack(): void {
     this._recalcIndicators()
     this._resetCrosshair()
     this._s._adjustVisibleRange()
@@ -743,27 +771,27 @@ export class ReplayEngine {
     }
   }
 
-  private _emitReplayStep (candle: KLineData, direction: 'forward' | 'back'): void {
+  private _emitReplayStep(candle: KLineData, direction: 'forward' | 'back'): void {
     for (const cb of this._replayStepCallbacks) {
       cb(candle, direction)
     }
   }
 
-  private _emitReplayError (type: string, detail?: unknown): void {
+  private _emitReplayError(type: string, detail?: unknown): void {
     const error = { type, detail }
     for (const cb of this._replayErrorCallbacks) {
       cb(error)
     }
   }
 
-  private _clearPlayInterval (): void {
+  private _clearPlayInterval(): void {
     if (this._playIntervalId !== null) {
       clearInterval(this._playIntervalId)
       this._playIntervalId = null
     }
   }
 
-  private async _waitForInit (): Promise<void> {
+  private async _waitForInit(): Promise<void> {
     await new Promise<void>((resolve) => {
       this._onInitComplete = resolve
       this._s._loading = false
@@ -771,7 +799,7 @@ export class ReplayEngine {
     })
   }
 
-  private async _fetchReplayBuffer (): Promise<void> {
+  private async _fetchReplayBuffer(): Promise<void> {
     const dataLoader = this._s._dataLoader
     const symbol = this._s.getSymbol()
     const period = this._s.getPeriod()
@@ -789,26 +817,33 @@ export class ReplayEngine {
         from: currentTimeLimit,
         to,
         callback: (data) => {
-          this._replayBuffer = data.filter(d => d.timestamp >= currentTimeLimit)
+          this._replayBuffer = data.filter((d) => d.timestamp >= currentTimeLimit)
           resolve()
         }
       })
     })
   }
 
-  private _getPeriodDurationMs (period: Period): number {
+  private _getPeriodDurationMs(period: Period): number {
     switch (period.type) {
-      case 'second': return period.span * 1000
-      case 'minute': return period.span * 60 * 1000
-      case 'hour': return period.span * 60 * 60 * 1000
-      case 'day': return period.span * 24 * 60 * 60 * 1000
-      case 'week': return period.span * 7 * 24 * 60 * 60 * 1000
-      case 'month': return period.span * 30 * 24 * 60 * 60 * 1000
-      case 'year': return period.span * 365 * 24 * 60 * 60 * 1000
+      case 'second':
+        return period.span * 1000
+      case 'minute':
+        return period.span * 60 * 1000
+      case 'hour':
+        return period.span * 60 * 60 * 1000
+      case 'day':
+        return period.span * 24 * 60 * 60 * 1000
+      case 'week':
+        return period.span * 7 * 24 * 60 * 60 * 1000
+      case 'month':
+        return period.span * 30 * 24 * 60 * 60 * 1000
+      case 'year':
+        return period.span * 365 * 24 * 60 * 60 * 1000
     }
   }
 
-  private _getSubResolutionTiers (period: Period): { coarse: Period | null; fine: Period } {
+  private _getSubResolutionTiers(period: Period): { coarse: Period | null; fine: Period } {
     const MIN_1: Period = { type: 'minute', span: 1 }
     const MIN_15: Period = { type: 'minute', span: 15 }
     const HOUR_1: Period = { type: 'hour', span: 1 }
@@ -823,7 +858,9 @@ export class ReplayEngine {
       case 'day':
         return { coarse: HOUR_1, fine: MIN_1 }
       case 'hour':
-        if (period.span >= 4) return { coarse: HOUR_1, fine: MIN_1 }
+        if (period.span >= 4) {
+          return { coarse: HOUR_1, fine: MIN_1 }
+        }
         return { coarse: MIN_15, fine: MIN_1 }
       case 'minute':
         return { coarse: null, fine: MIN_1 }
@@ -833,7 +870,7 @@ export class ReplayEngine {
     }
   }
 
-  private async _postProcessDataBoundary (gen?: number): Promise<void> {
+  private async _postProcessDataBoundary(gen?: number): Promise<void> {
     const period = this._s.getPeriod()
     const dataList = this._s._dataList
 
@@ -867,7 +904,9 @@ export class ReplayEngine {
 
     // Case 3: mid-candle — construct partial from sub-resolution data
     const partial = await this._fetchSubResolutionPartial(lastCandle, this._currentTimeLimit, gen)
-    if (gen !== undefined && this._generation !== gen) return
+    if (gen !== undefined && this._generation !== gen) {
+      return
+    }
 
     if (partial === null) {
       return
@@ -900,12 +939,12 @@ export class ReplayEngine {
    * Trigger the layout that was deferred during init in playback mode.
    * Called after _postProcessDataBoundary finishes modifying data.
    */
-  private _triggerDeferredLayout (): void {
+  private _triggerDeferredLayout(): void {
     this._resetCrosshair()
     this._triggerLayout(false)
   }
 
-  private _drawCandle (candle: KLineData): void {
+  private _drawCandle(candle: KLineData): void {
     // Store._addData blocks 'update' type when isInReplay() is true.
     // Save/restore _currentTimeLimit to bypass the guard for engine-driven draws.
     const savedLimit = this._currentTimeLimit
@@ -914,16 +953,16 @@ export class ReplayEngine {
     this._currentTimeLimit = savedLimit
   }
 
-  private _resetCrosshair (): void {
+  private _resetCrosshair(): void {
     this._s._crosshair = {}
     this._s.setCrosshair(this._s._crosshair, { notInvalidate: true })
   }
 
-  private _triggerLayout (cacheYAxisWidth: boolean): void {
+  private _triggerLayout(cacheYAxisWidth: boolean): void {
     this._s._chart.layout({ measureWidth: true, update: true, buildYAxisTick: true, cacheYAxisWidth })
   }
 
-  private _recalcIndicators (): void {
+  private _recalcIndicators(): void {
     const filterIndicators = this._s.getIndicatorsByFilter({})
     if (filterIndicators.length > 0) {
       this._s._calcIndicator(filterIndicators)

@@ -14,14 +14,14 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, PolygonStyle, TextStyle } from '../../common/Styles'
-import { isNumber, merge, clone } from '../../common/utils/typeChecks'
-import type { OverlayProperties, ProOverlayTemplate } from './types'
-import { DEFAULT_OVERLAY_PROPERTIES } from './types'
+import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
+import { formatPrecision } from '../../common/utils/format'
+import { clone, isNumber, merge } from '../../common/utils/typeChecks'
 import { getLinearSlopeIntercept, getLinearYFromCoordinates } from '../figure/line'
 import { computeTextPosition } from './textUtils'
+import type { OverlayProperties, ProOverlayTemplate } from './types'
+import { DEFAULT_OVERLAY_PROPERTIES } from './types'
 import { getRotateCoordinate } from './utils'
-import { formatPrecision } from '../../common/utils/format'
-import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
 
 /** End-cap kind for either anchor of a segment. */
 type EndCap = 'normal' | 'arrow'
@@ -40,16 +40,8 @@ type StatsPos = 'left' | 'center' | 'right' | 'auto'
 // row 1: priceRange / percentRange / pipsChange
 // row 2: barsRange / timeRange / distance
 // row 3: angle
-const STAT_KEYS = [
-  'priceRange',
-  'percentRange',
-  'pipsChange',
-  'barsRange',
-  'timeRange',
-  'distance',
-  'angle'
-] as const
-type StatKey = typeof STAT_KEYS[number]
+const STAT_KEYS = ['priceRange', 'percentRange', 'pipsChange', 'barsRange', 'timeRange', 'distance', 'angle'] as const
+type StatKey = (typeof STAT_KEYS)[number]
 
 /** Duration string like "3d 4h 12m". Zero-slots collapse so short
  *  ranges don't render as "0d 0h 3m". Anchors on ms — pass a
@@ -60,9 +52,15 @@ const formatDuration = (ms: number): string => {
   const hours = Math.floor((abs % 86400000) / 3600000)
   const minutes = Math.floor((abs % 3600000) / 60000)
   const parts: string[] = []
-  if (days > 0) parts.push(`${days}d`)
-  if (hours > 0) parts.push(`${hours}h`)
-  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`)
+  if (days > 0) {
+    parts.push(`${days}d`)
+  }
+  if (hours > 0) {
+    parts.push(`${hours}h`)
+  }
+  if (minutes > 0 || parts.length === 0) {
+    parts.push(`${minutes}m`)
+  }
   return parts.join(' ')
 }
 
@@ -73,11 +71,7 @@ const formatDuration = (ms: number): string => {
  * overlay uses, so a segment with `endCapRight: 'arrow'` and a plain
  * arrow overlay look identical at equal line widths.
  */
-const buildArrowhead = (
-  anchor: { x: number; y: number },
-  away: { x: number; y: number },
-  arrowSize: number
-): Array<{ x: number; y: number }> => {
+const buildArrowhead = (anchor: { x: number; y: number }, away: { x: number; y: number }, arrowSize: number): Array<{ x: number; y: number }> => {
   const kb = getLinearSlopeIntercept(away, anchor)
   let angle = 0
   if (kb !== null) {
@@ -89,16 +83,8 @@ const buildArrowhead = (
     angle = anchor.y > away.y ? Math.PI / 2 : -Math.PI / 2
   }
   const arrowAngle = Math.PI / 6
-  const p1 = getRotateCoordinate(
-    { x: anchor.x - arrowSize, y: anchor.y },
-    anchor,
-    angle + arrowAngle
-  )
-  const p2 = getRotateCoordinate(
-    { x: anchor.x - arrowSize, y: anchor.y },
-    anchor,
-    angle - arrowAngle
-  )
+  const p1 = getRotateCoordinate({ x: anchor.x - arrowSize, y: anchor.y }, anchor, angle + arrowAngle)
+  const p2 = getRotateCoordinate({ x: anchor.x - arrowSize, y: anchor.y }, anchor, angle - arrowAngle)
   return [anchor, p1, p2]
 }
 
@@ -174,15 +160,17 @@ const segment = (): ProOverlayTemplate => {
       // `extendData` carries the trend-line variant flags (extend
       // toggles + end-cap kinds + Style-tab booleans). All are
       // optional; absent means the legacy finite-segment behaviour.
-      const ext = overlay.extendData as {
-        extendLeft?: boolean
-        extendRight?: boolean
-        endCapLeft?: EndCap
-        endCapRight?: EndCap
-        showMidPoint?: boolean
-        stats?: StatKey[]
-        statsPosition?: StatsPos
-      } | undefined
+      const ext = overlay.extendData as
+        | {
+            extendLeft?: boolean
+            extendRight?: boolean
+            endCapLeft?: EndCap
+            endCapRight?: EndCap
+            showMidPoint?: boolean
+            stats?: StatKey[]
+            statsPosition?: StatsPos
+          }
+        | undefined
       const extendLeft = ext?.extendLeft === true
       const extendRight = ext?.extendRight === true
       const endCapLeft: EndCap = ext?.endCapLeft ?? 'normal'
@@ -203,17 +191,13 @@ const segment = (): ProOverlayTemplate => {
         // Vertical line. With no extend flags we still sort by Y
         // so endCap targeting is deterministic; with extend flags
         // we push each end to the chart edge.
-        const [topPt, bottomPt] = coordinates[0].y <= coordinates[1].y
-          ? [coordinates[0], coordinates[1]]
-          : [coordinates[1], coordinates[0]]
+        const [topPt, bottomPt] = coordinates[0].y <= coordinates[1].y ? [coordinates[0], coordinates[1]] : [coordinates[1], coordinates[0]]
         lineCoordinates = [
           { x: coordinates[0].x, y: extendLeft ? 0 : topPt.y },
           { x: coordinates[0].x, y: extendRight ? bounding.height : bottomPt.y }
         ]
       } else {
-        const [leftPt, rightPt] = coordinates[0].x <= coordinates[1].x
-          ? [coordinates[0], coordinates[1]]
-          : [coordinates[1], coordinates[0]]
+        const [leftPt, rightPt] = coordinates[0].x <= coordinates[1].x ? [coordinates[0], coordinates[1]] : [coordinates[1], coordinates[0]]
 
         const startX = extendLeft ? 0 : leftPt.x
         const endX = extendRight ? bounding.width : rightPt.x
@@ -352,7 +336,7 @@ const segment = (): ProOverlayTemplate => {
         const p1 = overlay.points[1]
         const v0 = p0.value
         const v1 = p1.value
-        const priceDiff = (isNumber(v0) && isNumber(v1)) ? (v1 - v0) : null
+        const priceDiff = isNumber(v0) && isNumber(v1) ? v1 - v0 : null
         const precision = chart.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE
 
         // Pip conversion — TV convention: 1 pip = the last-but-one
@@ -366,20 +350,26 @@ const segment = (): ProOverlayTemplate => {
             case 'priceRange':
               return priceDiff !== null ? formatPrecision(Math.abs(priceDiff), precision) : null
             case 'percentRange':
-              if (priceDiff === null || v0 === 0 || !isNumber(v0)) return null
+              if (priceDiff === null || v0 === 0 || !isNumber(v0)) {
+                return null
+              }
               return `${((priceDiff / v0) * 100).toFixed(2)}%`
             case 'pipsChange':
               return priceDiff !== null ? `${Math.round(priceDiff * pipMultiplier)} pips` : null
             case 'barsRange': {
               const i0 = p0.dataIndex
               const i1 = p1.dataIndex
-              if (!isNumber(i0) || !isNumber(i1)) return null
+              if (!isNumber(i0) || !isNumber(i1)) {
+                return null
+              }
               return `${Math.abs(i1 - i0)} bars`
             }
             case 'timeRange': {
               const t0 = p0.timestamp
               const t1 = p1.timestamp
-              if (!isNumber(t0) || !isNumber(t1)) return null
+              if (!isNumber(t0) || !isNumber(t1)) {
+                return null
+              }
               return formatDuration(t1 - t0)
             }
             case 'distance':
@@ -392,7 +382,7 @@ const segment = (): ProOverlayTemplate => {
               // Chart-domain angle: dy is inverted because canvas
               // y grows downward. Report degrees so the user gets
               // a familiar number.
-              const deg = Math.atan2(-dy, dx) * 180 / Math.PI
+              const deg = (Math.atan2(-dy, dx) * 180) / Math.PI
               return `${deg.toFixed(1)}°`
             }
           }
@@ -402,15 +392,23 @@ const segment = (): ProOverlayTemplate => {
         const row2: string[] = []
         const row3: string[] = []
         for (const key of STAT_KEYS) {
-          if (!statsSelected.includes(key)) continue
+          if (!statsSelected.includes(key)) {
+            continue
+          }
           const snippet = snippetFor(key)
-          if (snippet === null) continue
+          if (snippet === null) {
+            continue
+          }
           const idx = STAT_KEYS.indexOf(key)
-          if (idx < 3) row1.push(snippet)
-          else if (idx < 6) row2.push(snippet)
-          else row3.push(snippet)
+          if (idx < 3) {
+            row1.push(snippet)
+          } else if (idx < 6) {
+            row2.push(snippet)
+          } else {
+            row3.push(snippet)
+          }
         }
-        const rows = [row1, row2, row3].filter(r => r.length > 0).map(r => r.join(' | '))
+        const rows = [row1, row2, row3].filter((r) => r.length > 0).map((r) => r.join(' | '))
         if (rows.length > 0) {
           // Anchor along the line. Auto puts the label at the
           // higher-price side of the segment (anchor with smaller
@@ -465,9 +463,7 @@ const segment = (): ProOverlayTemplate => {
           const labelX = sx + (dy / len) * offsetMag
           const labelY = sy + (-dx / len) * offsetMag
           const flatnessThreshold = 0.15
-          const statsAlign: CanvasTextAlign = Math.abs(dy) / len < flatnessThreshold
-            ? 'center'
-            : dy < 0 ? 'right' : 'left'
+          const statsAlign: CanvasTextAlign = Math.abs(dy) / len < flatnessThreshold ? 'center' : dy < 0 ? 'right' : 'left'
 
           const statsColor = props.lineColor ?? DEFAULT_OVERLAY_PROPERTIES.lineColor
           figures.push({
@@ -505,8 +501,12 @@ const segment = (): ProOverlayTemplate => {
     // value (which round-trips through `setVisibleRange`).
     createYAxisFigures: ({ chart, overlay, coordinates, bounding, yAxis }) => {
       const ext = overlay.extendData as { showPriceLabels?: boolean } | undefined
-      if (ext?.showPriceLabels !== true) return []
-      if (coordinates.length !== 2) return []
+      if (ext?.showPriceLabels !== true) {
+        return []
+      }
+      if (coordinates.length !== 2) {
+        return []
+      }
 
       const isFromZero = yAxis?.isFromZero() ?? false
       const textAlign: CanvasTextAlign = isFromZero ? 'left' : 'right'
@@ -530,9 +530,7 @@ const segment = (): ProOverlayTemplate => {
       // against the default label and the user noticed.
       return overlay.points.map((point, i) => {
         const value = point.value
-        const labelText = isNumber(value)
-          ? decimalFold.format(thousandsSeparator.format(formatPrecision(value, precision)))
-          : ''
+        const labelText = isNumber(value) ? decimalFold.format(thousandsSeparator.format(formatPrecision(value, precision))) : ''
         return {
           type: 'text',
           attrs: {

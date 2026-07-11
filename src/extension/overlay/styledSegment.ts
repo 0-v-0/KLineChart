@@ -20,7 +20,7 @@
  */
 
 import type DeepPartial from '../../common/DeepPartial'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
 
 import type { ProOverlayTemplate } from './types'
 
@@ -84,11 +84,11 @@ const styledSegment = (): ProOverlayTemplate => {
     needDefaultYAxisFigure: false,
 
     createPointFigures: ({ coordinates, overlay }) => {
-      if (coordinates.length < 2) return []
+      if (coordinates.length < 2) {
+        return []
+      }
 
-      _extRef.data = (overlay.extendData != null && typeof overlay.extendData === 'object')
-        ? overlay.extendData as DeepPartial<StyledSegmentProperties>
-        : null
+      _extRef.data = overlay.extendData != null && typeof overlay.extendData === 'object' ? (overlay.extendData as DeepPartial<StyledSegmentProperties>) : null
 
       const text = prop('text')
       const textColor = prop('textColor')
@@ -117,7 +117,12 @@ const styledSegment = (): ProOverlayTemplate => {
         {
           type: 'line',
           key: 'segment',
-          attrs: { coordinates: [{ x: x1, y: y1 }, { x: x2, y: y2 }] },
+          attrs: {
+            coordinates: [
+              { x: x1, y: y1 },
+              { x: x2, y: y2 }
+            ]
+          },
           styles: lineStyles,
           ignoreEvent
         }

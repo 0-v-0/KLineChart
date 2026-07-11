@@ -16,24 +16,22 @@ import type Coordinate from '../common/Coordinate'
 import type { EventHandler, EventName, MouseTouchEvent, MouseTouchEventCallback } from '../common/EventHandler'
 import type Nullable from '../common/Nullable'
 import type Point from '../common/Point'
-import { isFunction, isNumber, isValid } from '../common/utils/typeChecks'
 import type { TextStyle } from '../common/Styles'
-import { createFont } from '../common/utils/canvas'
 import { UpdateLevel } from '../common/Updater'
+import { createFont } from '../common/utils/canvas'
+import { isFunction, isNumber, isValid } from '../common/utils/typeChecks'
 
 import type { Axis } from '../component/Axis'
 import type OverlayImp from '../component/Overlay'
 import type { Overlay, OverlayFigure } from '../component/Overlay'
 import { checkOverlayFigureEvent, OVERLAY_FIGURE_KEY_PREFIX } from '../component/Overlay'
 import type { YAxis } from '../component/YAxis'
+import type { TextAttrs } from '../extension/figure/text'
+import { getTextRect } from '../extension/figure/text'
 import type DrawPane from '../pane/DrawPane'
-
 import { PaneIdConstants } from '../pane/types'
 import type { EventOverlayInfoFigureType } from '../Store'
 import type DrawWidget from '../widget/DrawWidget'
-
-import type { TextAttrs } from '../extension/figure/text'
-import { getTextRect } from '../extension/figure/text'
 
 import View from './View'
 
@@ -45,7 +43,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     cleanup: () => void
   }> = null
 
-  constructor (widget: DrawWidget<DrawPane<C>>) {
+  constructor(widget: DrawWidget<DrawPane<C>>) {
     super(widget)
     this._initEvent()
   }
@@ -85,50 +83,51 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       )
       widget.setForceCursor(null)
       return false
-    }).registerEvent('mouseClickEvent', event => {
-      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
-      if (progressOverlayInfo !== null) {
-        const overlay = progressOverlayInfo.overlay
-        let progressOverlayPaneId = progressOverlayInfo.paneId
-        if (overlay.isStart()) {
-          chartStore.updateProgressOverlayInfo(paneId, true)
-          progressOverlayPaneId = paneId
-        }
-        const index = overlay.points.length - 1
-        if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
-          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
-          overlay.onDrawing?.({ chart, overlay, ...event })
-          overlay.nextStep()
-          if (!overlay.isDrawing()) {
-            chartStore.progressOverlayComplete()
-            overlay.onDrawEnd?.({ chart, overlay, ...event })
-            // TradingView-style auto-edit: if the freshly-drawn overlay
-            // includes an editableText figure with empty text (i.e. a
-            // text annotation), mount the inline editor automatically so
-            // the user can start typing without first hovering the
-            // 50%-opacity "+ Add text" placeholder.
-            this._maybeAutoStartEditingAfterDraw(overlay)
-          }
-        }
-        return this._figureMouseClickEvent(overlay, 'point', index, {
-          key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
-          type: 'circle',
-          attrs: {}
-        })(event)
-      }
-      chartStore.setClickOverlayInfo(
-        {
-          paneId,
-          overlay: null,
-          figureType: 'none',
-          figureIndex: -1,
-          figure: null
-        },
-        (o, f) => this._processOverlaySelectedEvent(o, f, event),
-        (o, f) => this._processOverlayDeselectedEvent(o, f, event)
-      )
-      return false
     })
+      .registerEvent('mouseClickEvent', (event) => {
+        const progressOverlayInfo = chartStore.getProgressOverlayInfo()
+        if (progressOverlayInfo !== null) {
+          const overlay = progressOverlayInfo.overlay
+          let progressOverlayPaneId = progressOverlayInfo.paneId
+          if (overlay.isStart()) {
+            chartStore.updateProgressOverlayInfo(paneId, true)
+            progressOverlayPaneId = paneId
+          }
+          const index = overlay.points.length - 1
+          if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
+            overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
+            overlay.onDrawing?.({ chart, overlay, ...event })
+            overlay.nextStep()
+            if (!overlay.isDrawing()) {
+              chartStore.progressOverlayComplete()
+              overlay.onDrawEnd?.({ chart, overlay, ...event })
+              // TradingView-style auto-edit: if the freshly-drawn overlay
+              // includes an editableText figure with empty text (i.e. a
+              // text annotation), mount the inline editor automatically so
+              // the user can start typing without first hovering the
+              // 50%-opacity "+ Add text" placeholder.
+              this._maybeAutoStartEditingAfterDraw(overlay)
+            }
+          }
+          return this._figureMouseClickEvent(overlay, 'point', index, {
+            key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
+            type: 'circle',
+            attrs: {}
+          })(event)
+        }
+        chartStore.setClickOverlayInfo(
+          {
+            paneId,
+            overlay: null,
+            figureType: 'none',
+            figureIndex: -1,
+            figure: null
+          },
+          (o, f) => this._processOverlaySelectedEvent(o, f, event),
+          (o, f) => this._processOverlayDeselectedEvent(o, f, event)
+        )
+        return false
+      })
       .registerEvent('mouseDoubleClickEvent', (event) => {
         const progressOverlayInfo = chartStore.getProgressOverlayInfo()
         if (progressOverlayInfo !== null) {
@@ -170,7 +169,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         const progressOverlayInfo = chartStore.getProgressOverlayInfo()
         if (progressOverlayInfo !== null) {
           const overlay = progressOverlayInfo.overlay
-          if (overlay.isContinuousDrawingMode() && overlay.isStart()) {
+          if (overlay.isContinuousDrawing() && overlay.isStart()) {
             chartStore.updateProgressOverlayInfo(paneId, true)
             const point = this._coordinateToPoint(overlay, event)
             overlay.startContinuousDrawing(point)
@@ -185,8 +184,8 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         const progressOverlayInfo = chartStore.getProgressOverlayInfo()
         if (progressOverlayInfo !== null) {
           const overlay = progressOverlayInfo.overlay
-          if (overlay.isContinuousDrawingMode() && overlay.isDrawing() && !overlay.isStart()) {
-            overlay.forceComplete()
+          if (overlay.isContinuousDrawing() && overlay.isDrawing() && !overlay.isStart()) {
+            overlay.completeContinuousDrawing()
             chartStore.progressOverlayComplete()
             overlay.onDrawEnd?.({ chart, overlay, ...event })
             return true
@@ -204,140 +203,62 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
           figureType: 'none',
           figureIndex: -1,
           figure: null
-        },
-        (o, f) => this._processOverlaySelectedEvent(o, f, event),
-        (o, f) => this._processOverlayDeselectedEvent(o, f, event)
-      )
-      return false
-    }).registerEvent('mouseDoubleClickEvent', event => {
-      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
-      if (progressOverlayInfo !== null) {
-        const overlay = progressOverlayInfo.overlay
-        const progressOverlayPaneId = progressOverlayInfo.paneId
-        if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
-          overlay.forceComplete()
-          if (!overlay.isDrawing()) {
-            chartStore.progressOverlayComplete()
-            overlay.onDrawEnd?.({ chart, overlay, ...event })
-          }
-        }
-        const index = overlay.points.length - 1
-        return this._figureMouseClickEvent(
-          overlay,
-          'point',
-          index,
-          {
-            key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
-            type: 'circle',
-            attrs: {}
-          }
-        )(event)
-      }
-      return false
-    }).registerEvent('mouseRightClickEvent', event => {
-      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
-      if (progressOverlayInfo !== null) {
-        const overlay = progressOverlayInfo.overlay
-        if (overlay.isDrawing()) {
-          const index = overlay.points.length - 1
-          return this._figureMouseRightClickEvent(
-            overlay,
-            'point',
-            index,
-            {
-              key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
-              type: 'circle',
-              attrs: {}
-            }
-          )(event)
-        }
-      }
-      return false
-    }).registerEvent('mouseDownEvent', event => {
-      // Handle continuous drawing mode - start drawing on mouse down
-      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
-      if (progressOverlayInfo !== null) {
-        const overlay = progressOverlayInfo.overlay
-        if (overlay.isContinuousDrawing() && overlay.isStart()) {
-          chartStore.updateProgressOverlayInfo(paneId, true)
-          const point = this._coordinateToPoint(overlay, event)
-          overlay.startContinuousDrawing(point)
-          overlay.onDrawStart?.({ chart, overlay, ...event })
-          return true
-        }
-      }
-      return false
-    }).registerEvent('mouseUpEvent', event => {
-      // Handle continuous drawing mode - complete on mouse up
-      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
-      if (progressOverlayInfo !== null) {
-        const overlay = progressOverlayInfo.overlay
-        if (overlay.isContinuousDrawing() && overlay.isDrawing() && !overlay.isStart()) {
-          overlay.completeContinuousDrawing()
-          chartStore.progressOverlayComplete()
-          overlay.onDrawEnd?.({ chart, overlay, ...event })
-          return true
-        }
-      }
-      const { overlay, figure } = chartStore.getPressedOverlayInfo()
-      if (overlay !== null) {
-        if (checkOverlayFigureEvent('onPressedMoveEnd', figure)) {
-          overlay.onPressedMoveEnd?.({ chart, overlay, figure: figure ?? undefined, ...event })
-        }
-      }
-      chartStore.setPressedOverlayInfo({
-        paneId,
-        overlay: null,
-        figureType: 'none',
-        figureIndex: -1,
-        figure: null
+        })
+        return false
       })
-      return false
-    }).registerEvent('pressedMouseMoveEvent', event => {
-      // Handle continuous drawing mode - accumulate points while mouse is pressed
-      const progressOverlayInfo = chartStore.getProgressOverlayInfo()
-      if (progressOverlayInfo !== null) {
-        const overlay = progressOverlayInfo.overlay
-        if (overlay.isContinuousDrawing() && overlay.isDrawing() && !overlay.isStart()) {
-          const point = this._coordinateToPoint(overlay, event)
-          overlay.addPointForContinuousDrawing(point)
-          overlay.onDrawing?.({ chart, overlay, ...event })
-          return true
-        }
-      }
-      const { overlay, figureType, figureIndex, figure } = chartStore.getPressedOverlayInfo()
-      if (overlay !== null) {
-        if (checkOverlayFigureEvent('onPressedMoving', figure)) {
-          if (!overlay.lock) {
+      .registerEvent('pressedMouseMoveEvent', (event) => {
+        // Handle continuous drawing mode - accumulate points while mouse is pressed
+        const progressOverlayInfo = chartStore.getProgressOverlayInfo()
+        if (progressOverlayInfo !== null) {
+          const overlay = progressOverlayInfo.overlay
+          if (overlay.isContinuousDrawing() && overlay.isDrawing() && !overlay.isStart()) {
             const point = this._coordinateToPoint(overlay, event)
-            // When the pressed figure declares `noTranslate`, the
-            // engine skips the default point-translation step
-            // entirely — the overlay's `onPressedMoving` handler
-            // below owns the drag (typically updating extendData
-            // for in-shape resize handles like Table's borders).
-            const noTranslate = (figure as { noTranslate?: boolean } | null)?.noTranslate === true
-            if (!noTranslate) {
-              if (figureType === 'point') {
-                overlay.eventPressedPointMove(point, figureIndex)
-              } else {
-                overlay.eventPressedOtherMove(point, this.getWidget().getPane().getChart().getChartStore())
-              }
-            }
-            let prevented = false
-            overlay.onPressedMoving?.({ chart, overlay, figure: figure ?? undefined, ...event, preventDefault: () => { prevented = true } })
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
-            if (prevented) {
-              this.getWidget().setForceCursor(null)
-            } else {
-              this.getWidget().setForceCursor('pointer')
-            }
+            overlay.addPointForContinuousDrawing(point)
+            overlay.onDrawing?.({ chart, overlay, ...event })
             return true
           }
         }
-      }
-      this.getWidget().setForceCursor(null)
-      return false
-    })
+        const { overlay, figureType, figureIndex, figure } = chartStore.getPressedOverlayInfo()
+        if (overlay !== null) {
+          if (checkOverlayFigureEvent('onPressedMoving', figure)) {
+            if (!overlay.lock) {
+              const point = this._coordinateToPoint(overlay, event)
+              // When the pressed figure declares `noTranslate`, the
+              // engine skips the default point-translation step
+              // entirely — the overlay's `onPressedMoving` handler
+              // below owns the drag (typically updating extendData
+              // for in-shape resize handles like Table's borders).
+              const noTranslate = (figure as { noTranslate?: boolean } | null)?.noTranslate === true
+              if (!noTranslate) {
+                if (figureType === 'point') {
+                  overlay.eventPressedPointMove(point, figureIndex)
+                } else {
+                  overlay.eventPressedOtherMove(point, this.getWidget().getPane().getChart().getChartStore())
+                }
+              }
+              let prevented = false
+              overlay.onPressedMoving?.({
+                chart,
+                overlay,
+                figure: figure ?? undefined,
+                ...event,
+                preventDefault: () => {
+                  prevented = true
+                }
+              })
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
+              if (prevented) {
+                this.getWidget().setForceCursor(null)
+              } else {
+                this.getWidget().setForceCursor('pointer')
+              }
+              return true
+            }
+          }
+        }
+        this.getWidget().setForceCursor(null)
+        return false
+      })
   }
 
   /**
@@ -352,8 +273,10 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
    * (Callout's bubble does this). Both canvas and textarea route
    * through the same getTextRect call, so they stay in lockstep.
    */
-  private _repositionTextEditor (figureAttrs: TextAttrs, styles: Partial<TextStyle>): void {
-    if (this._activeTextEditor === null) return
+  private _repositionTextEditor(figureAttrs: TextAttrs, styles: Partial<TextStyle>): void {
+    if (this._activeTextEditor === null) {
+      return
+    }
     const { input } = this._activeTextEditor
     const rect = getTextRect(figureAttrs, styles)
     // Engine-wide minimum width for the input — useful for plain
@@ -405,13 +328,13 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     // figure's current angle (Price Note's leader text computes a
     // fresh angle every redraw as the user drags the endpoints).
     const angle = (figureAttrs as { angle?: number }).angle
-    input.style.transform = angle !== undefined && angle !== 0
-      ? `rotate(${angle}rad)`
-      : 'none'
+    input.style.transform = angle !== undefined && angle !== 0 ? `rotate(${angle}rad)` : 'none'
   }
 
-  private _stopTextEdit (commit: boolean): void {
-    if (this._activeTextEditor === null) return
+  private _stopTextEdit(commit: boolean): void {
+    if (this._activeTextEditor === null) {
+      return
+    }
     const { input, overlay, figure, cleanup } = this._activeTextEditor
     const chart = this.getWidget().getPane().getChart()
     if (commit && isFunction(overlay.onTextChange)) {
@@ -425,7 +348,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     chart.updatePane(UpdateLevel.Overlay)
   }
 
-  private _startTextEdit (overlay: OverlayImp, figure: OverlayFigure, styles: Partial<TextStyle>): void {
+  private _startTextEdit(overlay: OverlayImp, figure: OverlayFigure, styles: Partial<TextStyle>): void {
     // Stop any existing edit
     this._stopTextEdit(false)
 
@@ -435,12 +358,8 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     // Figures that opt out (`placeholder === null`) — e.g. Table
     // cells — keep their own empty `text` for sizing; they already
     // declare explicit width/height on the figure.
-    const placeholderText = attrs.placeholder === null
-      ? ''
-      : (attrs.placeholder ?? '+ Add text')
-    const sizingAttrs = attrs.text.length === 0 && placeholderText.length > 0
-      ? { ...attrs, text: placeholderText }
-      : attrs
+    const placeholderText = attrs.placeholder === null ? '' : (attrs.placeholder ?? '+ Add text')
+    const sizingAttrs = attrs.text.length === 0 && placeholderText.length > 0 ? { ...attrs, text: placeholderText } : attrs
     const rect = getTextRect(sizingAttrs, styles)
 
     const container = this.getWidget().getContainer()
@@ -460,17 +379,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     input.style.resize = 'none'
     input.style.overflow = 'hidden'
 
-    const {
-      size = 12,
-      weight = 'normal',
-      family,
-      fontStyle,
-      color = '#000000',
-      paddingLeft = 0,
-      paddingTop = 0,
-      paddingRight = 0,
-      paddingBottom = 0
-    } = styles
+    const { size = 12, weight = 'normal', family, fontStyle, color = '#000000', paddingLeft = 0, paddingTop = 0, paddingRight = 0, paddingBottom = 0 } = styles
 
     // Border / background / borderRadius for the editor element come
     // from the FIGURE's own styles or an explicit overlay-level
@@ -503,9 +412,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
 
     // Border: only apply when an opaque border is configured. Default
     // ('none') matches the prior behaviour for plain Text overlays.
-    const borderStyle = borderColor !== undefined && borderColor !== 'transparent' && (borderSize ?? 0) > 0
-      ? `${borderSize ?? 1}px solid ${borderColor}`
-      : 'none'
+    const borderStyle = borderColor !== undefined && borderColor !== 'transparent' && (borderSize ?? 0) > 0 ? `${borderSize ?? 1}px solid ${borderColor}` : 'none'
 
     // Rotation: if the editableText figure carries `angle`, rotate
     // the textarea around its centre so it visually parallels the
@@ -514,9 +421,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     // align='center', baseline='middle' figure — the only orientation
     // the rotated-text path is currently used for.
     const angle = (attrs as { angle?: number }).angle
-    const transform = angle !== undefined && angle !== 0
-      ? `rotate(${angle}rad)`
-      : 'none'
+    const transform = angle !== undefined && angle !== 0 ? `rotate(${angle}rad)` : 'none'
 
     Object.assign(input.style, {
       position: 'absolute',
@@ -527,9 +432,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       padding: `${paddingTop}px ${paddingRight}px ${paddingBottom}px ${paddingLeft}px`,
       margin: '0',
       border: borderStyle,
-      borderRadius: borderRadius !== undefined
-        ? (typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius)
-        : '0',
+      borderRadius: borderRadius !== undefined ? (typeof borderRadius === 'number' ? `${borderRadius}px` : borderRadius) : '0',
       outline: 'none',
       font,
       color,
@@ -596,7 +499,9 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     input.addEventListener('input', onInput)
 
     // Prevent chart from handling mouse events on the input
-    const stopPropagation = (e: Event): void => { e.stopPropagation() }
+    const stopPropagation = (e: Event): void => {
+      e.stopPropagation()
+    }
     input.addEventListener('mousedown', stopPropagation)
     input.addEventListener('mouseup', stopPropagation)
     input.addEventListener('click', stopPropagation)
@@ -630,11 +535,15 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
    * Walks the same coordinate computation as `_drawOverlay` so the
    * editor mounts at the figure's actual screen position.
    */
-  private _maybeAutoStartEditingAfterDraw (overlay: OverlayImp): void {
-    if (overlay.createPointFigures == null) return
+  private _maybeAutoStartEditingAfterDraw(overlay: OverlayImp): void {
+    if (overlay.createPointFigures == null) {
+      return
+    }
 
     const { points } = overlay
-    if (points.length === 0) return
+    if (points.length === 0) {
+      return
+    }
 
     const pane = this.getWidget().getPane()
     const chart = pane.getChart()
@@ -644,7 +553,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     const bounding = this.getWidget().getBounding()
     const isContinuous = overlay.isContinuousDrawing()
 
-    const coordinates = points.map(point => {
+    const coordinates = points.map((point) => {
       let dataIndex: Nullable<number> = null
       if (isContinuous && isNumber(point.timestamp)) {
         dataIndex = chartStore.timestampToFloatIndex(point.timestamp)
@@ -671,12 +580,16 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     const defaultTextStyles = chart.getStyles().overlay.text
 
     for (const figure of figures) {
-      if (figure.type !== 'editableText') continue
+      if (figure.type !== 'editableText') {
+        continue
+      }
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- ignore
       // @ts-expect-error
       const attrsArray: TextAttrs[] = [].concat(figure.attrs)
-      const firstEmpty = attrsArray.find(a => a.text.length === 0)
-      if (firstEmpty == null) continue
+      const firstEmpty = attrsArray.find((a) => a.text.length === 0)
+      if (firstEmpty == null) {
+        continue
+      }
 
       // Resolve merged styles the same way drawFigures + the placeholder
       // path do — defaults → overlay.styles.text → per-figure styles.
@@ -694,12 +607,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     }
   }
 
-  private _createFigureEvents (
-    overlay: OverlayImp,
-    figureType: EventOverlayInfoFigureType,
-    figureIndex: number,
-    figure: OverlayFigure
-  ): Nullable<EventHandler> {
+  private _createFigureEvents(overlay: OverlayImp, figureType: EventOverlayInfoFigureType, figureIndex: number, figure: OverlayFigure): Nullable<EventHandler> {
     if (overlay.isDrawing()) {
       return null
     }
@@ -759,6 +667,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
             prevented = true
           }
         })
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
         if (prevented) {
           this.getWidget().setForceCursor(null)
         } else {
@@ -813,8 +722,8 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       const wasSelected = chartStore.getClickOverlayInfo().overlay?.id === overlay.id
       if (wasSelected && figure.type === 'editableText' && isFunction(overlay.onTextChange)) {
         const defaultStyles = chart.getStyles().overlay
-        const figureKey = figure.key ?? ((figure.attrs as TextAttrs).key)
-        let keyedStyles = figureKey != null && figureKey !== '' ? overlay.figureStyles[figureKey] as Record<string, unknown> | undefined : undefined
+        const figureKey = figure.key ?? (figure.attrs as TextAttrs).key
+        let keyedStyles = figureKey != null && figureKey !== '' ? (overlay.figureStyles[figureKey] as Record<string, unknown> | undefined) : undefined
         if (keyedStyles == null && figureKey != null && figureKey !== '') {
           for (const fKey of Object.keys(overlay.figureStyles)) {
             if (figureKey.startsWith(fKey + '_')) {
@@ -868,6 +777,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
             prevented = true
           }
         })
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
         if (!prevented) {
           this.getWidget().getPane().getChart().getChartStore().removeOverlay(overlay)
         }
@@ -904,49 +814,38 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       if (o.mode !== 'normal' && paneId === PaneIdConstants.CANDLE && isNumber(point.dataIndex)) {
         const kLineData = chartStore.getDataByDataIndex(point.dataIndex)
         if (kLineData !== null) {
-          const modeSensitivity = o.modeSensitivity
-          if (value > kLineData.high) {
-            if (o.mode === 'weak_magnet') {
-              const highY = yAxis.convertToPixel(kLineData.high)
-              const buffValueY = yAxis.reverse ? highY + modeSensitivity : highY - modeSensitivity
-              const buffValue = yAxis.convertFromPixel(buffValueY)
-              if (value < buffValue) {
-                value = kLineData.high
-              }
-            } else {
-              value = kLineData.high
+          // ALTD-1898 — both magnet modes now share one code
+          // path: find the closest of {open, high, low, close}
+          // by pixel distance from the cursor. Strong mode
+          // always snaps to that point; weak mode only snaps
+          // when the pixel distance is within `modeSensitivity`
+          // px, otherwise the raw cursor value passes through.
+          //
+          // The old asymmetric implementation was strong-inside
+          // / weak-outside: cursor between low and high always
+          // snapped hard regardless of mode, and the weak halo
+          // only existed above/below the wick. That mismatch is
+          // why weak "barely snapped" — most cursor positions
+          // that felt near an OHLC were inside the range where
+          // the mode gate did nothing.
+          const cursorY = coordinate.y
+          const candidates: Array<{ value: number; pixel: number }> = [
+            { value: kLineData.open, pixel: yAxis.convertToPixel(kLineData.open) },
+            { value: kLineData.high, pixel: yAxis.convertToPixel(kLineData.high) },
+            { value: kLineData.low, pixel: yAxis.convertToPixel(kLineData.low) },
+            { value: kLineData.close, pixel: yAxis.convertToPixel(kLineData.close) }
+          ]
+          let nearest = candidates[0]
+          let nearestDist = Math.abs(cursorY - nearest.pixel)
+          for (let i = 1; i < candidates.length; i++) {
+            const dist = Math.abs(cursorY - candidates[i].pixel)
+            if (dist < nearestDist) {
+              nearest = candidates[i]
+              nearestDist = dist
             }
-          } else if (value < kLineData.low) {
-            if (o.mode === 'weak_magnet') {
-              const lowY = yAxis.convertToPixel(kLineData.low)
-              const buffValueY = yAxis.reverse ? lowY - modeSensitivity : lowY + modeSensitivity
-              const buffValue = yAxis.convertFromPixel(buffValueY)
-              if (value > buffValue) {
-                value = kLineData.low
-              }
-            } else {
-              value = kLineData.low
-            }
-          } else {
-            const max = Math.max(kLineData.open, kLineData.close)
-            const min = Math.min(kLineData.open, kLineData.close)
-            if (value > max) {
-              if (value - max < kLineData.high - value) {
-                value = max
-              } else {
-                value = kLineData.high
-              }
-            } else if (value < min) {
-              if (value - kLineData.low < min - value) {
-                value = kLineData.low
-              } else {
-                value = min
-              }
-            } else if (max - value < value - min) {
-              value = max
-            } else {
-              value = min
-            }
+          }
+          if (o.mode === 'strong_magnet' || nearestDist <= o.modeSensitivity) {
+            value = nearest.value
           }
         }
       }
@@ -992,7 +891,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     const yAxis = pane.getAxisComponent() as unknown as Nullable<YAxis>
     // For continuous drawing overlays, use float indices for smooth rendering
     const isContinuous = overlay.isContinuousDrawing()
-    const coordinates = points.map(point => {
+    const coordinates = points.map((point) => {
       let dataIndex: Nullable<number> = null
       if (isContinuous && isNumber(point.timestamp)) {
         // Use timestampToFloatIndex for sub-bar precision
@@ -1017,11 +916,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- ignore
       // @ts-expect-error
       const figures = [].concat(this.getFigures(overlay, coordinates))
-      this.drawFigures(
-        ctx,
-        overlay,
-        figures
-      )
+      this.drawFigures(ctx, overlay, figures)
       this._drawEditableTextPlaceholders(ctx, overlay, figures)
     }
     this.drawDefaultFigures(ctx, overlay, coordinates)
@@ -1033,11 +928,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
    * This mirrors TradingView's UX: an affordance appears only when the user
    * is actively interacting with the overlay.
    */
-  private _drawEditableTextPlaceholders (
-    ctx: CanvasRenderingContext2D,
-    overlay: OverlayImp,
-    figures: OverlayFigure[]
-  ): void {
+  private _drawEditableTextPlaceholders(ctx: CanvasRenderingContext2D, overlay: OverlayImp, figures: OverlayFigure[]): void {
     const chartStore = this.getWidget().getPane().getChart().getChartStore()
     const hoverOverlayInfo = chartStore.getHoverOverlayInfo()
     const clickOverlayInfo = chartStore.getClickOverlayInfo()
@@ -1056,7 +947,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
 
     const defaultStyles = this.getWidget().getPane().getChart().getStyles().overlay
 
-    figures.forEach(figure => {
+    figures.forEach((figure) => {
       if (figure.type !== 'editableText') {
         return
       }
@@ -1064,7 +955,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- ignore
       // @ts-expect-error
       const attrsArray: TextAttrs[] = [].concat(figure.attrs)
-      attrsArray.forEach(attrs => {
+      attrsArray.forEach((attrs) => {
         if (attrs.text.length > 0) {
           return
         }
@@ -1080,9 +971,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         const figureKey = figure.key
         const attrKey = (attrs as { key?: string }).key
         const effectiveKey = attrKey ?? figureKey
-        let keyedStyles = effectiveKey != null && effectiveKey !== ''
-          ? overlay.figureStyles[effectiveKey] as Record<string, unknown> | undefined
-          : undefined
+        let keyedStyles = effectiveKey != null && effectiveKey !== '' ? (overlay.figureStyles[effectiveKey] as Record<string, unknown> | undefined) : undefined
         if (keyedStyles == null && effectiveKey != null && effectiveKey !== '') {
           for (const fKey of Object.keys(overlay.figureStyles)) {
             if (effectiveKey.startsWith(fKey + '_')) {
@@ -1132,7 +1021,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
    * Handles hex (#RGB, #RRGGBB) and rgb/rgba strings.
    * Falls back to 'rgba(255,255,255,0.5)' for unrecognised formats.
    */
-  private _dimColor (color: string, opacity: number): string {
+  private _dimColor(color: string, opacity: number): string {
     const trimmed = color.trim()
 
     // hex shorthand #RGB
@@ -1168,7 +1057,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     return `rgba(255,255,255,${opacity})`
   }
 
-  protected drawFigures (ctx: CanvasRenderingContext2D, overlay: OverlayImp, figures: OverlayFigure[]): void {
+  protected drawFigures(ctx: CanvasRenderingContext2D, overlay: OverlayImp, figures: OverlayFigure[]): void {
     const defaultStyles = this.getWidget().getPane().getChart().getStyles().overlay
     figures.forEach((figure, figureIndex) => {
       const { type, key: figureKey, styles, attrs } = figure
@@ -1183,14 +1072,12 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         // points by cursor delta, preserving the engine's prior
         // behaviour for every overlay that doesn't opt in.
         const ownPointIndex = (figure as { pointIndex?: number }).pointIndex
-        const events = typeof ownPointIndex === 'number'
-          ? this._createFigureEvents(overlay, 'point', ownPointIndex, figure)
-          : this._createFigureEvents(overlay, 'other', figureIndex, figure)
+        const events = typeof ownPointIndex === 'number' ? this._createFigureEvents(overlay, 'point', ownPointIndex, figure) : this._createFigureEvents(overlay, 'other', figureIndex, figure)
         // Support per-attr key for granular styling (e.g., each Fibonacci level)
         // Attr key takes precedence over figure key
         const attrKey = (ats as { key?: string }).key
         const effectiveKey = attrKey ?? figureKey
-        let keyedStyles = effectiveKey != null && effectiveKey !== '' ? overlay.figureStyles[effectiveKey] as Record<string, unknown> | undefined : undefined
+        let keyedStyles = effectiveKey != null && effectiveKey !== '' ? (overlay.figureStyles[effectiveKey] as Record<string, unknown> | undefined) : undefined
         // Prefix-match fallback: for composite keys like 'fan_0.5_grid_x', check 'fan_0.5'
         if (keyedStyles == null && effectiveKey != null && effectiveKey !== '') {
           for (const fKey of Object.keys(overlay.figureStyles)) {
@@ -1235,9 +1122,14 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
             return
           }
         }
-        this.createFigure({
-          name: type, attrs: ats, styles: ss
-        }, events ?? undefined)?.draw(ctx)
+        this.createFigure(
+          {
+            name: type,
+            attrs: ats,
+            styles: ss
+          },
+          events ?? undefined
+        )?.draw(ctx)
       })
     })
   }
@@ -1266,18 +1158,12 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     return o.createPointFigures?.({ chart, overlay: o, coordinates, bounding, xAxis, yAxis }) ?? []
   }
 
-  protected drawDefaultFigures (
-    ctx: CanvasRenderingContext2D,
-    overlay: OverlayImp,
-    coordinates: Coordinate[]
-  ): void {
+  protected drawDefaultFigures(ctx: CanvasRenderingContext2D, overlay: OverlayImp, coordinates: Coordinate[]): void {
     const need = overlay.needDefaultPointFigure
     // Whitelist when supplied (number[]): only render default handles
     // for the listed point indices. Otherwise truthy renders all,
     // falsy renders none — preserving prior boolean behaviour.
-    const allowedIndices: Set<number> | null = Array.isArray(need)
-      ? new Set(need)
-      : null
+    const allowedIndices: Set<number> | null = Array.isArray(need) ? new Set(need) : null
     if (need) {
       const chartStore = this.getWidget().getPane().getChart().getChartStore()
       const hoverOverlayInfo = chartStore.getHoverOverlayInfo()
@@ -1292,9 +1178,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
           const props = (overlayAny.getProperties as (id: string) => Record<string, unknown>)(overlay.id)
           baseColor = (props.lineColor ?? props.borderColor) as string | undefined
         }
-        const pointColorOverride = baseColor != null
-          ? { color: baseColor, activeColor: baseColor, borderColor: baseColor }
-          : {}
+        const pointColorOverride = baseColor != null ? { color: baseColor, activeColor: baseColor, borderColor: baseColor } : {}
         const pointStyles = { ...defaultStyles.point, ...pointColorOverride, ...styles?.point }
         const isTvMode = pointStyles.mode === 'stroke'
         // Get chart container background color for stroke-mode fill
@@ -1309,7 +1193,9 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         coordinates.forEach(({ x, y }, index) => {
           // Skip points not in the allow-list (when `needDefaultPointFigure`
           // is a number[] whitelist).
-          if (allowedIndices !== null && !allowedIndices.has(index)) return
+          if (allowedIndices !== null && !allowedIndices.has(index)) {
+            return
+          }
           let radius = pointStyles.radius
           let color = pointStyles.color
           let borderColor = pointStyles.borderColor
@@ -1342,17 +1228,12 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
                   borderStyle: 'solid'
                 }
               },
-              this._createFigureEvents(
-                overlay,
-                'point',
-                index,
-                {
-                  key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
-                  type: 'circle',
-                  attrs: { x, y, r: tvRadius },
-                  styles: { borderColor }
-                }
-              ) ?? undefined
+              this._createFigureEvents(overlay, 'point', index, {
+                key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
+                type: 'circle',
+                attrs: { x, y, r: tvRadius },
+                styles: { borderColor }
+              }) ?? undefined
             )?.draw(ctx)
           } else {
             // Solid mode: two concentric filled circles (border + fill)
@@ -1362,17 +1243,12 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
                 attrs: { x, y, r: radius + borderSize },
                 styles: { color: borderColor }
               },
-              this._createFigureEvents(
-                overlay,
-                'point',
-                index,
-                {
-                  key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
-                  type: 'circle',
-                  attrs: { x, y, r: radius + borderSize },
-                  styles: { color: borderColor }
-                }
-              ) ?? undefined
+              this._createFigureEvents(overlay, 'point', index, {
+                key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
+                type: 'circle',
+                attrs: { x, y, r: radius + borderSize },
+                styles: { color: borderColor }
+              }) ?? undefined
             )?.draw(ctx)
             this.createFigure({
               name: 'circle',

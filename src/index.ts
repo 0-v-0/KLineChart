@@ -232,7 +232,7 @@ export {
   // Style / enum types
   type LineType, type PolygonType, type TooltipShowRule, type TooltipShowType, type FeatureType, type TooltipFeaturePosition, type CandleTooltipRectPosition,
   type CandleType, type FormatDateType, type BarSpaceLimit, type ZoomAnchor,
-  type Chart, type DomPosition, type YAxisOverride, type YAxisFilter,
+  type DomPosition, type YAxisOverride, type YAxisFilter,
   type ActionType, type IndicatorSeries, type OverlayMode, type OverlayDrawingMode,
   type OverlayTextChangeEvent, type OverlayTextChangeCallback,
   // Pro overlay types

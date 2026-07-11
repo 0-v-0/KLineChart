@@ -14,7 +14,7 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
 

@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
     "strictNullChecks": true,
-    "strictPropertyInitialization": false,
-    "noImplicitAny": false,
     "target": "ES5",
     "esModuleInterop": true,
     "downlevelIteration": true,
@@ -11,12 +9,7 @@
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "experimentalDecorators": true,
-    "lib": [
-      "dom",
-      "es2018"
-    ]
+    "lib": ["dom", "es2018"]
   },
-  "include": [
-    "src/**/*.ts"
-  ]
+  "include": ["src/**/*.ts"]
 }

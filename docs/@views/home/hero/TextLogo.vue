@@ -2,14 +2,13 @@
 import { onMounted } from 'vue'
 
 onMounted(() => {
-  const paths = document.querySelectorAll(".text-logo path");
+  const paths = document.querySelectorAll('.text-logo path')
   paths.forEach((p) => {
     const len = p.getTotalLength()
     p.style.strokeDasharray = len
     p.style.strokeDashoffset = len
   })
 })
-
 </script>
 
 <template>

@@ -98,7 +98,9 @@ export default class CrosshairFeatureView extends View<YAxis> {
           let finalColor = color
           let finalBackgroundColor = backgroundColor
           if (this._activeFeatureInfo?.feature.id === feature.id) {
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
             finalColor = activeColor ?? color
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
             finalBackgroundColor = activeBackgroundColor ?? backgroundColor
           }
           const eventHandler = {

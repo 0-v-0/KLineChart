@@ -46,6 +46,7 @@ export function drawRect(ctx: CanvasRenderingContext2D, attrs: RectAttrs | RectA
   let rects: RectAttrs[] = []
   rects = rects.concat(attrs)
   const { style = 'fill', color = 'transparent', borderSize = 1, borderColor = 'transparent', borderStyle = 'solid', borderRadius: r = 0, borderDashedValue = [2, 2] } = styles
+  // eslint-disable-next-line @typescript-eslint/unbound-method, @typescript-eslint/no-unnecessary-condition -- ignore
   const draw = ctx.roundRect ?? ctx.rect
   const solid = (style === 'fill' || styles.style === 'stroke_fill') && (!isString(color) || !isTransparent(color))
   if (solid) {

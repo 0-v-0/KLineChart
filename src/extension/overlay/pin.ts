@@ -31,10 +31,10 @@
  * anchor-drawing floating toggle, and engine italic support.
  */
 
-import type { OverlayTemplate, OverlayFigure } from '../../component/Overlay'
 import type ChartImp from '../../Chart'
 import { calcTextWidth } from '../../common/utils/canvas'
 import { isNumber } from '../../common/utils/typeChecks'
+import type { OverlayFigure, OverlayTemplate } from '../../component/Overlay'
 
 interface PinOverlayData {
   /** User-set fill colour for the pin (drives both outlines). */
@@ -56,7 +56,7 @@ interface OverlayStyleSlice {
   // bridge — same property other overlays use for their shapes'
   // borders; Pin's PATH figure ignores polygon/rect styling, so
   // there's no clash with the pin colour).
-  rect?: { borderColor?: string, borderSize?: number }
+  rect?: { borderColor?: string; borderSize?: number }
   text?: {
     color?: string
     size?: number
@@ -80,7 +80,8 @@ const DEFAULT_FONT_FAMILY = 'Helvetica Neue'
 // centred at (14, 11)). Four sub-paths combine under
 // fillRule='evenodd' so the body and ring around the head hole both
 // render as visible outlines with a transparent centre.
-const PIN_PATH = 'M21 11.25c0 1.97-1.03 4.2-2.6 6.53a67.74 67.74 0 0 1-4.23 5.45l-.17.2-.17-.2a67.74 67.74 0 0 1-4.23-5.45C8.03 15.44 7 13.22 7 11.25A7.13 7.13 0 0 1 14 4c3.84 0 7 3.22 7 7.25Zm-6.07 12.63-.28.34L14 25l-.65-.78-.28-.34C9.9 20.06 6 15.4 6 11.25A8.13 8.13 0 0 1 14 3c4.42 0 8 3.7 8 8.25 0 4.14-3.89 8.81-7.07 12.63ZM17 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm1 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z'
+const PIN_PATH =
+  'M21 11.25c0 1.97-1.03 4.2-2.6 6.53a67.74 67.74 0 0 1-4.23 5.45l-.17.2-.17-.2a67.74 67.74 0 0 1-4.23-5.45C8.03 15.44 7 13.22 7 11.25A7.13 7.13 0 0 1 14 4c3.84 0 7 3.22 7 7.25Zm-6.07 12.63-.28.34L14 25l-.65-.78-.28-.34C9.9 20.06 6 15.4 6 11.25A8.13 8.13 0 0 1 14 3c4.42 0 8 3.7 8 8.25 0 4.14-3.89 8.81-7.07 12.63ZM17 11a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm1 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z'
 
 const PATH_TIP_X = 14
 const PATH_TIP_Y = 25
@@ -116,7 +117,7 @@ const MIN_TOOLTIP_WIDTH = 220
 const SHADOW_OFFSET_Y = 2
 const SHADOW_COLOR = 'rgba(0, 0, 0, 0.28)'
 
-function parseExtendData (extendData: unknown): PinOverlayData {
+function parseExtendData(extendData: unknown): PinOverlayData {
   if (extendData !== null && typeof extendData === 'object') {
     return extendData as PinOverlayData
   }
@@ -136,7 +137,9 @@ const pin: OverlayTemplate = {
     // Chart interface. Same pattern Signpost uses for its
     // createXAxisFigures.
     const { chart, overlay, coordinates } = params as typeof params & { chart: ChartImp }
-    if (coordinates.length < 1) return []
+    if (coordinates.length < 1) {
+      return []
+    }
 
     const data = parseExtendData(overlay.extendData)
     const styles = (overlay.styles ?? {}) as OverlayStyleSlice
@@ -180,18 +183,14 @@ const pin: OverlayTemplate = {
       const textColor = styles.text?.color ?? DEFAULT_TOOLTIP_TEXT_COLOR
       const tooltipBg = styles.text?.backgroundColor ?? DEFAULT_TOOLTIP_BG
       const tooltipBorderColor = styles.rect?.borderColor
-      const tooltipBorderSize = (tooltipBorderColor !== undefined && tooltipBorderColor !== 'transparent')
-        ? (styles.rect?.borderSize ?? 1)
-        : 0
+      const tooltipBorderSize = tooltipBorderColor !== undefined && tooltipBorderColor !== 'transparent' ? (styles.rect?.borderSize ?? 1) : 0
 
       // Auto-grow around the typed text; floor at MIN_TOOLTIP_WIDTH
       // so the textarea minimum doesn't stick out past the bubble
       // for placeholder content on initial draw.
       const sizingText = textValue.length > 0 ? textValue : '+ Add text'
       const lines = sizingText.split('\n')
-      const maxLineWidth = lines.length === 1
-        ? calcTextWidth(sizingText, fontSize, fontWeight, fontFamily)
-        : Math.max(...lines.map(l => calcTextWidth(l, fontSize, fontWeight, fontFamily)))
+      const maxLineWidth = lines.length === 1 ? calcTextWidth(sizingText, fontSize, fontWeight, fontFamily) : Math.max(...lines.map((l) => calcTextWidth(l, fontSize, fontWeight, fontFamily)))
       const tooltipWidth = Math.max(maxLineWidth + TOOLTIP_PADDING_H * 2, MIN_TOOLTIP_WIDTH)
       const tooltipHeight = lines.length * fontSize + TOOLTIP_PADDING_V * 2
 
@@ -224,13 +223,7 @@ const pin: OverlayTemplate = {
       const approachLeftY = vTipY - approachDy
       const approachRightX = rectCentreX + approachDx
       const approachRightY = vTipY - approachDy
-      const vPath = [
-        `M ${baseLeftX} ${rectBottom}`,
-        `L ${approachLeftX.toFixed(3)} ${approachLeftY.toFixed(3)}`,
-        `Q ${rectCentreX} ${vTipY} ${approachRightX.toFixed(3)} ${approachRightY.toFixed(3)}`,
-        `L ${baseRightX} ${rectBottom}`,
-        'Z'
-      ].join(' ')
+      const vPath = [`M ${baseLeftX} ${rectBottom}`, `L ${approachLeftX.toFixed(3)} ${approachLeftY.toFixed(3)}`, `Q ${rectCentreX} ${vTipY} ${approachRightX.toFixed(3)} ${approachRightY.toFixed(3)}`, `L ${baseRightX} ${rectBottom}`, 'Z'].join(' ')
 
       // Soft drop-shadow under the whole tooltip — duplicate of the
       // rect + V path, offset down a few pixels and drawn FIRST so
@@ -277,20 +270,21 @@ const pin: OverlayTemplate = {
           width: tooltipWidth,
           height: tooltipHeight
         },
-        styles: tooltipBorderSize > 0
-          ? {
-              style: 'stroke_fill',
-              color: tooltipBg,
-              borderColor: tooltipBorderColor,
-              borderSize: tooltipBorderSize,
-              borderRadius: TOOLTIP_BORDER_RADIUS
-            }
-          : {
-              style: 'fill',
-              color: tooltipBg,
-              borderRadius: TOOLTIP_BORDER_RADIUS,
-              borderSize: 0
-            }
+        styles:
+          tooltipBorderSize > 0
+            ? {
+                style: 'stroke_fill',
+                color: tooltipBg,
+                borderColor: tooltipBorderColor,
+                borderSize: tooltipBorderSize,
+                borderRadius: TOOLTIP_BORDER_RADIUS
+              }
+            : {
+                style: 'fill',
+                color: tooltipBg,
+                borderRadius: TOOLTIP_BORDER_RADIUS,
+                borderSize: 0
+              }
       })
 
       // V-pointer body — same path as the shadow, drawn at the real
@@ -351,18 +345,25 @@ const pin: OverlayTemplate = {
   // without hovering / clicking the pin. Same approach Signpost uses.
   createXAxisFigures: (params) => {
     const { chart, overlay, coordinates } = params as typeof params & { chart: ChartImp }
-    if (coordinates.length < 1) return []
+    if (coordinates.length < 1) {
+      return []
+    }
     const data = parseExtendData(overlay.extendData)
-    if (data.anchorDrawing !== true) return []
+    if (data.anchorDrawing !== true) {
+      return []
+    }
     const point = overlay.points[0]
-    if (!isNumber(point.timestamp)) return []
-    const text = chart.getChartStore().getInnerFormatter()
-      .formatDate(point.timestamp, 'YYYY-MM-DD HH:mm', 'crosshair')
-    return [{
-      type: 'text',
-      attrs: { x: coordinates[0].x, y: 0, text, align: 'center' },
-      ignoreEvent: true
-    }]
+    if (!isNumber(point.timestamp)) {
+      return []
+    }
+    const text = chart.getChartStore().getInnerFormatter().formatDate(point.timestamp, 'YYYY-MM-DD HH:mm', 'crosshair')
+    return [
+      {
+        type: 'text',
+        attrs: { x: coordinates[0].x, y: 0, text, align: 'center' },
+        ignoreEvent: true
+      }
+    ]
   },
 
   onTextChange: ({ overlay, text: newText }) => {

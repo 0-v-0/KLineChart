@@ -1,9 +1,9 @@
-import { resolvePath } from '../utils.js'
 import build from './build.js'
+import { resolvePath } from '../utils.js'
 
 const fileName = 'index.cjs'
 const index = resolvePath('index.js')
-await build({
+build({
   index,
   fileName,
   format: 'cjs'

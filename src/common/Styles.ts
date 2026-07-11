@@ -774,7 +774,7 @@ function getDefaultCrosshairStyle(): CrosshairStyle {
   }
 }
 
-function getDefaultOverlayStyle (): OverlayStyle {
+function getDefaultOverlayStyle(): OverlayStyle {
   const alphaBg = hexToRgb(Color.BLUE, 0.25)
   function text(): TextStyle {
     return {

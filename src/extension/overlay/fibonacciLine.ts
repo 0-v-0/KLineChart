@@ -40,11 +40,10 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, PolygonStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
-
-import type { OverlayProperties, FigureLevel, ProOverlayTemplate } from './types'
-import { DEFAULT_OVERLAY_PROPERTIES } from './types'
+import { clone, merge } from '../../common/utils/typeChecks'
 import { fibLevelDefaultColour, formatFibRatio, resolveFibSettings, withAlpha } from './fibonacciShared'
+import type { FigureLevel, OverlayProperties, ProOverlayTemplate } from './types'
+import { DEFAULT_OVERLAY_PROPERTIES } from './types'
 
 /** Retracement level set — same defaults the retracement
  *  template uses, exported so other fib templates can share.
@@ -92,7 +91,10 @@ export const FIBONACCI_CHANNEL_LEVELS: FigureLevel[] = [
   { value: 4.236, enabled: false, color: fibLevelDefaultColour(4.236) }
 ]
 
-interface Coord { x: number; y: number }
+interface Coord {
+  x: number
+  y: number
+}
 
 interface FigureSpec {
   type: string
@@ -131,12 +133,18 @@ const level1Offset = (baseStart: Coord, offsetAnchor: Coord): Coord => ({
  *  TV does for straight-up channels. */
 const extendSegment = (a: Coord, b: Coord, leftX: number, rightX: number): [Coord, Coord] => {
   if (Math.abs(b.x - a.x) < 0.001) {
-    return [{ x: a.x, y: a.y }, { x: a.x, y: b.y }]
+    return [
+      { x: a.x, y: a.y },
+      { x: a.x, y: b.y }
+    ]
   }
   const m = (b.y - a.y) / (b.x - a.x)
   const leftY = a.y + m * (leftX - a.x)
   const rightY = a.y + m * (rightX - a.x)
-  return [{ x: leftX, y: leftY }, { x: rightX, y: rightY }]
+  return [
+    { x: leftX, y: leftY },
+    { x: rightX, y: rightY }
+  ]
 }
 
 const fibonacciLine = (): ProOverlayTemplate => {
@@ -176,7 +184,9 @@ const fibonacciLine = (): ProOverlayTemplate => {
       const props = properties.get(overlay.id) ?? {}
 
       const figures: FigureSpec[] = []
-      if (coordinates.length === 0) return figures
+      if (coordinates.length === 0) {
+        return figures
+      }
 
       const settings = resolveFibSettings(overlay.extendData)
 
@@ -212,15 +222,16 @@ const fibonacciLine = (): ProOverlayTemplate => {
 
       // Channel rendering only makes sense once the third
       // anchor exists.
-      if (coordinates.length < 3) return figures
+      if (coordinates.length < 3) {
+        return figures
+      }
 
       const base0 = coordinates[0]
       const base1 = coordinates[1]
       const offsetAnchor = coordinates[2]
       const perpOffset = level1Offset(base0, offsetAnchor)
 
-      const enabledLevels = (((props.figureLevels?.length ?? 0) > 0 ? props.figureLevels! : FIBONACCI_CHANNEL_LEVELS) as FigureLevel[])
-        .filter(l => l.enabled)
+      const enabledLevels = (((props.figureLevels?.length ?? 0) > 0 ? props.figureLevels! : FIBONACCI_CHANNEL_LEVELS) as FigureLevel[]).filter((l) => l.enabled)
 
       // Level lines are parallels of the base. Each level p
       // shifts both base endpoints by `p * perpOffset`, then
@@ -234,7 +245,7 @@ const fibonacciLine = (): ProOverlayTemplate => {
       // reaches to the chart edges the same way retracement
       // does.
       const enrichedLevels = enabledLevels
-        .map(level => {
+        .map((level) => {
           const percent = level.value
           const startBefore: Coord = {
             x: base0.x + perpOffset.x * percent,
@@ -259,7 +270,7 @@ const fibonacciLine = (): ProOverlayTemplate => {
         // Reverse flag swaps sort order so bands paint the
         // other way. Sort by `start.y` so band iteration is
         // deterministic.
-        .sort((a, b) => settings.reverse ? b.start.y - a.start.y : a.start.y - b.start.y)
+        .sort((a, b) => (settings.reverse ? b.start.y - a.start.y : a.start.y - b.start.y))
 
       // Background bands — filled quadrilaterals between
       // adjacent enriched levels. Fill from the lower level's
@@ -292,7 +303,7 @@ const fibonacciLine = (): ProOverlayTemplate => {
       // `fbLinesStyle` bag so a Style-tab thickness change
       // moves every parallel together.
       const baseLineStyle = fbLinesStyle(props)
-      enrichedLevels.forEach(l => {
+      enrichedLevels.forEach((l) => {
         figures.push({
           type: 'line',
           key: `level_${l.percent}`,
@@ -313,18 +324,17 @@ const fibonacciLine = (): ProOverlayTemplate => {
         const hAlign = props.textAlignHorizontal ?? 'left'
         const vAlign = props.textAlignVertical ?? 'top'
         const baseline: CanvasTextBaseline = vAlign === 'middle' ? 'middle' : vAlign === 'bottom' ? 'top' : 'bottom'
-        const texts = enrichedLevels.map(l => {
-          const anchor = hAlign === 'right'
-            ? l.end
-            : hAlign === 'center'
-              ? { x: (l.start.x + l.end.x) / 2, y: (l.start.y + l.end.y) / 2 }
-              : l.start
+        const texts = enrichedLevels.map((l) => {
+          const anchor = hAlign === 'right' ? l.end : hAlign === 'center' ? { x: (l.start.x + l.end.x) / 2, y: (l.start.y + l.end.y) / 2 } : l.start
           // Flip the canvas alignment relative to the anchor
           // so the text extends AWAY from the line. `center`
           // stays centred.
           let canvasAlign: CanvasTextAlign = 'center'
-          if (hAlign === 'left') canvasAlign = 'right'
-          else if (hAlign === 'right') canvasAlign = 'left'
+          if (hAlign === 'left') {
+            canvasAlign = 'right'
+          } else if (hAlign === 'right') {
+            canvasAlign = 'left'
+          }
           return {
             key: `level_${l.percent}_text`,
             x: anchor.x,

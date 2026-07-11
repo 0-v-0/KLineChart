@@ -195,9 +195,7 @@ export interface ProOverlayTemplate<E = unknown> extends OverlayTemplate<E> {
  * @param template - The overlay template to check
  * @returns True if the template has setProperties and getProperties methods
  */
-export function isProOverlayTemplate<E = unknown> (
-  template: OverlayTemplate<E>
-): template is ProOverlayTemplate<E> {
+export function isProOverlayTemplate<E = unknown>(template: OverlayTemplate<E>): template is ProOverlayTemplate<E> {
   const pro = template as ProOverlayTemplate<E>
   return typeof pro.setProperties === 'function' && typeof pro.getProperties === 'function'
 }
@@ -214,7 +212,7 @@ export type OverlayPropertiesStore = Record<string, DeepPartial<OverlayPropertie
  *
  * @returns An empty properties store
  */
-export function createPropertiesStore (): OverlayPropertiesStore {
+export function createPropertiesStore(): OverlayPropertiesStore {
   return {}
 }
 

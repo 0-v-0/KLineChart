@@ -3,9 +3,9 @@ import { init, registerYAxis } from 'klinecharts'
 registerYAxis({
   name: 'customYAxisBasic',
   minSpan: () => Math.pow(10, -2),
-  displayValueToText: value => `${value.toFixed(2)}%`,
-  valueToRealValue: (value, { range }) => (value - range.from) / range.range * range.realRange + range.realFrom,
-  realValueToValue: (value, { range }) => (value - range.realFrom) / range.realRange * range.range + range.from,
+  displayValueToText: (value) => `${value.toFixed(2)}%`,
+  valueToRealValue: (value, { range }) => ((value - range.from) / range.range) * range.realRange + range.realFrom,
+  realValueToValue: (value, { range }) => ((value - range.realFrom) / range.realRange) * range.range + range.from,
   createRange: ({ chart, defaultRange }) => {
     const kLineDataList = chart.getDataList()
     const visibleRange = chart.getVisibleRange()
@@ -13,8 +13,8 @@ registerYAxis({
     if (kLineData) {
       const realFrom = -200
       const realTo = 200
-      const from = realFrom / 100 * kLineData.close + kLineData.close
-      const to = realTo / 100 * kLineData.close + kLineData.close
+      const from = (realFrom / 100) * kLineData.close + kLineData.close
+      const to = (realTo / 100) * kLineData.close + kLineData.close
       const realRange = realTo - realFrom
       return {
         from,
@@ -32,20 +32,16 @@ registerYAxis({
   }
 })
 
-const chart = init(
-  'custom-y-axis-basic-chart'
-)
+const chart = init('custom-y-axis-basic-chart')
 chart.overrideYAxis({ name: 'customYAxisBasic' })
 
 chart.setSymbol({ ticker: 'TestSymbol' })
 chart.setPeriod({ span: 1, type: 'day' })
 chart.setDataLoader({
-  getBars: ({
-    callback
-  }) => {
+  getBars: ({ callback }) => {
     fetch('https://klinecharts.com/datas/kline.json')
-      .then(res => res.json())
-      .then(dataList => {
+      .then((res) => res.json())
+      .then((dataList) => {
         callback(dataList)
       })
   }

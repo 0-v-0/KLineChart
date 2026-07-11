@@ -37,17 +37,14 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, PolygonStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
-
-import type { OverlayProperties, FigureLevel, ProOverlayTemplate } from './types'
-import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-
+import { clone, merge } from '../../common/utils/typeChecks'
 import type { LineAttrs } from '../figure/line'
-import type { TextAttrs } from '../figure/text'
 import type { PolygonAttrs } from '../figure/polygon'
-
-import { getRayLine } from './utils'
+import type { TextAttrs } from '../figure/text'
 import { formatFibRatio, resolveFibSettings, withAlpha } from './fibonacciShared'
+import type { FigureLevel, OverlayProperties, ProOverlayTemplate } from './types'
+import { DEFAULT_OVERLAY_PROPERTIES } from './types'
+import { getRayLine } from './utils'
 
 /** Default palette shared between price + time levels — same
  *  ratio gets the same colour on both axes so a user
@@ -79,7 +76,9 @@ export const FIBONACCI_FAN_LEVELS: FigureLevel[] = withDefaults()
  *  `fanTimeLevels` back into a level array. Missing / malformed
  *  input falls through to the default set. */
 const resolveLevels = (raw: unknown): FigureLevel[] => {
-  if (!Array.isArray(raw) || raw.length === 0) return withDefaults()
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return withDefaults()
+  }
   return (raw as Array<Partial<FigureLevel>>).map((l, i) => {
     const value = typeof l.value === 'number' ? l.value : FIBONACCI_FAN_LEVELS[i].value
     const key = String(value)
@@ -120,7 +119,9 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
     needDefaultYAxisFigure: true,
     createPointFigures: ({ coordinates, bounding, overlay }) => {
       const props = properties.get(overlay.id) ?? {}
-      if (coordinates.length <= 1) return []
+      if (coordinates.length <= 1) {
+        return []
+      }
 
       const settings = resolveFibSettings(overlay.extendData)
       const ext = (overlay.extendData ?? {}) as {
@@ -133,8 +134,8 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
         showGrid?: boolean
         gridColor?: string
       }
-      const priceLevels = resolveLevels(ext.fanPriceLevels).filter(l => l.enabled)
-      const timeLevels = resolveLevels(ext.fanTimeLevels).filter(l => l.enabled)
+      const priceLevels = resolveLevels(ext.fanPriceLevels).filter((l) => l.enabled)
+      const timeLevels = resolveLevels(ext.fanTimeLevels).filter((l) => l.enabled)
       const showLeftLabels = ext.showLeftLabels !== false
       const showRightLabels = ext.showRightLabels !== false
       const showTopLabels = ext.showTopLabels !== false
@@ -156,7 +157,7 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
       const bottomY = Math.max(origin.y, extent.y)
       const LABEL_GAP = 8
 
-      const figures: Array<{ type: string, key?: string, ignoreEvent?: boolean, isCheckEvent?: boolean, attrs: unknown, styles?: Partial<LineStyle> | Partial<TextStyle> | Partial<PolygonStyle> }> = []
+      const figures: Array<{ type: string; key?: string; ignoreEvent?: boolean; isCheckEvent?: boolean; attrs: unknown; styles?: Partial<LineStyle> | Partial<TextStyle> | Partial<PolygonStyle> }> = []
 
       // Background bands — one triangular wedge per adjacent
       // pair of enabled price levels. Apex at `origin` (all
@@ -170,7 +171,7 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
         // to the chart edge on whichever side extent lies —
         // if dx > 0 the right edge, dx < 0 the left. A vertical
         // drag (dx == 0) falls back to a vertical clamp.
-        const rayFarEndpoint = (p: number): { x: number, y: number } => {
+        const rayFarEndpoint = (p: number): { x: number; y: number } => {
           const targetY = origin.y + yDistance * p
           const dx = extent.x - origin.x
           const dy = targetY - origin.y
@@ -209,7 +210,7 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
       // the top or bottom chart edge (whichever side extent
       // lies vertically).
       if (settings.showBackground && timeLevels.length >= 2) {
-        const timeRayFarEndpoint = (p: number): { x: number, y: number } => {
+        const timeRayFarEndpoint = (p: number): { x: number; y: number } => {
           const targetX = origin.x + xDistance * p
           const dx = targetX - origin.x
           const dy = extent.y - origin.y
@@ -247,13 +248,25 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
       // grid colour picker; toggles off cleanly.
       if (showGrid) {
         const gridLines: LineAttrs[] = []
-        priceLevels.forEach(l => {
+        priceLevels.forEach((l) => {
           const x = origin.x + xDistance * l.value
-          gridLines.push({ key: `grid_price_${l.value}`, coordinates: [{ x, y: origin.y }, { x, y: extent.y }] })
+          gridLines.push({
+            key: `grid_price_${l.value}`,
+            coordinates: [
+              { x, y: origin.y },
+              { x, y: extent.y }
+            ]
+          })
         })
-        timeLevels.forEach(l => {
+        timeLevels.forEach((l) => {
           const y = origin.y + yDistance * l.value
-          gridLines.push({ key: `grid_time_${l.value}`, coordinates: [{ x: origin.x, y }, { x: extent.x, y }] })
+          gridLines.push({
+            key: `grid_time_${l.value}`,
+            coordinates: [
+              { x: origin.x, y },
+              { x: extent.x, y }
+            ]
+          })
         })
         figures.push({
           type: 'line',
@@ -266,7 +279,7 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
       // and label colour both inherit from `level.color` so a
       // level recoloured in the Levels section paints
       // consistently across ray + labels.
-      priceLevels.forEach(l => {
+      priceLevels.forEach((l) => {
         const targetY = origin.y + yDistance * l.value
         const rayPieces = getRayLine([origin, { x: extent.x, y: targetY }], bounding)
         const rays = Array.isArray(rayPieces) ? rayPieces : [rayPieces]
@@ -295,14 +308,16 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
           figures.push({
             type: 'text',
             isCheckEvent: false,
-            attrs: [{
-              key: `price_label_left_${l.value}`,
-              x: leftX - LABEL_GAP,
-              y: targetY,
-              text: labelText,
-              align: 'right',
-              baseline: 'middle'
-            } satisfies TextAttrs],
+            attrs: [
+              {
+                key: `price_label_left_${l.value}`,
+                x: leftX - LABEL_GAP,
+                y: targetY,
+                text: labelText,
+                align: 'right',
+                baseline: 'middle'
+              } satisfies TextAttrs
+            ],
             styles: { ...textStyleFn(props), color: labelColour }
           })
         }
@@ -310,14 +325,16 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
           figures.push({
             type: 'text',
             isCheckEvent: false,
-            attrs: [{
-              key: `price_label_right_${l.value}`,
-              x: rightX + LABEL_GAP,
-              y: targetY,
-              text: labelText,
-              align: 'left',
-              baseline: 'middle'
-            } satisfies TextAttrs],
+            attrs: [
+              {
+                key: `price_label_right_${l.value}`,
+                x: rightX + LABEL_GAP,
+                y: targetY,
+                text: labelText,
+                align: 'left',
+                baseline: 'middle'
+              } satisfies TextAttrs
+            ],
             styles: { ...textStyleFn(props), color: labelColour }
           })
         }
@@ -326,7 +343,7 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
       // Time rays — one per enabled time level. Same pattern as
       // price rays but fanning toward the horizontal line at
       // Y = extent.y.
-      timeLevels.forEach(l => {
+      timeLevels.forEach((l) => {
         const targetX = origin.x + xDistance * l.value
         const rayPieces = getRayLine([origin, { x: targetX, y: extent.y }], bounding)
         const rays = Array.isArray(rayPieces) ? rayPieces : [rayPieces]
@@ -353,14 +370,16 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
           figures.push({
             type: 'text',
             isCheckEvent: false,
-            attrs: [{
-              key: `time_label_top_${l.value}`,
-              x: targetX,
-              y: topY - LABEL_GAP,
-              text: labelText,
-              align: 'center',
-              baseline: 'bottom'
-            } satisfies TextAttrs],
+            attrs: [
+              {
+                key: `time_label_top_${l.value}`,
+                x: targetX,
+                y: topY - LABEL_GAP,
+                text: labelText,
+                align: 'center',
+                baseline: 'bottom'
+              } satisfies TextAttrs
+            ],
             styles: { ...textStyleFn(props), color: labelColour }
           })
         }
@@ -368,14 +387,16 @@ const fibonacciSpeedResistanceFan = (): ProOverlayTemplate => {
           figures.push({
             type: 'text',
             isCheckEvent: false,
-            attrs: [{
-              key: `time_label_bottom_${l.value}`,
-              x: targetX,
-              y: bottomY + LABEL_GAP,
-              text: labelText,
-              align: 'center',
-              baseline: 'top'
-            } satisfies TextAttrs],
+            attrs: [
+              {
+                key: `time_label_bottom_${l.value}`,
+                x: targetX,
+                y: bottomY + LABEL_GAP,
+                text: labelText,
+                align: 'center',
+                baseline: 'top'
+              } satisfies TextAttrs
+            ],
             styles: { ...textStyleFn(props), color: labelColour }
           })
         }

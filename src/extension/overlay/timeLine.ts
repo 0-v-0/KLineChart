@@ -27,8 +27,8 @@
  */
 
 import type DeepPartial from '../../common/DeepPartial'
-import { merge, clone } from '../../common/utils/typeChecks'
 import { calcTextWidth } from '../../common/utils/canvas'
+import { clone, merge } from '../../common/utils/typeChecks'
 
 import type { ProOverlayTemplate } from './types'
 
@@ -91,11 +91,11 @@ const timeLine = (): ProOverlayTemplate => {
     needDefaultYAxisFigure: false,
 
     createPointFigures: ({ coordinates, bounding, overlay }) => {
-      if (coordinates.length === 0) return []
+      if (coordinates.length === 0) {
+        return []
+      }
 
-      _extRef.data = (overlay.extendData != null && typeof overlay.extendData === 'object')
-        ? overlay.extendData as DeepPartial<TimeLineProperties>
-        : null
+      _extRef.data = overlay.extendData != null && typeof overlay.extendData === 'object' ? (overlay.extendData as DeepPartial<TimeLineProperties>) : null
 
       const x = coordinates[0].x
       const text = prop('text')
@@ -118,7 +118,12 @@ const timeLine = (): ProOverlayTemplate => {
         figures.push({
           type: 'line',
           key: 'line',
-          attrs: { coordinates: [{ x, y: 0 }, { x, y: bounding.height }] },
+          attrs: {
+            coordinates: [
+              { x, y: 0 },
+              { x, y: bounding.height }
+            ]
+          },
           styles: lineStyles,
           ignoreEvent
         })
@@ -133,7 +138,12 @@ const timeLine = (): ProOverlayTemplate => {
         figures.push({
           type: 'line',
           key: 'line-top',
-          attrs: { coordinates: [{ x, y: 0 }, { x, y: gapTop }] },
+          attrs: {
+            coordinates: [
+              { x, y: 0 },
+              { x, y: gapTop }
+            ]
+          },
           styles: lineStyles,
           ignoreEvent
         })
@@ -141,7 +151,12 @@ const timeLine = (): ProOverlayTemplate => {
         figures.push({
           type: 'line',
           key: 'line-bottom',
-          attrs: { coordinates: [{ x, y: gapBottom }, { x, y: bounding.height }] },
+          attrs: {
+            coordinates: [
+              { x, y: gapBottom },
+              { x, y: bounding.height }
+            ]
+          },
           styles: lineStyles,
           ignoreEvent
         })

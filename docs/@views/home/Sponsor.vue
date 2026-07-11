@@ -85,7 +85,6 @@ function showParticle() {
           </a>
         </div>
       </div>
-<<<<<<< HEAD
 
       <div class="board">
         <div class="featured">
@@ -145,29 +144,6 @@ function showParticle() {
             </a>
           </div>
         </div>
-=======
-      <!-- <h4 v-if="platinum.length > 0">{{ lang === 'zh-CN' ? '铂金赞助商' : 'Platinum Sponsors' }}</h4> -->
-      <div v-if="platinum.length > 0" class="sponsor-grid sponsor-platinum-grid">
-        <a v-for="item in platinum" class="sponsor-grid-item item" target="_blank" rel="noreferrer" :href="item.website">
-          <img class="image" :src="item.logo"/>
-        </a>
-      </div>
-      <!-- <h4 v-if="gold.length > 0">{{ lang === 'zh-CN' ? '黄金赞助商' : 'Gold Sponsors' }}</h4> -->
-      <div v-if="gold.length > 0" class="sponsor-grid sponsor-gold-grid">
-        <a v-for="item in gold" class="sponsor-grid-item item" target="_blank" rel="noreferrer" :href="item.website">
-          <img class="image" :src="item.logo"/>
-        </a>
-      </div>
-      <div class="sponsor-become">
-        <a target="_blank" rel="noreferrer" href="./sponsor.html" @mouseenter="showParticle" >
-          <Particle ref="particle">
-            <svg width="18" height="18" viewBox="0 0 24 24">
-              <path fill="currentColor" d="m12 21l-1.45-1.3q-2.525-2.275-4.175-3.925T3.75 12.812T2.388 10.4T2 8.15Q2 5.8 3.575 4.225T7.5 2.65q1.3 0 2.475.55T12 4.75q.85-1 2.025-1.55t2.475-.55q2.35 0 3.925 1.575T22 8.15q0 1.15-.387 2.25t-1.363 2.412t-2.625 2.963T13.45 19.7z"/>
-            </svg>
-          </Particle>
-          {{ i18n('view_home_sponsor_become_sponsor', lang) }}
-        </a>
->>>>>>> f9e0e2ae (docs: update and rebase main into here)
       </div>
     </div>
   </Section>
@@ -424,15 +400,8 @@ function showParticle() {
     min-height: 100%;
   }
 
-<<<<<<< HEAD
   .featured {
     grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
-=======
-  .sponsor-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
->>>>>>> f9e0e2ae (docs: update and rebase main into here)
   }
 
   .featured-side {
@@ -454,89 +423,5 @@ function showParticle() {
   .sponsor-become a:hover svg {
     transform: none;
   }
-<<<<<<< HEAD
 }
 </style>
-=======
-
-  .sponsor-top-grid .item-no1 .image {
-    height: 62px;
-  }
-
-  .sponsor-top-grid .item-no2-no3 {
-    height: 140px;
-  }
-
-  .sponsor-top-grid .item-no2-no3 .image {
-    height: 40px;
-  }
-
-  .sponsor-platinum-grid .item {
-    height: 100px;
-  }
-
-  .sponsor-platinum-grid .item .image {
-    height: 30px;
-  }
-
-  .sponsor-gold-grid .item {
-    width: calc((100% - 18px) / 4);
-    height: 50px;
-  }
-
-  .sponsor-gold-grid .item .image {
-    height: 16px;
-  }
-
-  .sponsor-become {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    padding-top: 50px;
-    font-size: 14px;
-    color: var(--vp-c-indigo-1);
-    font-weight: bold;
-  }
-
-  .sponsor-become a {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    padding: 8px 20px;
-    gap: 8px;
-    border-radius: 99px;
-    transition: all .25s ease-in;
-    border: solid 1px var(--vp-c-indigo-1);
-    color: var(--vp-c-indigo-1);
-    text-decoration: none;
-  }
-
-  .sponsor-become a:hover {
-    border-color: var(--vp-c-indigo-2);
-    color: var(--vp-c-indigo-2);
-  }
-
-  @media (min-width: 640px) {
-    .sponsor-grid {
-      gap: 16px;
-    }
-
-    .sponsor-top-grid .item-no2-no3 {
-      width: calc((100% - 16px) / 2);
-      height: 140px;
-    }
-
-    .sponsor-top-grid .item-no2-no3 .image {
-      height: 52px;
-    }
-
-    .sponsor-platinum-grid .item {
-      width: calc((100% - 32px) / 3);
-    }
-
-    .sponsor-gold-grid .item {
-      width: calc((100% - 48px) / 4);
-    }
-  }
-</style>
->>>>>>> f9e0e2ae (docs: update and rebase main into here)

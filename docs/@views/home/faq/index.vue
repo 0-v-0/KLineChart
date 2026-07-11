@@ -11,37 +11,36 @@ const { lang } = useData()
 
 const items = ref([
   {
-    q: "view_home_faq_question_1",
-    a: "view_home_faq_answer_1",
+    q: 'view_home_faq_question_1',
+    a: 'view_home_faq_answer_1',
     expanded: false
   },
   {
-    q: "view_home_faq_question_2",
-    a: "view_home_faq_answer_2",
+    q: 'view_home_faq_question_2',
+    a: 'view_home_faq_answer_2',
     expanded: false
   },
   {
-    q: "view_home_faq_question_3",
-    a: "view_home_faq_answer_3",
+    q: 'view_home_faq_question_3',
+    a: 'view_home_faq_answer_3',
     expanded: false
   },
   {
-    q: "view_home_faq_question_4",
-    a: "view_home_faq_answer_4",
+    q: 'view_home_faq_question_4',
+    a: 'view_home_faq_answer_4',
     expanded: false
   },
   {
-    q: "view_home_faq_question_5",
-    a: "view_home_faq_answer_5",
+    q: 'view_home_faq_question_5',
+    a: 'view_home_faq_answer_5',
     expanded: false
   },
   {
-    q: "view_home_faq_question_6",
-    a: "view_home_faq_answer_6",
+    q: 'view_home_faq_question_6',
+    a: 'view_home_faq_answer_6',
     expanded: false
-  },
+  }
 ])
-
 </script>
 
 <template>

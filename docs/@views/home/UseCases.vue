@@ -32,12 +32,12 @@ const items = computed(() =>
         class="use-case home-card home-stagger-item"
         :style="{ '--stagger-delay': `${index * 0.07}s` }"
       >
-        <div class="illustration-wrap" aria-hidden="true">
-          <UseCaseIllustration class="illustration" :variant="item.variant" />
-        </div>
         <div class="use-case-body home-card-body">
           <h3>{{ item.title }}</h3>
           <p class="summary">{{ item.description }}</p>
+        </div>
+        <div class="illustration-wrap" aria-hidden="true">
+          <UseCaseIllustration class="illustration" :variant="item.variant" />
         </div>
       </article>
     </div>
@@ -53,16 +53,17 @@ const items = computed(() =>
 
 .use-case {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   min-height: 100%;
-  padding: 22px;
+  padding: 0;
   overflow: hidden;
 }
 
 .use-case-body {
   flex: 1;
   min-width: 0;
-  padding: 22px 0 0;
+  justify-content: center;
 }
 
 .summary {
@@ -73,13 +74,12 @@ const items = computed(() =>
 }
 
 .illustration-wrap {
+  flex: 0 0 clamp(96px, 34%, 176px);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-sizing: border-box;
-  width: 100%;
-  height: 124px;
-  padding: 0;
+  min-height: 100%;
+  padding: 12px 8px;
   overflow: hidden;
 }
 
@@ -87,36 +87,19 @@ const items = computed(() =>
   display: block;
   width: 100%;
   max-width: 160px;
-  height: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
   object-fit: contain;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 960px) {
   .use-cases {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--home-grid-gap-lg);
   }
 
   .illustration-wrap {
-    height: 140px;
-  }
-
-  .illustration {
-    max-width: 180px;
-  }
-}
-
-@media (min-width: 960px) {
-  .use-cases {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .illustration-wrap {
-    height: 150px;
-  }
-
-  .illustration {
-    max-width: 200px;
+    padding: 20px 14px;
   }
 }
 </style>

@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-import type Nullable from '../common/Nullable'
 import type { KLineData } from '../common/Data'
+import type Nullable from '../common/Nullable'
 
 export type ReplayStatus = 'idle' | 'loading' | 'ready' | 'playing' | 'paused' | 'finished'
 

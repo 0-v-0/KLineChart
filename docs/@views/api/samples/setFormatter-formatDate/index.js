@@ -3,11 +3,7 @@ import { init, utils } from 'klinecharts'
 const chart = init('setFormatter-formatDate-chart')
 
 chart.setFormatter({
-  formatDate: ({
-    dateTimeFormat,
-    timestamp,
-    type
-  }) => {
+  formatDate: ({ dateTimeFormat, timestamp, type }) => {
     switch (type) {
       case 'tooltip': {
         return utils.formatDate(dateTimeFormat, timestamp, 'YYYY-MM-DD HH:mm')
@@ -26,12 +22,10 @@ chart.setFormatter({
 chart.setSymbol({ ticker: 'TestSymbol' })
 chart.setPeriod({ span: 1, type: 'day' })
 chart.setDataLoader({
-  getBars: ({
-    callback
-  }) => {
+  getBars: ({ callback }) => {
     fetch('https://klinecharts.com/datas/kline.json')
-      .then(res => res.json())
-      .then(dataList => {
+      .then((res) => res.json())
+      .then((dataList) => {
         callback(dataList)
       })
   }

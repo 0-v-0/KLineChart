@@ -14,10 +14,10 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
+import { computeTextPosition } from './textUtils'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-import { computeTextPosition } from './textUtils'
 
 const verticalRayLine = (): ProOverlayTemplate => {
   const properties = new Map<string, DeepPartial<OverlayProperties>>()
@@ -81,7 +81,8 @@ const verticalRayLine = (): ProOverlayTemplate => {
         figures.push({
           type: 'editableText',
           attrs: {
-            ...computeTextPosition(coordinates[0].x, coordinates[0].y, props, bounding.width, 'center', 'top'), text
+            ...computeTextPosition(coordinates[0].x, coordinates[0].y, props, bounding.width, 'center', 'top'),
+            text
           },
           styles: textStyle(id)
         })

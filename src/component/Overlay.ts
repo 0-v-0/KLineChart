@@ -64,10 +64,7 @@ export interface OverlayEventCollection<E> {
   onTextChange: Nullable<OverlayTextChangeCallback<E>>
 }
 
-export function checkOverlayFigureEvent (
-  targetEventType: keyof Omit<OverlayEventCollection<unknown>, 'onDrawStart' | 'onDrawing' | 'onDrawEnd' | 'onRemoved' | 'onTextChange'>,
-  figure: Nullable<OverlayFigure>
-): boolean {
+export function checkOverlayFigureEvent(targetEventType: keyof Omit<OverlayEventCollection<unknown>, 'onDrawStart' | 'onDrawing' | 'onDrawEnd' | 'onRemoved' | 'onTextChange'>, figure: Nullable<OverlayFigure>): boolean {
   const ignoreEvent = figure?.ignoreEvent ?? false
   if (isBoolean(ignoreEvent)) {
     return !ignoreEvent
@@ -324,7 +321,14 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
   needDefaultXAxisFigure = false
   needDefaultYAxisFigure = false
   mode: OverlayMode = 'normal'
-  modeSensitivity = 8
+  // Pixel radius around each OHLC point that weak-magnet mode
+  // treats as "in range" — cursor within `modeSensitivity` px
+  // of open/high/low/close snaps to that point, further away
+  // returns the raw cursor value. 60 px matches TV's weak-
+  // magnet feel dialled in against side-by-side testing;
+  // tighter radii read as "barely snaps" even after the
+  // algorithm fix because TV's halo is unusually wide.
+  modeSensitivity = 60
   points: Array<Partial<Point>> = []
   extendData: E
   styles: Nullable<DeepPartial<OverlayStyle>> = null
@@ -368,15 +372,7 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
       _prevOverlay: null
     })
 
-    const {
-      id,
-      name,
-      currentStep: _,
-      points,
-      styles,
-      figureStyles,
-      ...others
-    } = overlay
+    const { id, name, currentStep: _, points, styles, figureStyles, ...others } = overlay
 
     merge(this, others)
 
@@ -424,12 +420,8 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
 
   shouldUpdate(): { draw: boolean; sort: boolean } {
     const sort = this._prevOverlay.zLevel !== this.zLevel
-    const draw = sort ||
-      JSON.stringify(this._prevOverlay.points) !== JSON.stringify(this.points) ||
-      this._prevOverlay.visible !== this.visible ||
-      this._prevOverlay.extendData !== this.extendData ||
-      this._prevOverlay.styles !== this.styles ||
-      JSON.stringify(this._prevOverlay.figureStyles) !== JSON.stringify(this.figureStyles)
+    const draw =
+      sort || JSON.stringify(this._prevOverlay.points) !== JSON.stringify(this.points) || this._prevOverlay.visible !== this.visible || this._prevOverlay.extendData !== this.extendData || this._prevOverlay.styles !== this.styles || JSON.stringify(this._prevOverlay.figureStyles) !== JSON.stringify(this.figureStyles)
 
     return { sort, draw }
   }
@@ -454,14 +446,14 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
     return this.currentStep === OVERLAY_DRAW_STEP_START
   }
 
-  isContinuousDrawing (): boolean {
+  isContinuousDrawing(): boolean {
     return this.drawingMode === 'continuous'
   }
 
   /**
    * Add a point during continuous drawing mode
    */
-  addPointForContinuousDrawing (point: Partial<Point>): boolean {
+  addPointForContinuousDrawing(point: Partial<Point>): boolean {
     const newPoint: Partial<Point> = {}
     if (isNumber(point.timestamp)) {
       newPoint.timestamp = point.timestamp
@@ -479,7 +471,7 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
   /**
    * Start continuous drawing - set first point
    */
-  startContinuousDrawing (point: Partial<Point>): void {
+  startContinuousDrawing(point: Partial<Point>): void {
     this.points = []
     this.addPointForContinuousDrawing(point)
     this.currentStep = 2 // Mark as actively drawing
@@ -488,11 +480,11 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
   /**
    * Complete continuous drawing
    */
-  completeContinuousDrawing (): void {
+  completeContinuousDrawing(): void {
     this.currentStep = OVERLAY_DRAW_STEP_FINISHED
   }
 
-  eventMoveForDrawing (point: Partial<Point>): void {
+  eventMoveForDrawing(point: Partial<Point>): void {
     const pointIndex = this.currentStep - 1
     const newPoint: Partial<Point> = {}
     if (isNumber(point.timestamp)) {
@@ -548,7 +540,7 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
       if (isNumber(point.value) && isNumber(this._prevPressedPoint.value)) {
         difValue = point.value - this._prevPressedPoint.value
       }
-      this.points = this._prevPressedPoints.map(p => {
+      this.points = this._prevPressedPoints.map((p) => {
         // Only derive dataIndex from timestamp when missing (e.g. after restore).
         // Continuous-drawing overlays like brush already carry float-precision
         // dataIndexes from the initial draw; overwriting them via

@@ -4,7 +4,6 @@ import { useData } from 'vitepress'
 import i18n from '../../../@i18n'
 
 const { lang } = useData()
-
 </script>
 
 <template>

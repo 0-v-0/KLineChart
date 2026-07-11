@@ -12,17 +12,13 @@
  * limitations under the License.
  */
 
-import { describe, it, expect } from 'vitest'
-import StoreImp from '../Store'
+import { describe, expect, it } from 'vitest'
+import type Chart from '../Chart'
 import type { KLineData } from '../common/Data'
-import type {
-  DataLoader,
-  DataLoaderGetBarsParams,
-  DataLoaderGetRangeParams
-} from '../common/DataLoader'
+import type { DataLoader, DataLoaderGetBarsParams, DataLoaderGetRangeParams } from '../common/DataLoader'
 import type { Period } from '../common/Period'
 import type { SymbolInfo } from '../common/SymbolInfo'
-import type Chart from '../Chart'
+import StoreImp from '../Store'
 
 // ---------------------------------------------------------------------------
 // Test rig
@@ -31,14 +27,18 @@ import type Chart from '../Chart'
 const HOUR_MS = 3_600_000
 const BASE = Date.UTC(2026, 3, 2, 0, 0, 0)
 
-function createMockChart (): Chart {
+function createMockChart(): Chart {
   return {
-    layout: () => { /* noop */ },
-    updatePane: () => { /* noop */ }
+    layout: () => {
+      /* noop */
+    },
+    updatePane: () => {
+      /* noop */
+    }
   } as unknown as Chart
 }
 
-function candle (timestamp: number, marker = 0): KLineData {
+function candle(timestamp: number, marker = 0): KLineData {
   return { timestamp, open: 100 + marker, high: 101 + marker, low: 99 + marker, close: 100 + marker, volume: 1000 }
 }
 
@@ -59,7 +59,7 @@ interface DeferredLoaderResult {
  * manually via `resolveAt(idx, data)`. Lets tests interleave callback
  * order to simulate the supersede race.
  */
-function createDeferredLoader (): DeferredLoaderResult {
+function createDeferredLoader(): DeferredLoaderResult {
   const pending: DeferredLoad[] = []
   const loader: DataLoader = {
     getBars: (params: DataLoaderGetBarsParams) => {
@@ -71,8 +71,12 @@ function createDeferredLoader (): DeferredLoaderResult {
         })
       }
     },
-    subscribeBar: () => { /* noop */ },
-    unsubscribeBar: () => { /* noop */ },
+    subscribeBar: () => {
+      /* noop */
+    },
+    unsubscribeBar: () => {
+      /* noop */
+    },
     getRange: (params: DataLoaderGetRangeParams) => {
       params.callback([])
     }
@@ -82,7 +86,9 @@ function createDeferredLoader (): DeferredLoaderResult {
     pending,
     resolveAt: (idx, data) => {
       const p = pending[idx]
-      if (!p) throw new Error(`no pending load at index ${idx}`)
+      if (!p) {
+        throw new Error(`no pending load at index ${idx}`)
+      }
       p.resolve(data)
     }
   }
@@ -90,8 +96,8 @@ function createDeferredLoader (): DeferredLoaderResult {
 
 const SYMBOL_A: SymbolInfo = { ticker: 'AAA', pricePrecision: 2, volumePrecision: 0 } as SymbolInfo
 const SYMBOL_B: SymbolInfo = { ticker: 'BBB', pricePrecision: 2, volumePrecision: 0 } as SymbolInfo
-const PERIOD_1H: Period = { type: 'hour', span: 1, text: '1h' }
-const PERIOD_4H: Period = { type: 'hour', span: 4, text: '4h' }
+const PERIOD_1H: Period = { type: 'hour', span: 1 }
+const PERIOD_4H: Period = { type: 'hour', span: 4 }
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -114,7 +120,7 @@ describe('_processDataLoad init-generation gating', () => {
 
     // Synchronous switch: 4h then symbol B
     store.setPeriod(PERIOD_4H) // fires getBars for (A, 4h) — gen N+1
-    store.setSymbol(SYMBOL_B)  // fires getBars for (B, 4h) — gen N+2
+    store.setSymbol(SYMBOL_B) // fires getBars for (B, 4h) — gen N+2
 
     expect(pending).toHaveLength(3)
 
@@ -157,12 +163,14 @@ describe('_processDataLoad init-generation gating', () => {
     const store = new StoreImp(chart)
     store.setSymbol(SYMBOL_A)
     store.setPeriod(PERIOD_1H)
-    const { loader, pending, resolveAt } = createDeferredLoader()
+    const { loader, resolveAt } = createDeferredLoader()
     store.setDataLoader(loader)
     resolveAt(0, [candle(BASE, 1)])
 
     let completeCount = 0
-    store.subscribeAction('onInitLoadComplete', () => { completeCount += 1 })
+    store.subscribeAction('onInitLoadComplete', () => {
+      completeCount += 1
+    })
 
     store.setPeriod(PERIOD_4H)
     store.setSymbol(SYMBOL_B)
@@ -187,7 +195,9 @@ describe('_processDataLoad init-generation gating', () => {
     store.setDataLoader(loader)
 
     let completeCount = 0
-    store.subscribeAction('onInitLoadComplete', () => { completeCount += 1 })
+    store.subscribeAction('onInitLoadComplete', () => {
+      completeCount += 1
+    })
 
     expect(pending).toHaveLength(1)
     resolveAt(0, [candle(BASE, 7)])
@@ -203,7 +213,7 @@ describe('_processDataLoad init-generation gating', () => {
     const store = new StoreImp(chart)
     store.setSymbol(SYMBOL_A)
     store.setPeriod(PERIOD_1H)
-    const { loader, pending, resolveAt } = createDeferredLoader()
+    const { loader, resolveAt } = createDeferredLoader()
     store.setDataLoader(loader)
     resolveAt(0, [candle(BASE, 1)])
 

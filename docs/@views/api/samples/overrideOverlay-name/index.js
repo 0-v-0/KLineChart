@@ -12,12 +12,10 @@ chart.createIndicator({
 chart.setSymbol({ ticker: 'TestSymbol' })
 chart.setPeriod({ span: 1, type: 'day' })
 chart.setDataLoader({
-  getBars: ({
-    callback
-  }) => {
+  getBars: ({ callback }) => {
     fetch('https://klinecharts.com/datas/kline.json')
-      .then(res => res.json())
-      .then(dataList => {
+      .then((res) => res.json())
+      .then((dataList) => {
         callback(dataList)
         const startData = dataList[dataList.length - 50]
         const endData = dataList[dataList.length - 10]
@@ -32,9 +30,7 @@ chart.setDataLoader({
         chart.createOverlay({
           name: 'priceLine',
           paneId: 'candle_pane',
-          points: [
-            { timestamp: startData.timestamp, value: endData.close }
-          ]
+          points: [{ timestamp: startData.timestamp, value: endData.close }]
         })
         chart.createOverlay({
           name: 'priceLine',

@@ -17,16 +17,14 @@ import type Nullable from '../../common/Nullable'
 import FigureImp, { type FigureConstructor, type FigureInnerConstructor, type FigureTemplate } from '../../component/Figure'
 import arc from './arc'
 import circle from './circle'
+import editableText from './editableText'
+import image from './image'
 import line from './line'
 import path from './path'
 import polygon from './polygon'
 import rect from './rect'
-import text from './text'
-import editableText from './editableText'
-import arc from './arc'
-import path from './path'
 import rotatedText from './rotatedText'
-import image from './image'
+import text from './text'
 
 const figures: Record<string, FigureInnerConstructor> = {}
 
@@ -40,7 +38,6 @@ function getSupportedFigures(): string[] {
 }
 
 function registerFigure<A = unknown, S = unknown>(figure: FigureTemplate<A, S>): void {
-  // @ts-ignore
   figures[figure.name] = FigureImp.extend(figure)
 }
 

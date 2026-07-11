@@ -40,7 +40,7 @@ onMounted(() => {
   console.log(lighten('#E6AC00', 60))
 })
 
-function changePrimaryColor (color) {
+function changePrimaryColor(color) {
   const style = document.documentElement.style
   style.setProperty('--vp-c-indigo-1', color)
   style.setProperty('--vp-c-indigo-2', lighten(color, 20))
@@ -51,19 +51,10 @@ function changePrimaryColor (color) {
   currentColor.value = color
 }
 
-const colors = ref([
-  '#F92855',
-  '#F17313',
-  '#E6AC00',
-  '#2DC08E',
-  '#3FB5FB',
-  '#1677FF',
-  '#A14DFD',
-  '#EC4899'
-])
+const colors = ref(['#F92855', '#F17313', '#E6AC00', '#2DC08E', '#3FB5FB', '#1677FF', '#A14DFD', '#EC4899'])
 
-function lighten (color, percent) {
-  color = color.replace(/^#/, "")
+function lighten(color, percent) {
+  color = color.replace(/^#/, '')
 
   let r = parseInt(color.substring(0, 2), 16)
   let g = parseInt(color.substring(2, 4), 16)
@@ -73,22 +64,16 @@ function lighten (color, percent) {
   g = Math.min(255, Math.floor(g + (255 - g) * (percent / 100)))
   b = Math.min(255, Math.floor(b + (255 - b) * (percent / 100)))
 
-  return (
-    "#" +
-    [r, g, b]
-      .map(x => x.toString(16).padStart(2, "0"))
-      .join("")
-  )
+  return '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('')
 }
 
-function hexToRgba (hex, alpha) {
+function hexToRgba(hex, alpha) {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
   const b = parseInt(hex.slice(5, 7), 16)
 
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
-
 </script>
 
 <style scoped>

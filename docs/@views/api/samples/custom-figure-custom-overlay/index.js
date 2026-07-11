@@ -17,7 +17,7 @@ registerFigure({
   checkEventOn: (coordinate, attrs) => {
     const { x, y } = coordinate
     const { width, height } = attrs
-    return Math.abs(x * height) + Math.abs(y * width) <= width * height / 2
+    return Math.abs(x * height) + Math.abs(y * width) <= (width * height) / 2
   }
 })
 
@@ -43,12 +43,10 @@ const chart = init('custom-figure-custom-overlay-chart')
 chart.setSymbol({ ticker: 'TestSymbol' })
 chart.setPeriod({ span: 1, type: 'day' })
 chart.setDataLoader({
-  getBars: ({
-    callback
-  }) => {
+  getBars: ({ callback }) => {
     fetch('https://klinecharts.com/datas/kline.json')
-      .then(res => res.json())
-      .then(dataList => {
+      .then((res) => res.json())
+      .then((dataList) => {
         callback(dataList)
         const data = dataList[dataList.length - 10]
         chart.createOverlay({

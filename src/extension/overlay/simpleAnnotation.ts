@@ -22,12 +22,12 @@ interface SimpleAnnotationData {
   textColor?: string
 }
 
-function parseExtendData (extendData: unknown, overlay: Parameters<NonNullable<OverlayTemplate['createPointFigures']>>[0]['overlay']): SimpleAnnotationData {
+function parseExtendData(extendData: unknown, overlay: Parameters<NonNullable<OverlayTemplate['createPointFigures']>>[0]['overlay']): SimpleAnnotationData {
   if (!isValid(extendData)) {
     return { text: '', direction: 'up' }
   }
   if (isFunction(extendData)) {
-    return { text: (extendData(overlay)) as string, direction: 'up' }
+    return { text: extendData(overlay) as string, direction: 'up' }
   }
   if (typeof extendData === 'object' && extendData !== null) {
     const data = extendData as SimpleAnnotationData
@@ -60,13 +60,24 @@ const simpleAnnotation: OverlayTemplate = {
 
       figures.push({
         type: 'line',
-        attrs: { coordinates: [{ x: startX, y: startY }, { x: startX, y: lineEndY }] },
+        attrs: {
+          coordinates: [
+            { x: startX, y: startY },
+            { x: startX, y: lineEndY }
+          ]
+        },
         styles: isValid(color) ? { style: 'dashed', color } : undefined,
         ignoreEvent: true
       })
       figures.push({
         type: 'polygon',
-        attrs: { coordinates: [{ x: startX, y: lineEndY }, { x: startX - 4, y: arrowEndY }, { x: startX + 4, y: arrowEndY }] },
+        attrs: {
+          coordinates: [
+            { x: startX, y: lineEndY },
+            { x: startX - 4, y: arrowEndY },
+            { x: startX + 4, y: arrowEndY }
+          ]
+        },
         styles: isValid(color) ? { style: 'fill', color, borderColor: color } : undefined,
         ignoreEvent: true
       })
@@ -84,13 +95,24 @@ const simpleAnnotation: OverlayTemplate = {
 
       figures.push({
         type: 'line',
-        attrs: { coordinates: [{ x: startX, y: startY }, { x: startX, y: lineEndY }] },
+        attrs: {
+          coordinates: [
+            { x: startX, y: startY },
+            { x: startX, y: lineEndY }
+          ]
+        },
         styles: isValid(color) ? { style: 'dashed', color } : undefined,
         ignoreEvent: true
       })
       figures.push({
         type: 'polygon',
-        attrs: { coordinates: [{ x: startX, y: lineEndY }, { x: startX - 4, y: arrowEndY }, { x: startX + 4, y: arrowEndY }] },
+        attrs: {
+          coordinates: [
+            { x: startX, y: lineEndY },
+            { x: startX - 4, y: arrowEndY },
+            { x: startX + 4, y: arrowEndY }
+          ]
+        },
         styles: isValid(color) ? { style: 'fill', color, borderColor: color } : undefined,
         ignoreEvent: true
       })

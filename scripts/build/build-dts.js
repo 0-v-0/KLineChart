@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
-import { createRequire } from 'node:module'
 import { promisify } from 'node:util'
+import { createRequire } from 'node:module'
 
 import { version } from './config.js'
 import { failure, start, success } from './logger.js'

@@ -30,7 +30,7 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
 
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 
@@ -73,7 +73,9 @@ const fibonacciSpiral = (): ProOverlayTemplate => {
     needDefaultYAxisFigure: true,
     createPointFigures: ({ coordinates, bounding, overlay }) => {
       const props = properties.get(overlay.id) ?? {}
-      if (coordinates.length <= 1) return []
+      if (coordinates.length <= 1) {
+        return []
+      }
 
       const centre = coordinates[0]
       const tip = coordinates[1]
@@ -92,14 +94,16 @@ const fibonacciSpiral = (): ProOverlayTemplate => {
       const dyRaw = tip.y - centre.y
       const dy = ccw ? -dyRaw : dyRaw
       const r0 = Math.hypot(dx, dy)
-      if (r0 <= 0) return []
+      if (r0 <= 0) {
+        return []
+      }
       const theta0 = Math.atan2(dy, dx)
       const a = r0 / Math.exp(SPIRAL_B * theta0)
 
       // Sample points along the spiral from θ₀ − inward sweep
       // to θ₀ + outward sweep. `line` connects them as a
       // polyline.
-      const points: Array<{ x: number, y: number }> = []
+      const points: Array<{ x: number; y: number }> = []
       const thetaMin = theta0 - SPIRAL_SWEEP_INWARD
       const thetaMax = theta0 + SPIRAL_SWEEP_OUTWARD
       const ySign = ccw ? -1 : 1

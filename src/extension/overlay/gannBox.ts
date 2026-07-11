@@ -14,10 +14,10 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, PolygonStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
-import type { OverlayProperties, ProOverlayTemplate } from './types'
+import { clone, merge } from '../../common/utils/typeChecks'
 import type { LineAttrs } from '../figure/line'
 import type { PolygonAttrs } from '../figure/polygon'
+import type { OverlayProperties, ProOverlayTemplate } from './types'
 
 /**
  * Gann Box overlay - Gann grid with specific ratio lines
@@ -93,17 +93,47 @@ const gannBox = (): ProOverlayTemplate => {
         const dashedLines: LineAttrs[] = [
           { key: 'dashed_0', coordinates: [coordinates[0], { x: coordinates[1].x, y: coordinates[1].y - quarterYDis }] },
           { key: 'dashed_1', coordinates: [coordinates[0], { x: coordinates[1].x, y: coordinates[1].y - quarterYDis * 2 }] },
-          { key: 'dashed_2', coordinates: [{ x: coordinates[0].x, y: coordinates[1].y }, { x: coordinates[1].x, y: coordinates[0].y + quarterYDis }] },
-          { key: 'dashed_3', coordinates: [{ x: coordinates[0].x, y: coordinates[1].y }, { x: coordinates[1].x, y: coordinates[0].y + quarterYDis * 2 }] },
+          {
+            key: 'dashed_2',
+            coordinates: [
+              { x: coordinates[0].x, y: coordinates[1].y },
+              { x: coordinates[1].x, y: coordinates[0].y + quarterYDis }
+            ]
+          },
+          {
+            key: 'dashed_3',
+            coordinates: [
+              { x: coordinates[0].x, y: coordinates[1].y },
+              { x: coordinates[1].x, y: coordinates[0].y + quarterYDis * 2 }
+            ]
+          },
           { key: 'dashed_4', coordinates: [{ ...coordinates[0] }, { x: coordinates[0].x + xDis * 0.236, y: coordinates[1].y }] },
           { key: 'dashed_5', coordinates: [{ ...coordinates[0] }, { x: coordinates[0].x + xDis * 0.5, y: coordinates[1].y }] },
-          { key: 'dashed_6', coordinates: [{ x: coordinates[0].x, y: coordinates[1].y }, { x: coordinates[0].x + xDis * 0.236, y: coordinates[0].y }] },
-          { key: 'dashed_7', coordinates: [{ x: coordinates[0].x, y: coordinates[1].y }, { x: coordinates[0].x + xDis * 0.5, y: coordinates[0].y }] }
+          {
+            key: 'dashed_6',
+            coordinates: [
+              { x: coordinates[0].x, y: coordinates[1].y },
+              { x: coordinates[0].x + xDis * 0.236, y: coordinates[0].y }
+            ]
+          },
+          {
+            key: 'dashed_7',
+            coordinates: [
+              { x: coordinates[0].x, y: coordinates[1].y },
+              { x: coordinates[0].x + xDis * 0.5, y: coordinates[0].y }
+            ]
+          }
         ]
 
         const solidLines: LineAttrs[] = [
           { key: 'solid_0', coordinates: [coordinates[0], coordinates[1]] },
-          { key: 'solid_1', coordinates: [{ x: coordinates[0].x, y: coordinates[1].y }, { x: coordinates[1].x, y: coordinates[0].y }] }
+          {
+            key: 'solid_1',
+            coordinates: [
+              { x: coordinates[0].x, y: coordinates[1].y },
+              { x: coordinates[1].x, y: coordinates[0].y }
+            ]
+          }
         ]
 
         const borderLines: LineAttrs[] = [
@@ -114,12 +144,7 @@ const gannBox = (): ProOverlayTemplate => {
         ]
 
         const polygonAttrs: PolygonAttrs = {
-          coordinates: [
-            coordinates[0],
-            { x: coordinates[1].x, y: coordinates[0].y },
-            coordinates[1],
-            { x: coordinates[0].x, y: coordinates[1].y }
-          ]
+          coordinates: [coordinates[0], { x: coordinates[1].x, y: coordinates[0].y }, coordinates[1], { x: coordinates[0].x, y: coordinates[1].y }]
         }
 
         return [

@@ -80,19 +80,18 @@ export interface TradeLineOptions extends Partial<TradeLineProperties> {
   onRightClick?: OverlayEventCallback<unknown>
 }
 
-export function createTradeLine (
-  chart: Chart,
-  options?: TradeLineOptions
-): TradeLine {
+export function createTradeLine(chart: Chart, options?: TradeLineOptions): TradeLine {
   const { onRightClick, ...rest } = options ?? {}
   const properties: TradeLineProperties = { ...rest }
 
   const result = chart.createOverlay({
     name: 'tradeLine',
-    points: [{
-      timestamp: properties.timestamp,
-      value: properties.price ?? 0
-    }],
+    points: [
+      {
+        timestamp: properties.timestamp,
+        value: properties.price ?? 0
+      }
+    ],
     lock: true,
     visible: true,
     extendData: properties,
@@ -106,98 +105,102 @@ export function createTradeLine (
   })
   const overlayId = typeof result === 'string' ? result : null
 
-  function update (): void {
-    if (overlayId === null) return
+  function update(): void {
+    if (overlayId === null) {
+      return
+    }
     chart.overrideOverlay({
       id: overlayId,
       extendData: { ...properties },
-      points: [{
-        timestamp: properties.timestamp,
-        value: properties.price ?? 0
-      }]
+      points: [
+        {
+          timestamp: properties.timestamp,
+          value: properties.price ?? 0
+        }
+      ]
     })
   }
 
   const self: TradeLine = {
-    get id (): string {
+    get id(): string {
       return overlayId ?? ''
     },
 
-    get paneId (): string {
+    get paneId(): string {
       return 'candle_pane'
     },
 
-    setDirection (direction: 'up' | 'down'): TradeLine {
+    setDirection(direction: 'up' | 'down'): TradeLine {
       properties.direction = direction
       update()
       return self
     },
 
-    setArrowType (type: 'wide' | 'arrow' | 'tiny'): TradeLine {
+    setArrowType(type: 'wide' | 'arrow' | 'tiny'): TradeLine {
       properties.arrowType = type
       update()
       return self
     },
 
-    setColor (color: string): TradeLine {
+    setColor(color: string): TradeLine {
       properties.color = color
       update()
       return self
     },
 
-    setTextColor (color: string): TradeLine {
+    setTextColor(color: string): TradeLine {
       properties.textColor = color
       update()
       return self
     },
 
-    setText (text: string): TradeLine {
+    setText(text: string): TradeLine {
       properties.text = text
       update()
       return self
     },
 
-    setTextFontSize (size: number): TradeLine {
+    setTextFontSize(size: number): TradeLine {
       properties.textFontSize = size
       update()
       return self
     },
 
-    setTextGap (gap: number): TradeLine {
+    setTextGap(gap: number): TradeLine {
       properties.textGap = gap
       update()
       return self
     },
 
-    setGap (gap: number): TradeLine {
+    setGap(gap: number): TradeLine {
       properties.gap = gap
       update()
       return self
     },
 
-    setShowLabelArrow (show: boolean): TradeLine {
+    setShowLabelArrow(show: boolean): TradeLine {
       properties.showLabelArrow = show
       update()
       return self
     },
 
-    setTimestamp (timestamp: number): TradeLine {
+    setTimestamp(timestamp: number): TradeLine {
       properties.timestamp = timestamp
       update()
       return self
     },
 
-    setPrice (price: number): TradeLine {
+    setPrice(price: number): TradeLine {
       properties.price = price
       update()
       return self
     },
 
-    getProperties (): TradeLineProperties {
+    getProperties(): TradeLineProperties {
       return { ...properties }
     },
 
-    remove (): void {
+    remove(): void {
       if (overlayId !== null) {
         chart.removeOverlay({ id: overlayId })
       }

@@ -55,7 +55,7 @@ interface TextStyleLike {
   backgroundColor?: string
 }
 
-function parseExtendData (extendData: unknown): TextOverlayData {
+function parseExtendData(extendData: unknown): TextOverlayData {
   if (extendData !== null && typeof extendData === 'object') {
     return extendData as TextOverlayData
   }
@@ -75,7 +75,9 @@ const text: OverlayTemplate = {
   needDefaultYAxisFigure: false,
 
   createPointFigures: ({ overlay, coordinates }) => {
-    if (coordinates.length < 1) return []
+    if (coordinates.length < 1) {
+      return []
+    }
 
     const data = parseExtendData(overlay.extendData)
     const styleText = (overlay.styles?.text ?? {}) as TextStyleLike
@@ -92,11 +94,21 @@ const text: OverlayTemplate = {
     // Neue, etc.) doesn't get clobbered. Including `color: undefined`
     // here would override the default white and paint the text black.
     const figureStyles: Record<string, unknown> = {}
-    if (color !== undefined) figureStyles.color = color
-    if (size !== undefined) figureStyles.size = size
-    if (family !== undefined) figureStyles.family = family
-    if (weight !== undefined) figureStyles.weight = weight
-    if (backgroundColor !== undefined) figureStyles.backgroundColor = backgroundColor
+    if (color !== undefined) {
+      figureStyles.color = color
+    }
+    if (size !== undefined) {
+      figureStyles.size = size
+    }
+    if (family !== undefined) {
+      figureStyles.family = family
+    }
+    if (weight !== undefined) {
+      figureStyles.weight = weight
+    }
+    if (backgroundColor !== undefined) {
+      figureStyles.backgroundColor = backgroundColor
+    }
 
     return [
       {

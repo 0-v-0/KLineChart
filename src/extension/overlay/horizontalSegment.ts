@@ -14,11 +14,11 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
+import type { LineAttrs } from '../figure/line'
+import { computeTextPosition } from './textUtils'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-import { computeTextPosition } from './textUtils'
-import type { LineAttrs } from '../figure/line'
 
 const horizontalSegment = (): ProOverlayTemplate => {
   const properties = new Map<string, DeepPartial<OverlayProperties>>()

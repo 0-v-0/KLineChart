@@ -19,7 +19,7 @@
  */
 
 import type DeepPartial from '../../common/DeepPartial'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
 
 import type { ProOverlayTemplate } from './types'
 
@@ -62,34 +62,31 @@ const box = (): ProOverlayTemplate => {
     needDefaultYAxisFigure: false,
 
     createPointFigures: ({ coordinates, overlay }) => {
-      if (coordinates.length < 2) return []
+      if (coordinates.length < 2) {
+        return []
+      }
 
-      _extRef.data = (overlay.extendData != null && typeof overlay.extendData === 'object')
-        ? overlay.extendData as DeepPartial<BoxProperties>
-        : null
+      _extRef.data = overlay.extendData != null && typeof overlay.extendData === 'object' ? (overlay.extendData as DeepPartial<BoxProperties>) : null
 
       const corner1 = coordinates[0]
       const corner2 = coordinates[1]
 
       const ignoreEvent = prop('ignoreEvent')
 
-      return [{
-        type: 'polygon',
-        attrs: {
-          coordinates: [
-            corner1,
-            { x: corner2.x, y: corner1.y },
-            corner2,
-            { x: corner1.x, y: corner2.y }
-          ]
-        },
-        styles: {
-          style: 'fill',
-          color: prop('backgroundColor'),
-          borderSize: 0
-        },
-        ignoreEvent
-      }]
+      return [
+        {
+          type: 'polygon',
+          attrs: {
+            coordinates: [corner1, { x: corner2.x, y: corner1.y }, corner2, { x: corner1.x, y: corner2.y }]
+          },
+          styles: {
+            style: 'fill',
+            color: prop('backgroundColor'),
+            borderSize: 0
+          },
+          ignoreEvent
+        }
+      ]
     },
 
     onRightClick: (event) => {

@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-import type { OverlayEvent } from '../../component/Overlay'
 import type { Chart } from '../../Chart'
+import type { OverlayEvent } from '../../component/Overlay'
 
 // ---------------------------------------------------------------------------
 // PriceLineProperties
@@ -191,10 +191,7 @@ export interface PriceLine {
  *   .setLabelBackgroundColor('#ff0000')
  * ```
  */
-export function createPriceLine (
-  chart: Chart,
-  options?: Partial<PriceLineProperties>
-): PriceLine {
+export function createPriceLine(chart: Chart, options?: Partial<PriceLineProperties>): PriceLine {
   const properties: PriceLineProperties = { ...options }
 
   const result = chart.createOverlay({
@@ -220,8 +217,10 @@ export function createPriceLine (
     })
   }
 
-  function update (): void {
-    if (overlayId === null) return
+  function update(): void {
+    if (overlayId === null) {
+      return
+    }
     chart.overrideOverlay({
       id: overlayId,
       extendData: { ...properties },
@@ -230,210 +229,218 @@ export function createPriceLine (
   }
 
   const self: PriceLine = {
-    get id (): string {
+    get id(): string {
       return overlayId ?? ''
     },
 
-    get paneId (): string {
+    get paneId(): string {
       return 'candle_pane'
     },
 
     // -- Core data setters --
-    setPrice (price: number): PriceLine {
+    setPrice(price: number): PriceLine {
       properties.price = price
       update()
       return self
     },
 
-    setText (text: string): PriceLine {
+    setText(text: string): PriceLine {
       properties.labelText = text
       update()
       return self
     },
 
     // -- Label visibility & editability --
-    setLabelVisible (visible: boolean): PriceLine {
+    setLabelVisible(visible: boolean): PriceLine {
       properties.labelVisible = visible
       update()
       return self
     },
 
-    setEditable (editable: boolean): PriceLine {
+    setEditable(editable: boolean): PriceLine {
       properties.labelEditable = editable
       update()
       return self
     },
 
     // -- Line styling --
-    setLineColor (color: string): PriceLine {
+    setLineColor(color: string): PriceLine {
       properties.lineColor = color
       update()
       return self
     },
 
-    setLineWidth (width: number): PriceLine {
+    setLineWidth(width: number): PriceLine {
       properties.lineWidth = width
       update()
       return self
     },
 
-    setLineStyle (style: 'solid' | 'dashed'): PriceLine {
+    setLineStyle(style: 'solid' | 'dashed'): PriceLine {
       properties.lineStyle = style
       update()
       return self
     },
 
-    setLineDashedValue (dashedValue: number[]): PriceLine {
+    setLineDashedValue(dashedValue: number[]): PriceLine {
       properties.lineDashedValue = dashedValue
       update()
       return self
     },
 
     // -- Label styling --
-    setLabelFont (font: string): PriceLine {
+    setLabelFont(font: string): PriceLine {
       properties.labelFont = font
       update()
       return self
     },
 
-    setLabelFontSize (size: number): PriceLine {
+    setLabelFontSize(size: number): PriceLine {
       properties.labelFontSize = size
       update()
       return self
     },
 
-    setLabelFontWeight (weight: number | string): PriceLine {
+    setLabelFontWeight(weight: number | string): PriceLine {
       properties.labelFontWeight = weight
       update()
       return self
     },
 
-    setLabelTextColor (color: string): PriceLine {
+    setLabelTextColor(color: string): PriceLine {
       properties.labelTextColor = color
       update()
       return self
     },
 
-    setLabelBackgroundColor (color: string): PriceLine {
+    setLabelBackgroundColor(color: string): PriceLine {
       properties.labelBackgroundColor = color
       update()
       return self
     },
 
-    setLabelBorderColor (color: string): PriceLine {
+    setLabelBorderColor(color: string): PriceLine {
       properties.labelBorderColor = color
       update()
       return self
     },
 
-    setLabelBorderStyle (style: 'solid' | 'dashed'): PriceLine {
+    setLabelBorderStyle(style: 'solid' | 'dashed'): PriceLine {
       properties.labelBorderStyle = style
       update()
       return self
     },
 
-    setLabelBorderSize (size: number): PriceLine {
+    setLabelBorderSize(size: number): PriceLine {
       properties.labelBorderSize = size
       update()
       return self
     },
 
-    setLabelBorderRadius (radius: number): PriceLine {
+    setLabelBorderRadius(radius: number): PriceLine {
       properties.labelBorderRadius = radius
       update()
       return self
     },
 
-    setLabelPadding (padding: { left?: number; right?: number; top?: number; bottom?: number }): PriceLine {
-      if (padding.left !== undefined) properties.labelPaddingLeft = padding.left
-      if (padding.right !== undefined) properties.labelPaddingRight = padding.right
-      if (padding.top !== undefined) properties.labelPaddingTop = padding.top
-      if (padding.bottom !== undefined) properties.labelPaddingBottom = padding.bottom
+    setLabelPadding(padding: { left?: number; right?: number; top?: number; bottom?: number }): PriceLine {
+      if (padding.left !== undefined) {
+        properties.labelPaddingLeft = padding.left
+      }
+      if (padding.right !== undefined) {
+        properties.labelPaddingRight = padding.right
+      }
+      if (padding.top !== undefined) {
+        properties.labelPaddingTop = padding.top
+      }
+      if (padding.bottom !== undefined) {
+        properties.labelPaddingBottom = padding.bottom
+      }
       update()
       return self
     },
 
     // -- Label positioning --
-    setLabelPosition (position: 'above' | 'below' | 'center'): PriceLine {
+    setLabelPosition(position: 'above' | 'below' | 'center'): PriceLine {
       properties.labelPosition = position
       update()
       return self
     },
 
-    setLabelAlign (align: 'left' | 'center' | 'right'): PriceLine {
+    setLabelAlign(align: 'left' | 'center' | 'right'): PriceLine {
       properties.labelAlign = align
       update()
       return self
     },
 
-    setLabelOffsetX (offset: number): PriceLine {
+    setLabelOffsetX(offset: number): PriceLine {
       properties.labelOffsetX = offset
       update()
       return self
     },
 
-    setLabelOffsetY (offset: number): PriceLine {
+    setLabelOffsetY(offset: number): PriceLine {
       properties.labelOffsetY = offset
       update()
       return self
     },
 
-    setLabelOffsetPercentX (percent: number): PriceLine {
+    setLabelOffsetPercentX(percent: number): PriceLine {
       properties.labelOffsetPercentX = percent
       update()
       return self
     },
 
     // -- Y-axis label --
-    setYAxisLabelVisible (visible: boolean): PriceLine {
+    setYAxisLabelVisible(visible: boolean): PriceLine {
       properties.yAxisLabelVisible = visible
       update()
       return self
     },
 
-    setYAxisLabelTextColor (color: string): PriceLine {
+    setYAxisLabelTextColor(color: string): PriceLine {
       properties.yAxisLabelTextColor = color
       update()
       return self
     },
 
-    setYAxisLabelBackgroundColor (color: string): PriceLine {
+    setYAxisLabelBackgroundColor(color: string): PriceLine {
       properties.yAxisLabelBackgroundColor = color
       update()
       return self
     },
 
-    setYAxisLabelBorderColor (color: string): PriceLine {
+    setYAxisLabelBorderColor(color: string): PriceLine {
       properties.yAxisLabelBorderColor = color
       update()
       return self
     },
 
     // -- Event listeners --
-    onMoveStart<T> (params: T, callback: (params: T, event?: OverlayEvent<unknown>) => void): PriceLine {
+    onMoveStart<T>(params: T, callback: (params: T, event?: OverlayEvent<unknown>) => void): PriceLine {
       properties.onMoveStart = { params, callback: callback as (p: unknown, e?: OverlayEvent<unknown>) => void }
       update()
       return self
     },
 
-    onMove<T> (params: T, callback: (params: T, event?: OverlayEvent<unknown>) => void): PriceLine {
+    onMove<T>(params: T, callback: (params: T, event?: OverlayEvent<unknown>) => void): PriceLine {
       properties.onMove = { params, callback: callback as (p: unknown, e?: OverlayEvent<unknown>) => void }
       update()
       return self
     },
 
-    onMoveEnd<T> (params: T, callback: (params: T, event?: OverlayEvent<unknown>) => void): PriceLine {
+    onMoveEnd<T>(params: T, callback: (params: T, event?: OverlayEvent<unknown>) => void): PriceLine {
       properties.onMoveEnd = { params, callback: callback as (p: unknown, e?: OverlayEvent<unknown>) => void }
       update()
       return self
     },
 
     // -- Lifecycle --
-    getProperties (): PriceLineProperties {
+    getProperties(): PriceLineProperties {
       return { ...properties }
     },
 
-    remove (): void {
+    remove(): void {
       if (overlayId !== null) {
         chart.removeOverlay({ id: overlayId })
       }

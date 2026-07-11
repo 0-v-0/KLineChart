@@ -12,12 +12,12 @@
  * limitations under the License.
  */
 
-export function throttle<A extends unknown[]>(func: (...args: A) => unknown, wait?: number): (...args: A) => void {
+export function throttle(func: (...args: unknown[]) => unknown, wait?: number): () => void {
   let previous = 0
-  return function (this: unknown, ...args: A): void {
+  return function () {
     const now = Date.now()
     if (now - previous > (wait ?? 20)) {
-      func.apply(this, args)
+      func.apply(this, arguments)
       previous = now
     }
   }
@@ -35,9 +35,11 @@ export function throttle<A extends unknown[]>(func: (...args: A) => unknown, wai
 //       return cache.get(key)
 //     }
 //     const result = func.apply(this, args)
+//     // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
 //     memoized.cache = cache.set(key, result) || cache
 //     return result
 //   }
+//   // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
 //   memoized.cache = new (memoize.Cache || Map)()
 //   return memoized
 // }

@@ -39,8 +39,8 @@
  * background-colour field both route through it and stay in sync.
  */
 
-import type { OverlayTemplate, OverlayFigure } from '../../component/Overlay'
 import { calcTextWidth } from '../../common/utils/canvas'
+import type { OverlayFigure, OverlayTemplate } from '../../component/Overlay'
 
 interface CommentOverlayData {
   text?: string
@@ -53,7 +53,7 @@ interface CommentOverlayData {
 
 interface OverlayStyleSlice {
   polygon?: { color?: string }
-  text?: { color?: string, size?: number, family?: string, weight?: number | string, backgroundColor?: string }
+  text?: { color?: string; size?: number; family?: string; weight?: number | string; backgroundColor?: string }
 }
 
 // Visual defaults — tuned to read clearly on a dark candle chart.
@@ -73,14 +73,17 @@ const EDITOR_BORDER_RADIUS = `${LABEL_BORDER_RADIUS}px ${LABEL_BORDER_RADIUS}px 
 // smooth; the 4px-radius Callout corners get away with 8.
 const ARC_SEGMENTS = 12
 
-function parseExtendData (extendData: unknown): CommentOverlayData {
+function parseExtendData(extendData: unknown): CommentOverlayData {
   if (extendData !== null && typeof extendData === 'object') {
     return extendData as CommentOverlayData
   }
   return {}
 }
 
-interface XY { x: number, y: number }
+interface XY {
+  x: number
+  y: number
+}
 
 /**
  * Push the points along a corner-arc into `out`, sampled clockwise
@@ -88,11 +91,7 @@ interface XY { x: number, y: number }
  * angles. Canvas angles: 0° = +x (right), 90° = +y (down), positive
  * direction = clockwise (because y points down).
  */
-function pushArc (
-  out: XY[],
-  cx: number, cy: number, r: number,
-  startAngle: number, endAngle: number
-): void {
+function pushArc(out: XY[], cx: number, cy: number, r: number, startAngle: number, endAngle: number): void {
   for (let i = 0; i <= ARC_SEGMENTS; i++) {
     const t = i / ARC_SEGMENTS
     const angle = startAngle + (endAngle - startAngle) * t
@@ -107,10 +106,7 @@ function pushArc (
  * The BL corner is a single vertex with no arc, giving the
  * recognisable "comment" point at the bubble's bottom-left.
  */
-function buildBubblePolygon (
-  rect: { x: number, y: number, width: number, height: number },
-  r: number
-): XY[] {
+function buildBubblePolygon(rect: { x: number; y: number; width: number; height: number }, r: number): XY[] {
   const path: XY[] = []
   const left = rect.x
   const right = rect.x + rect.width
@@ -142,7 +138,9 @@ const comment: OverlayTemplate = {
   needDefaultYAxisFigure: false,
 
   createPointFigures: ({ overlay, coordinates }) => {
-    if (coordinates.length < 1) return []
+    if (coordinates.length < 1) {
+      return []
+    }
 
     const data = parseExtendData(overlay.extendData)
     const styles = (overlay.styles ?? {}) as OverlayStyleSlice
@@ -164,9 +162,7 @@ const comment: OverlayTemplate = {
     // the bubble at initial placeholder size.
     const sizingText = textValue.length > 0 ? textValue : '+ Add text'
     const lines = sizingText.split('\n')
-    const maxLineWidth = lines.length === 1
-      ? calcTextWidth(sizingText, fontSize, fontWeight, fontFamily)
-      : Math.max(...lines.map(l => calcTextWidth(l, fontSize, fontWeight, fontFamily)))
+    const maxLineWidth = lines.length === 1 ? calcTextWidth(sizingText, fontSize, fontWeight, fontFamily) : Math.max(...lines.map((l) => calcTextWidth(l, fontSize, fontWeight, fontFamily)))
     const bubbleWidth = Math.max(maxLineWidth + LABEL_PADDING_H * 2, MIN_BUBBLE_WIDTH)
     const bubbleHeight = lines.length * fontSize + LABEL_PADDING_V * 2
 
@@ -203,7 +199,9 @@ const comment: OverlayTemplate = {
       paddingTop: LABEL_PADDING_V,
       paddingBottom: LABEL_PADDING_V
     }
-    if (textColor !== undefined) editableTextStyle.color = textColor
+    if (textColor !== undefined) {
+      editableTextStyle.color = textColor
+    }
 
     const figures: OverlayFigure[] = [
       {

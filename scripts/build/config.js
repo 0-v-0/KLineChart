@@ -2,11 +2,12 @@
 
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replace from '@rollup/plugin-replace'
-import terser from '@rollup/plugin-terser'
 import typescript from '@rollup/plugin-typescript'
+import terser from '@rollup/plugin-terser'
 import fileSize from 'rollup-plugin-filesize'
+import eslint from '@rollup/plugin-eslint'
 
-import { getVersion, resolvePath } from '../utils.js'
+import { resolvePath, getVersion } from '../utils.js'
 
 const version = getVersion()
 
@@ -29,6 +30,9 @@ function createInputConfig({ input, replaceValues }) {
     input,
     plugins: [
       typescript(),
+      eslint({
+        throwOnError: true
+      }),
       nodeResolve(),
       replace({
         preventAssignment: true,
@@ -71,4 +75,4 @@ function createOutputConfig({ fileName, format, name, parentDir }) {
   return config
 }
 
-export { createInputConfig, createOutputConfig, env, isDev, isProd, version }
+export { createInputConfig, createOutputConfig, version, env, isDev, isProd }

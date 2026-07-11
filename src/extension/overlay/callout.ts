@@ -51,8 +51,8 @@
  *   editor is a textarea so Enter inserts a newline.
  */
 
-import type { OverlayTemplate, OverlayFigure } from '../../component/Overlay'
 import { calcTextWidth } from '../../common/utils/canvas'
+import type { OverlayFigure, OverlayTemplate } from '../../component/Overlay'
 
 interface CalloutOverlayData {
   text?: string
@@ -65,8 +65,8 @@ interface CalloutOverlayData {
 }
 
 interface OverlayStyleSlice {
-  polygon?: { color?: string, borderColor?: string }
-  text?: { color?: string, size?: number, family?: string, weight?: number | string, backgroundColor?: string }
+  polygon?: { color?: string; borderColor?: string }
+  text?: { color?: string; size?: number; family?: string; weight?: number | string; backgroundColor?: string }
 }
 
 // Visual defaults — chosen to match TradingView's Callout tool.
@@ -85,18 +85,19 @@ const DEFAULT_FONT_FAMILY = 'Helvetica Neue'
 // polygon's vertex count.
 const ARC_SEGMENTS = 8
 
-function parseExtendData (extendData: unknown): CalloutOverlayData {
+function parseExtendData(extendData: unknown): CalloutOverlayData {
   if (extendData !== null && typeof extendData === 'object') {
     return extendData as CalloutOverlayData
   }
   return {}
 }
 
-interface XY { x: number, y: number }
+interface XY {
+  x: number
+  y: number
+}
 
-type AttachKind =
-  | 'edge-top' | 'edge-right' | 'edge-bottom' | 'edge-left'
-  | 'corner-TL' | 'corner-TR' | 'corner-BR' | 'corner-BL'
+type AttachKind = 'edge-top' | 'edge-right' | 'edge-bottom' | 'edge-left' | 'corner-TL' | 'corner-TR' | 'corner-BR' | 'corner-BL'
 
 interface TailAttachment {
   kind: AttachKind
@@ -114,10 +115,7 @@ interface TailAttachment {
  * clockwise, `exit` the second — so the detour is always inserted as
  * `entry → anchor → exit` regardless of which side the tail is on.
  */
-function nearestTailAttachment (
-  anchor: XY,
-  rect: { x: number, y: number, width: number, height: number }
-): TailAttachment {
+function nearestTailAttachment(anchor: XY, rect: { x: number; y: number; width: number; height: number }): TailAttachment {
   const k = TAIL_BASE_WIDTH / 2
   const left = rect.x
   const right = rect.x + rect.width
@@ -126,7 +124,12 @@ function nearestTailAttachment (
   const midX = rect.x + rect.width / 2
   const midY = rect.y + rect.height / 2
 
-  interface Cand { kind: AttachKind, snap: XY, entry: XY, exit: XY }
+  interface Cand {
+    kind: AttachKind
+    snap: XY
+    entry: XY
+    exit: XY
+  }
   const candidates: Cand[] = [
     {
       kind: 'edge-top',
@@ -198,11 +201,7 @@ function nearestTailAttachment (
  * angles. Canvas angles: 0° = +x (right), 90° = +y (down), positive
  * direction = clockwise (because y points down).
  */
-function pushArc (
-  out: XY[],
-  cx: number, cy: number, r: number,
-  startAngle: number, endAngle: number
-): void {
+function pushArc(out: XY[], cx: number, cy: number, r: number, startAngle: number, endAngle: number): void {
   for (let i = 0; i <= ARC_SEGMENTS; i++) {
     const t = i / ARC_SEGMENTS
     const angle = startAngle + (endAngle - startAngle) * t
@@ -218,12 +217,7 @@ function pushArc (
  * (and the rect's adjacent edge-tips up to the base points),
  * sketching the corner as a triangle pointing at the anchor.
  */
-function buildBubblePolygon (
-  rect: { x: number, y: number, width: number, height: number },
-  r: number,
-  anchor: XY,
-  attach: TailAttachment
-): XY[] {
+function buildBubblePolygon(rect: { x: number; y: number; width: number; height: number }, r: number, anchor: XY, attach: TailAttachment): XY[] {
   const path: XY[] = []
   const TL = { cx: rect.x + r, cy: rect.y + r, start: Math.PI, end: 1.5 * Math.PI }
   const TR = { cx: rect.x + rect.width - r, cy: rect.y + r, start: 1.5 * Math.PI, end: 2 * Math.PI }
@@ -312,7 +306,9 @@ const callout: OverlayTemplate = {
   needDefaultYAxisFigure: false,
 
   createPointFigures: ({ overlay, coordinates }) => {
-    if (coordinates.length < 2) return []
+    if (coordinates.length < 2) {
+      return []
+    }
 
     const data = parseExtendData(overlay.extendData)
     const styles = (overlay.styles ?? {}) as OverlayStyleSlice
@@ -332,9 +328,7 @@ const callout: OverlayTemplate = {
     // starts typing.
     const sizingText = textValue.length > 0 ? textValue : '+ Add text'
     const lines = sizingText.split('\n')
-    const maxLineWidth = lines.length === 1
-      ? calcTextWidth(sizingText, fontSize, fontWeight, fontFamily)
-      : Math.max(...lines.map(l => calcTextWidth(l, fontSize, fontWeight, fontFamily)))
+    const maxLineWidth = lines.length === 1 ? calcTextWidth(sizingText, fontSize, fontWeight, fontFamily) : Math.max(...lines.map((l) => calcTextWidth(l, fontSize, fontWeight, fontFamily)))
     const bubbleWidth = Math.max(maxLineWidth + LABEL_PADDING_H * 2, MIN_BUBBLE_WIDTH)
     const bubbleHeight = lines.length * fontSize + LABEL_PADDING_V * 2
 
@@ -376,7 +370,9 @@ const callout: OverlayTemplate = {
       paddingTop: LABEL_PADDING_V,
       paddingBottom: LABEL_PADDING_V
     }
-    if (textColor !== undefined) editableTextStyle.color = textColor
+    if (textColor !== undefined) {
+      editableTextStyle.color = textColor
+    }
 
     const figures: OverlayFigure[] = [
       {

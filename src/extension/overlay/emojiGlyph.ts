@@ -46,7 +46,7 @@ export const ICON_SOURCE_VIEWBOX = 24
  * pre-scale at the data layer. Coordinates with leading dots
  * (`-.5`) and decimals are handled by the regex.
  */
-export function scalePath (d: string, scale: number): string {
+export function scalePath(d: string, scale: number): string {
   return d.replace(/-?\d*\.?\d+/g, (n) => String(parseFloat(n) * scale))
 }
 
@@ -80,7 +80,7 @@ export interface GlyphFigureParams {
  * `(x, y)` — either as a `text` figure (unicode glyph) or as a
  * `path` figure (Tabler SVG path, scaled to `size`).
  */
-export function glyphFigure (params: GlyphFigureParams): OverlayFigure {
+export function glyphFigure(params: GlyphFigureParams): OverlayFigure {
   const { x, y, value, size, color, key, fontFamily, fontWeight, iconLineWidth, iconStyle } = params
   const base: { key?: string } = key !== undefined ? { key } : {}
   if (value.startsWith(ICON_VALUE_PREFIX)) {

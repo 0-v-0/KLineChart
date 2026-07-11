@@ -2,7 +2,7 @@ import pkg from '../../../package.json'
 
 export const version = pkg.version
 
-export function getChartApiMenus (lang = '') {
+export function getChartApiMenus(lang = '') {
   const prefix = `${lang}/api/chart`
   return [
     { text: 'init', link: `${prefix}/init` },
@@ -27,7 +27,7 @@ export function getChartApiMenus (lang = '') {
   ]
 }
 
-export function getInstanceApiMenus (lang = '') {
+export function getInstanceApiMenus(lang = '') {
   const prefix = `${lang}/api/instance`
   return [
     { text: 'getDom', link: `${prefix}/getDom` },

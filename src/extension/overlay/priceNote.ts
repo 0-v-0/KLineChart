@@ -39,11 +39,11 @@
  * polygon-style fill).
  */
 
-import type { OverlayTemplate, OverlayFigure } from '../../component/Overlay'
+import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
 import { calcTextWidth } from '../../common/utils/canvas'
 import { formatPrecision } from '../../common/utils/format'
-import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
 import { isNumber } from '../../common/utils/typeChecks'
+import type { OverlayFigure, OverlayTemplate } from '../../component/Overlay'
 
 interface PriceNoteOverlayData {
   /** Inline-editable annotation rendered along the leader line. */
@@ -60,8 +60,8 @@ interface PriceNoteOverlayData {
 
 interface OverlayStyleSlice {
   line?: { color?: string }
-  polygon?: { color?: string, borderColor?: string, borderSize?: number }
-  text?: { color?: string, size?: number, family?: string, weight?: number | string, backgroundColor?: string }
+  polygon?: { color?: string; borderColor?: string; borderSize?: number }
+  text?: { color?: string; size?: number; family?: string; weight?: number | string; backgroundColor?: string }
 }
 
 // Visual defaults — same palette as Note.
@@ -76,23 +76,23 @@ const LABEL_BORDER_RADIUS = 4
 const DEFAULT_FONT_SIZE = 14
 const DEFAULT_FONT_FAMILY = 'Helvetica Neue'
 
-function parseExtendData (extendData: unknown): PriceNoteOverlayData {
+function parseExtendData(extendData: unknown): PriceNoteOverlayData {
   if (extendData !== null && typeof extendData === 'object') {
     return extendData as PriceNoteOverlayData
   }
   return {}
 }
 
-interface XY { x: number, y: number }
+interface XY {
+  x: number
+  y: number
+}
 
 /**
  * Return the midpoint of the label-rect edge closest to `anchor` —
  * same nearest-edge picker as Note.
  */
-function nearestMidpoint (
-  anchor: XY,
-  rect: { x: number, y: number, width: number, height: number }
-): XY {
+function nearestMidpoint(anchor: XY, rect: { x: number; y: number; width: number; height: number }): XY {
   const midX = rect.x + rect.width / 2
   const midY = rect.y + rect.height / 2
   const midpoints: XY[] = [
@@ -124,7 +124,9 @@ const priceNote: OverlayTemplate = {
   needDefaultYAxisFigure: false,
 
   createPointFigures: ({ chart, overlay, coordinates }) => {
-    if (coordinates.length < 2) return []
+    if (coordinates.length < 2) {
+      return []
+    }
 
     const data = parseExtendData(overlay.extendData)
     const styles = (overlay.styles ?? {}) as OverlayStyleSlice
@@ -143,9 +145,7 @@ const priceNote: OverlayTemplate = {
     // read-only. Falls back to '0.00' for sizing only when no price
     // is available (during the brief drawing window).
     const priceValue = overlay.points[0]?.value
-    const priceText = isNumber(priceValue)
-      ? formatPrecision(priceValue, chart.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE)
-      : ''
+    const priceText = isNumber(priceValue) ? formatPrecision(priceValue, chart.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE) : ''
     const labelSizingText = priceText.length > 0 ? priceText : '0.00'
     const labelTextWidth = calcTextWidth(labelSizingText, fontSize, fontWeight, fontFamily)
     const labelWidth = labelTextWidth + LABEL_PADDING_H * 2
@@ -195,7 +195,9 @@ const priceNote: OverlayTemplate = {
       paddingTop: 0,
       paddingBottom: 0
     }
-    if (textColor !== undefined) labelTextStyle.color = textColor
+    if (textColor !== undefined) {
+      labelTextStyle.color = textColor
+    }
     // Editable text on the leader line — inherits Note's editor look
     // (transparent bg / no border) so it reads as a free-floating
     // annotation rather than a second bubble.
@@ -204,7 +206,9 @@ const priceNote: OverlayTemplate = {
       weight: fontWeight,
       family: fontFamily
     }
-    if (textColor !== undefined) lineEditableStyle.color = textColor
+    if (textColor !== undefined) {
+      lineEditableStyle.color = textColor
+    }
 
     // Drag scoping — matches Note's TV semantics:
     //   * Drag the leader line   → whole overlay translates.

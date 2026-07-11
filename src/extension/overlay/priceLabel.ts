@@ -36,11 +36,11 @@
  * any fill alpha (same approach Callout uses).
  */
 
-import type { OverlayTemplate, OverlayFigure } from '../../component/Overlay'
+import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
 import { calcTextWidth } from '../../common/utils/canvas'
 import { formatPrecision } from '../../common/utils/format'
-import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
 import { isNumber } from '../../common/utils/typeChecks'
+import type { OverlayFigure, OverlayTemplate } from '../../component/Overlay'
 
 interface PriceLabelOverlayData {
   fontSize?: number
@@ -52,8 +52,8 @@ interface PriceLabelOverlayData {
 }
 
 interface OverlayStyleSlice {
-  polygon?: { color?: string, borderColor?: string }
-  text?: { color?: string, size?: number, family?: string, weight?: number | string }
+  polygon?: { color?: string; borderColor?: string }
+  text?: { color?: string; size?: number; family?: string; weight?: number | string }
 }
 
 // Visual defaults — tuned to match TradingView's Price Label.
@@ -76,24 +76,23 @@ const TAIL_HEIGHT = 14
 const DEFAULT_FONT_SIZE = 12
 // Price Label text is bold per TV — distinguishes it from Comment /
 // Note's regular weight.
-const DEFAULT_FONT_WEIGHT = 'bold' as const
+const DEFAULT_FONT_WEIGHT = 'bold'
 const DEFAULT_FONT_FAMILY = 'Helvetica Neue'
 const ARC_SEGMENTS = 6
 
-function parseExtendData (extendData: unknown): PriceLabelOverlayData {
+function parseExtendData(extendData: unknown): PriceLabelOverlayData {
   if (extendData !== null && typeof extendData === 'object') {
     return extendData as PriceLabelOverlayData
   }
   return {}
 }
 
-interface XY { x: number, y: number }
+interface XY {
+  x: number
+  y: number
+}
 
-function pushArc (
-  out: XY[],
-  cx: number, cy: number, r: number,
-  startAngle: number, endAngle: number
-): void {
+function pushArc(out: XY[], cx: number, cy: number, r: number, startAngle: number, endAngle: number): void {
   for (let i = 0; i <= ARC_SEGMENTS; i++) {
     const t = i / ARC_SEGMENTS
     const angle = startAngle + (endAngle - startAngle) * t
@@ -106,13 +105,7 @@ function pushArc (
  * bottom edge between `base1` (rightward) and `base2` (leftward) —
  * matching Callout's edge-bottom clockwise convention.
  */
-function buildBubblePolygon (
-  rect: { x: number, y: number, width: number, height: number },
-  r: number,
-  base1: XY,
-  base2: XY,
-  apex: XY
-): XY[] {
+function buildBubblePolygon(rect: { x: number; y: number; width: number; height: number }, r: number, base1: XY, base2: XY, apex: XY): XY[] {
   const path: XY[] = []
   const left = rect.x
   const right = rect.x + rect.width
@@ -145,7 +138,9 @@ const priceLabel: OverlayTemplate = {
   needDefaultYAxisFigure: false,
 
   createPointFigures: ({ chart, overlay, coordinates }) => {
-    if (coordinates.length < 1) return []
+    if (coordinates.length < 1) {
+      return []
+    }
 
     const data = parseExtendData(overlay.extendData)
     const styles = (overlay.styles ?? {}) as OverlayStyleSlice
@@ -163,9 +158,7 @@ const priceLabel: OverlayTemplate = {
     // value (shouldn't happen post-draw but keeps the figure list
     // safe during partial states).
     const priceValue = overlay.points[0]?.value
-    const text = isNumber(priceValue)
-      ? formatPrecision(priceValue, chart.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE)
-      : ''
+    const text = isNumber(priceValue) ? formatPrecision(priceValue, chart.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE) : ''
 
     const textWidth = calcTextWidth(text.length > 0 ? text : '0.00', fontSize, fontWeight, fontFamily)
     const bubbleWidth = textWidth + LABEL_PADDING_H * 2
@@ -217,7 +210,9 @@ const priceLabel: OverlayTemplate = {
       paddingTop: 0,
       paddingBottom: 0
     }
-    if (textColor !== undefined) textStyle.color = textColor
+    if (textColor !== undefined) {
+      textStyle.color = textColor
+    }
 
     const figures: OverlayFigure[] = [
       {

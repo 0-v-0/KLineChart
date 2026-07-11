@@ -14,10 +14,10 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { PolygonStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
+import { computeTextPosition } from './textUtils'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-import { computeTextPosition } from './textUtils'
 
 /**
  * Rectangle overlay - rectangle defined by two corner points
@@ -78,12 +78,7 @@ const rect = (): ProOverlayTemplate => {
       const id = overlay.id
 
       // Create rectangle as polygon with four corners
-      const rectCoordinates = [
-        topLeft,
-        { x: bottomRight.x, y: topLeft.y },
-        bottomRight,
-        { x: topLeft.x, y: bottomRight.y }
-      ]
+      const rectCoordinates = [topLeft, { x: bottomRight.x, y: topLeft.y }, bottomRight, { x: topLeft.x, y: bottomRight.y }]
 
       const figures: Array<{ type: string; attrs: unknown; styles?: unknown }> = [
         {
@@ -98,7 +93,8 @@ const rect = (): ProOverlayTemplate => {
       figures.push({
         type: 'editableText',
         attrs: {
-          ...computeTextPosition((topLeft.x + bottomRight.x) / 2, (topLeft.y + bottomRight.y) / 2, props, bounding.width, 'center', 'middle'), text
+          ...computeTextPosition((topLeft.x + bottomRight.x) / 2, (topLeft.y + bottomRight.y) / 2, props, bounding.width, 'center', 'middle'),
+          text
         },
         styles: textStyle(id)
       })

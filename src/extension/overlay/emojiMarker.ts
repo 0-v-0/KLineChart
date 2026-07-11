@@ -23,10 +23,10 @@
  * any picker value renders identically on both overlays.
  */
 
+import type DeepPartial from '../../common/DeepPartial'
 import { clone, merge } from '../../common/utils/typeChecks'
 import { glyphFigure } from './emojiGlyph'
 import type { ProOverlayTemplate } from './types'
-import type DeepPartial from '../../common/DeepPartial'
 
 interface EmojiMarkerProperties {
   /** Picker value — unicode emoji or `'svg:<d>'` icon string. */
@@ -84,16 +84,13 @@ const emojiMarker = (): ProOverlayTemplate => {
     needDefaultYAxisFigure: false,
 
     createPointFigures: ({ coordinates, overlay }) => {
-      if (coordinates.length === 0) return []
+      if (coordinates.length === 0) {
+        return []
+      }
 
       // Each render resolves properties for THIS overlay's id —
       // extendData wins over stored properties wins over defaults.
-      const ext: DeepPartial<EmojiMarkerProperties> | null =
-        (overlay.extendData != null && typeof overlay.extendData === 'object')
-          ? overlay.extendData as DeepPartial<EmojiMarkerProperties>
-          : typeof overlay.extendData === 'string'
-            ? { text: overlay.extendData }
-            : null
+      const ext: DeepPartial<EmojiMarkerProperties> | null = overlay.extendData != null && typeof overlay.extendData === 'object' ? (overlay.extendData as DeepPartial<EmojiMarkerProperties>) : typeof overlay.extendData === 'string' ? { text: overlay.extendData } : null
       const props = getProps(overlay.id)
       const prop = <K extends keyof EmojiMarkerProperties>(key: K): EmojiMarkerProperties[K] => {
         const e = ext as Record<string, unknown> | null

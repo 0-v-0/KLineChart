@@ -127,7 +127,7 @@ const buttonClasses = computed(() => {
 function formatNumber(num, formatted) {
   const value = `${num}`
   if (formatted) {
-    const result = value.replace(/(\d)(?=(\d{3})+$)/g, $1 => `${$1},`)
+    const result = value.replace(/(\d)(?=(\d{3})+$)/g, ($1) => `${$1},`)
     const splitArray = result.split(',')
     const numSegments = [splitArray[0]]
     for (let i = 1; i < splitArray.length; i++) {
@@ -142,21 +142,21 @@ function formatNumber(num, formatted) {
 // Animation function
 function animateToValue(target) {
   if (currentNumber.value >= target) return
-  
+
   const duration = 2000
   const startValue = currentNumber.value
   const difference = target - startValue
   const startTime = Date.now()
-  
+
   function updateValue() {
     const elapsed = Date.now() - startTime
     const progress = Math.min(elapsed / duration, 1)
-    
+
     // Easing function (ease out cubic)
     const easedProgress = 1 - Math.pow(1 - progress, 3)
-    
-    currentNumber.value = Math.round(startValue + (difference * easedProgress))
-    
+
+    currentNumber.value = Math.round(startValue + difference * easedProgress)
+
     if (progress < 1) {
       requestAnimationFrame(updateValue)
     } else {
@@ -167,7 +167,7 @@ function animateToValue(target) {
       }
     }
   }
-  
+
   updateValue()
 }
 
@@ -192,7 +192,7 @@ function setupIntersectionObserver() {
     isInView.value = true
     return
   }
-  
+
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -210,7 +210,7 @@ function setupIntersectionObserver() {
       rootMargin: props.inViewMargin
     }
   )
-  
+
   if (buttonRef.value) {
     observer.observe(buttonRef.value)
   }
@@ -231,7 +231,7 @@ onMounted(async () => {
   } catch (error) {
     console.error('Failed to fetch GitHub stars:', error)
   }
-  
+
   // Setup intersection observer
   await nextTick()
   setupIntersectionObserver()

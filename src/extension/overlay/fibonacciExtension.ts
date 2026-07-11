@@ -14,19 +14,11 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, PolygonStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
 import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
-
-import type { OverlayProperties, FigureLevel, ProOverlayTemplate } from './types'
+import { clone, merge } from '../../common/utils/typeChecks'
+import { buildBackgroundBands, buildEnrichedLevels, buildLevelLabels, buildLevelLines, fibLevelDefaultColour, resolveFibSettings } from './fibonacciShared'
+import type { FigureLevel, OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-import {
-  buildBackgroundBands,
-  buildEnrichedLevels,
-  buildLevelLabels,
-  buildLevelLines,
-  fibLevelDefaultColour,
-  resolveFibSettings
-} from './fibonacciShared'
 
 export const FIBONACCI_EXTENSION_LEVELS: FigureLevel[] = [
   { value: 0, enabled: true, color: fibLevelDefaultColour(0) },
@@ -86,7 +78,9 @@ const fibonacciExtension = (): ProOverlayTemplate => {
         styles?: Partial<LineStyle> | Partial<TextStyle> | Partial<PolygonStyle>
       }> = []
 
-      if (coordinates.length === 0) return figures
+      if (coordinates.length === 0) {
+        return figures
+      }
 
       const settings = resolveFibSettings(overlay.extendData)
 
@@ -113,7 +107,9 @@ const fibonacciExtension = (): ProOverlayTemplate => {
       // The rest of the render (levels + bands + labels) only
       // makes sense once the extension anchor `coordinates[2]`
       // exists.
-      if (coordinates.length < 3) return figures
+      if (coordinates.length < 3) {
+        return figures
+      }
 
       let precision = 0
       const symbol = chart.getSymbol()
@@ -122,7 +118,7 @@ const fibonacciExtension = (): ProOverlayTemplate => {
       } else {
         precision = SymbolDefaultPrecisionConstants.PRICE
         const indicators = chart.getIndicators({ paneId: overlay.paneId })
-        indicators.forEach(indicator => {
+        indicators.forEach((indicator) => {
           precision = Math.max(precision, indicator.precision)
         })
       }
@@ -144,8 +140,7 @@ const fibonacciExtension = (): ProOverlayTemplate => {
       const virtualNearValue = (points[2]?.value ?? 0) + valueDif
 
       const enriched = buildEnrichedLevels({
-        levels: (((props.figureLevels?.length ?? 0) > 0 ? props.figureLevels! : FIBONACCI_EXTENSION_LEVELS) as FigureLevel[])
-          .filter(l => l.enabled),
+        levels: (((props.figureLevels?.length ?? 0) > 0 ? props.figureLevels! : FIBONACCI_EXTENSION_LEVELS) as FigureLevel[]).filter((l) => l.enabled),
         anchorFar: coordinates[2],
         anchorNear: virtualNear,
         valueFar: points[2]?.value ?? 0,
@@ -163,7 +158,9 @@ const fibonacciExtension = (): ProOverlayTemplate => {
       figures.push(...buildLevelLines(enriched, leftX, rightX, fbLinesStyle(props)))
 
       const labels = buildLevelLabels(enriched, leftX, rightX, settings, props, textStyleFn(props))
-      if (labels !== null) figures.push(labels)
+      if (labels !== null) {
+        figures.push(labels)
+      }
 
       return figures
     },

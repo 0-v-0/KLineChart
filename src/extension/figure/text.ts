@@ -32,18 +32,17 @@ import { drawRect, type RectAttrs } from './rect'
  * Exported so callers (e.g. Table) can compute line counts the
  * same way the renderer will.
  */
-export function wrapText (
-  text: string,
-  maxWidth: number,
-  size: number,
-  weight?: number | string,
-  family?: string
-): string[] {
+export function wrapText(text: string, maxWidth: number, size: number, weight?: number | string, family?: string): string[] {
   const explicit = text.split('\n')
-  if (maxWidth <= 0) return explicit
+  if (maxWidth <= 0) {
+    return explicit
+  }
   const out: string[] = []
   for (const segment of explicit) {
-    if (segment.length === 0) { out.push(''); continue }
+    if (segment.length === 0) {
+      out.push('')
+      continue
+    }
     let current = ''
     const words = segment.split(' ')
     for (const word of words) {
@@ -53,14 +52,18 @@ export function wrapText (
         continue
       }
       // Tentative overflows. Flush `current` if non-empty.
-      if (current !== '') out.push(current)
+      if (current !== '') {
+        out.push(current)
+      }
       // Single word still too wide → character chunking.
       if (calcTextWidth(word, size, weight, family) > maxWidth) {
         let chunk = ''
         for (const ch of word) {
           const t = chunk + ch
           if (calcTextWidth(t, size, weight, family) > maxWidth) {
-            if (chunk !== '') out.push(chunk)
+            if (chunk !== '') {
+              out.push(chunk)
+            }
             chunk = ch
           } else {
             chunk = t
@@ -71,27 +74,25 @@ export function wrapText (
         current = word
       }
     }
-    if (current !== '') out.push(current)
+    if (current !== '') {
+      out.push(current)
+    }
   }
   return out
 }
 
-export function getTextRect (attrs: TextAttrs, styles: Partial<TextStyle>): RectAttrs {
+export function getTextRect(attrs: TextAttrs, styles: Partial<TextStyle>): RectAttrs {
   const { size = 12, paddingLeft = 0, paddingTop = 0, paddingRight = 0, paddingBottom = 0, weight = 'normal', family, lineHeight = 1 } = styles
   const { x, y, text, align = 'left', baseline = 'top', width: w, height: h, wrap = false } = attrs
   // When `wrap` is on AND an explicit width is set, the line set
   // comes from soft-wrapping at `width - paddings`. Otherwise we
   // keep the prior \n-only behaviour (every existing overlay
   // sticks to the old branch).
-  const lines = wrap && w !== undefined
-    ? wrapText(text, Math.max(0, w - paddingLeft - paddingRight), size, weight, family)
-    : text.split('\n')
-  const maxLineWidth = lines.length === 1
-    ? calcTextWidth(lines[0], size, weight, family)
-    : Math.max(...lines.map(l => calcTextWidth(l, size, weight, family)))
+  const lines = wrap && w !== undefined ? wrapText(text, Math.max(0, w - paddingLeft - paddingRight), size, weight, family) : text.split('\n')
+  const maxLineWidth = lines.length === 1 ? calcTextWidth(lines[0], size, weight, family) : Math.max(...lines.map((l) => calcTextWidth(l, size, weight, family)))
   const lineStep = size * lineHeight
-  const width = w ?? (paddingLeft + maxLineWidth + paddingRight)
-  const height = h ?? (paddingTop + lines.length * lineStep + paddingBottom)
+  const width = w ?? paddingLeft + maxLineWidth + paddingRight
+  const height = h ?? paddingTop + lines.length * lineStep + paddingBottom
   let startX = 0
   switch (align) {
     case 'left':
@@ -145,19 +146,9 @@ export function checkCoordinateOnText(coordinate: Coordinate, attrs: TextAttrs |
 export function drawText(ctx: CanvasRenderingContext2D, attrs: TextAttrs | TextAttrs[], styles: Partial<TextStyle>): void {
   let texts: TextAttrs[] = []
   texts = texts.concat(attrs)
-  const {
-    color = 'currentColor',
-    size = 12,
-    family,
-    weight,
-    fontStyle,
-    paddingLeft = 0,
-    paddingTop = 0,
-    paddingRight = 0,
-    lineHeight = 1
-  } = styles
+  const { color = 'currentColor', size = 12, family, weight, fontStyle, paddingLeft = 0, paddingTop = 0, paddingRight = 0, lineHeight = 1 } = styles
   const lineStep = size * lineHeight
-  const rects = texts.map(text => getTextRect(text, styles))
+  const rects = texts.map((text) => getTextRect(text, styles))
   drawRect(ctx, rects, { ...styles, color: styles.backgroundColor })
 
   ctx.textAlign = 'left'
@@ -182,9 +173,7 @@ export function drawText(ctx: CanvasRenderingContext2D, attrs: TextAttrs | TextA
     // otherwise. Without this the rect would size for wrapped
     // lines but the draw would only render the first explicit
     // line, truncating the rest.
-    const lines = text.wrap === true && text.width !== undefined
-      ? wrapText(text.text, Math.max(0, text.width - paddingLeft - paddingRight), size, weight, family)
-      : text.text.split('\n')
+    const lines = text.wrap === true && text.width !== undefined ? wrapText(text.text, Math.max(0, text.width - paddingLeft - paddingRight), size, weight, family) : text.text.split('\n')
     lines.forEach((line, i) => {
       let lineX = rect.x + paddingLeft
       if (align === 'center') {

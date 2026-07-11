@@ -888,7 +888,7 @@ export default class ChartImp implements Chart {
         pane = this._createPane(IndicatorPane, { ...this._chartStore.getLayoutOptions().pane, id: indicator.paneId })
         shouldSort = true
       }
-      this._createOrUseIndicatorYAxis(pane, indicator.yAxisId)
+      this._createOrUseIndicatorYAxis(pane as unknown as DrawPane<YAxis>, indicator.yAxisId)
       this._removeOrphanYAxes()
       this.layout({
         sort: shouldSort,
@@ -913,7 +913,7 @@ export default class ChartImp implements Chart {
     filterIndicators.forEach((indicator) => {
       const pane = this.getDrawPaneById(indicator.paneId)
       if (isValid(pane)) {
-        updated = this._createOrUseIndicatorYAxis(pane, indicator.yAxisId) || updated
+        updated = this._createOrUseIndicatorYAxis(pane as unknown as DrawPane<YAxis>, indicator.yAxisId) || updated
       }
     })
 

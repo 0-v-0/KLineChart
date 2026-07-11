@@ -17,7 +17,7 @@ import type { TextStyle } from '../../common/Styles'
 
 import type { FigureTemplate } from '../../component/Figure'
 
-import { type TextAttrs, checkCoordinateOnText, drawText } from './text'
+import { checkCoordinateOnText, drawText, type TextAttrs } from './text'
 
 export interface EditableTextAttrs extends TextAttrs {
   /**
@@ -46,19 +46,19 @@ export interface EditableTextAttrs extends TextAttrs {
  * hovered state while the cursor moves towards the placeholder, so the
  * user can actually click it to start editing.
  */
-function checkEditableTextEventOn (
-  coordinate: Coordinate,
-  attrs: EditableTextAttrs | EditableTextAttrs[],
-  styles: Partial<TextStyle>
-): boolean {
+function checkEditableTextEventOn(coordinate: Coordinate, attrs: EditableTextAttrs | EditableTextAttrs[], styles: Partial<TextStyle>): boolean {
   const arr: EditableTextAttrs[] = ([] as EditableTextAttrs[]).concat(attrs)
   // Substitute empty texts with the placeholder so the hit area is
   // non-zero. `placeholder === null` opts the figure out — for
   // Table cells the explicit width/height already gives a click
   // target without needing a phantom placeholder.
-  const patched = arr.map(a => {
-    if (a.text.length > 0) return a
-    if (a.placeholder === null) return a
+  const patched = arr.map((a) => {
+    if (a.text.length > 0) {
+      return a
+    }
+    if (a.placeholder === null) {
+      return a
+    }
     return { ...a, text: a.placeholder ?? '+ Add text' }
   })
   return checkCoordinateOnText(coordinate, patched.length === 1 ? patched[0] : patched, styles)
@@ -72,7 +72,7 @@ const editableText: FigureTemplate<EditableTextAttrs | EditableTextAttrs[], Part
     const attrsArray: EditableTextAttrs[] = Array.isArray(attrs) ? attrs : [attrs]
 
     // Filter to only non-empty texts — empty text is handled externally (placeholder in OverlayView)
-    const nonEmpty = attrsArray.filter(a => a.text.length > 0)
+    const nonEmpty = attrsArray.filter((a) => a.text.length > 0)
     if (nonEmpty.length === 0) {
       return
     }
@@ -89,8 +89,8 @@ const editableText: FigureTemplate<EditableTextAttrs | EditableTextAttrs[], Part
     // Unrotated case (angle === 0 / undefined) hits the existing
     // drawText path so the prior behaviour for every overlay is
     // preserved byte-for-byte.
-    const upright = nonEmpty.filter(a => a.angle === undefined || a.angle === 0)
-    const rotated = nonEmpty.filter(a => a.angle !== undefined && a.angle !== 0)
+    const upright = nonEmpty.filter((a) => a.angle === undefined || a.angle === 0)
+    const rotated = nonEmpty.filter((a) => a.angle !== undefined && a.angle !== 0)
     if (upright.length > 0) {
       drawText(ctx, upright.length === 1 ? upright[0] : upright, cleanStyles)
     }

@@ -1,25 +1,7 @@
 export default {
   extends: ['@commitlint/config-conventional'],
   rules: {
-    'type-enum': [
-      2,
-      'always',
-      [
-        'feat',
-        'fix',
-        'docs',
-        'style',
-        'refactor',
-        'perf',
-        'impr',
-        'chore',
-        'test',
-        'revert',
-        'ci',
-        'opt',
-        'release'
-      ]
-    ],
+    'type-enum': [2, 'always', ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'impr', 'chore', 'test', 'revert', 'ci', 'opt', 'release']],
     'subject-case': [0]
   }
 }

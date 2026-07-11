@@ -35,10 +35,9 @@
  */
 
 import type DeepPartial from '../../common/DeepPartial'
-import { merge, clone } from '../../common/utils/typeChecks'
-
-import type { ProOverlayTemplate } from './types'
+import { clone, merge } from '../../common/utils/typeChecks'
 import type { TradeLineProperties } from './tradeLineApi'
+import type { ProOverlayTemplate } from './types'
 
 // ---------------------------------------------------------------------------
 // Default style constants
@@ -108,12 +107,12 @@ const tradeLine = (): ProOverlayTemplate => {
     createPointFigures: ({ coordinates, overlay }) => {
       const figures: FigureArray = []
 
-      if (coordinates.length === 0) return []
+      if (coordinates.length === 0) {
+        return []
+      }
 
       // Sync extendData
-      _extRef.data = (overlay.extendData != null && typeof overlay.extendData === 'object')
-        ? overlay.extendData as DeepPartial<TradeLineProperties>
-        : null
+      _extRef.data = overlay.extendData != null && typeof overlay.extendData === 'object' ? (overlay.extendData as DeepPartial<TradeLineProperties>) : null
 
       const direction = prop('direction') ?? 'up'
       const arrowType = prop('arrowType') ?? 'wide'
@@ -157,9 +156,7 @@ const tradeLine = (): ProOverlayTemplate => {
       //   text
       // -------------------------------------------------------------------
       // Main arrow base: the end opposite the tip
-      const mainBaseY = direction === 'up'
-        ? mainTipY + mainTotalH
-        : mainTipY - mainTotalH
+      const mainBaseY = direction === 'up' ? mainTipY + mainTotalH : mainTipY - mainTotalH
 
       if (text.length > 0) {
         const textFontSize = prop('textFontSize') ?? defaultTradeLineStyle.textFontSize
@@ -170,16 +167,12 @@ const tradeLine = (): ProOverlayTemplate => {
           // Label arrow tip starts gap px beyond the main arrow base
           // buy (up): label tip below main base → mainBaseY + gap
           // sell (down): label tip above main base → mainBaseY - gap
-          const labelTipY = direction === 'up'
-            ? mainBaseY + gap
-            : mainBaseY - gap
+          const labelTipY = direction === 'up' ? mainBaseY + gap : mainBaseY - gap
 
           drawLabelArrow(figures, x, labelTipY, direction, color)
 
           // Text beyond the label arrow
-          const textY = direction === 'up'
-            ? labelTipY + labelTotalH + textGap
-            : labelTipY - labelTotalH - textGap
+          const textY = direction === 'up' ? labelTipY + labelTotalH + textGap : labelTipY - labelTotalH - textGap
 
           figures.push({
             type: 'editableText',
@@ -195,9 +188,7 @@ const tradeLine = (): ProOverlayTemplate => {
           })
         } else {
           // No label arrow — text directly beyond main arrow base
-          const textY = direction === 'up'
-            ? mainBaseY + gap
-            : mainBaseY - gap
+          const textY = direction === 'up' ? mainBaseY + gap : mainBaseY - gap
 
           figures.push({
             type: 'editableText',
@@ -242,19 +233,15 @@ type FigureArray = Array<{
   ignoreEvent?: boolean
 }>
 
-function getArrowTotalHeight (arrowType: 'wide' | 'arrow' | 'tiny'): number {
-  return arrowType === 'wide'
-    ? WIDE_HEAD_H + WIDE_BODY_H
-    : arrowType === 'arrow'
-      ? ARROW_HEAD_H + ARROW_LINE_H
-      : TINY_HEAD_H
+function getArrowTotalHeight(arrowType: 'wide' | 'arrow' | 'tiny'): number {
+  return arrowType === 'wide' ? WIDE_HEAD_H + WIDE_BODY_H : arrowType === 'arrow' ? ARROW_HEAD_H + ARROW_LINE_H : TINY_HEAD_H
 }
 
 // ---------------------------------------------------------------------------
 // Main arrow type 1: WIDE — stroke_fill rect body + wider triangle head
 // ---------------------------------------------------------------------------
 
-function drawWideArrow (figures: FigureArray, x: number, tipY: number, direction: 'up' | 'down', color: string): void {
+function drawWideArrow(figures: FigureArray, x: number, tipY: number, direction: 'up' | 'down', color: string): void {
   const halfBodyW = WIDE_BODY_W / 2
   const halfHeadW = WIDE_HEAD_W / 2
   const strokeFillStyle = { style: 'stroke_fill', color, borderColor: color, borderSize: 1 }
@@ -320,7 +307,7 @@ function drawWideArrow (figures: FigureArray, x: number, tipY: number, direction
 // Main arrow type 2: ARROW — line stem + chevron head
 // ---------------------------------------------------------------------------
 
-function drawLineArrow (figures: FigureArray, x: number, tipY: number, direction: 'up' | 'down', color: string): void {
+function drawLineArrow(figures: FigureArray, x: number, tipY: number, direction: 'up' | 'down', color: string): void {
   const halfHeadW = ARROW_HEAD_W / 2
   const sign = direction === 'up' ? 1 : -1
   const headBase = tipY + ARROW_HEAD_H * sign
@@ -356,7 +343,7 @@ function drawLineArrow (figures: FigureArray, x: number, tipY: number, direction
 // Main arrow type 3: TINY — filled triangle head only (no stem)
 // ---------------------------------------------------------------------------
 
-function drawTinyArrow (figures: FigureArray, x: number, tipY: number, direction: 'up' | 'down', color: string): void {
+function drawTinyArrow(figures: FigureArray, x: number, tipY: number, direction: 'up' | 'down', color: string): void {
   const halfHeadW = TINY_HEAD_W / 2
   const headBase = direction === 'up' ? tipY + TINY_HEAD_H : tipY - TINY_HEAD_H
 
@@ -378,7 +365,7 @@ function drawTinyArrow (figures: FigureArray, x: number, tipY: number, direction
 // LABEL ARROW — small indicator between text and candle
 // ---------------------------------------------------------------------------
 
-function drawLabelArrow (figures: FigureArray, x: number, tipY: number, direction: 'up' | 'down', color: string): void {
+function drawLabelArrow(figures: FigureArray, x: number, tipY: number, direction: 'up' | 'down', color: string): void {
   const halfHeadW = LABEL_HEAD_W / 2
   const sign = direction === 'up' ? 1 : -1
   const headBase = tipY + LABEL_HEAD_H * sign

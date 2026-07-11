@@ -9,7 +9,6 @@
 
 <script setup>
 const props = defineProps(['features'])
-
 </script>
 <style scoped>
 .feature-list {

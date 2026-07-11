@@ -13,39 +13,34 @@ const subscriptNumbers = {
   9: '₉'
 }
 
-const chart = init(
-  'init-decimalFold-format-chart',
-  {
-    decimalFold: {
-      format: value => {
-        const vl = `${value}`
-        const reg = /\.0{3,}[1-9][0-9]*$/
-        if (reg.test(vl)) {
-          const result = vl.split('.')
-          const lastIndex = result.length - 1
-          const v = result[lastIndex]
-          const match = /0*/.exec(v)
-          if (match) {
-            const count = `${match[0].length}`
-            result[lastIndex] = v.replace(/0*/, `0${count.replace(/\d/, $1 => subscriptNumbers[$1] ?? '')}`)
-            return result.join('.')
-          }
+const chart = init('init-decimalFold-format-chart', {
+  decimalFold: {
+    format: (value) => {
+      const vl = `${value}`
+      const reg = /\.0{3,}[1-9][0-9]*$/
+      if (reg.test(vl)) {
+        const result = vl.split('.')
+        const lastIndex = result.length - 1
+        const v = result[lastIndex]
+        const match = /0*/.exec(v)
+        if (match) {
+          const count = `${match[0].length}`
+          result[lastIndex] = v.replace(/0*/, `0${count.replace(/\d/, ($1) => subscriptNumbers[$1] ?? '')}`)
+          return result.join('.')
         }
-        return vl
       }
+      return vl
     }
   }
-)
+})
 
 chart.setSymbol({ ticker: 'TestSymbol', pricePrecision: 10 })
 chart.setPeriod({ span: 1, type: 'day' })
 chart.setDataLoader({
-  getBars: ({
-    callback
-  }) => {
+  getBars: ({ callback }) => {
     fetch('https://klinecharts.com/datas/kline2.json')
-      .then(res => res.json())
-      .then(dataList => {
+      .then((res) => res.json())
+      .then((dataList) => {
         callback(dataList)
       })
   }

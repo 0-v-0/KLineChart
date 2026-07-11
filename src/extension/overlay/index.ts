@@ -14,99 +14,107 @@
 
 import type Nullable from '../../common/Nullable'
 
-import OverlayImp, { type OverlayTemplate, type OverlayConstructor, type OverlayInnerConstructor } from '../../component/Overlay'
-import { isProOverlayTemplate } from './types'
-
+import OverlayImp, { type OverlayConstructor, type OverlayInnerConstructor, type OverlayTemplate } from '../../component/Overlay'
+// Harmonic pattern overlays (Pro overlays with factory pattern)
+import abcd from './abcd'
+import anyWaves from './anyWaves'
+// Basic shape overlays (Pro overlays with factory pattern)
+import arrow from './arrow'
+import box from './box'
+import brush from './brush'
+import callout from './callout'
+import circle from './circle'
+import comment from './comment'
+import eightWaves from './eightWaves'
+import emojiMarker from './emojiMarker'
+import fibonacciCircle from './fibonacciCircle'
+import fibonacciExtension from './fibonacciExtension'
+// Fibonacci overlays (Pro overlays with factory pattern)
+import fibonacciLine from './fibonacciLine'
+import fibonacciSegment from './fibonacciSegment'
+import fibonacciSpeedResistanceFan from './fibonacciSpeedResistanceFan'
+import fibonacciSpiral from './fibonacciSpiral'
+import fiveWaves from './fiveWaves'
+import flagMark from './flagMark'
+import freePath from './freePath'
+// Gann overlays (Pro overlays with factory pattern)
+import gannBox from './gannBox'
 // Basic line overlays
 import horizontalRayLine from './horizontalRayLine'
 import horizontalSegment from './horizontalSegment'
 import horizontalStraightLine from './horizontalStraightLine'
+import image from './image'
+import measure from './measure'
+import note from './note'
+import parallelogram from './parallelogram'
 import parallelStraightLine from './parallelStraightLine'
+import pin from './pin'
 import priceChannelLine from './priceChannelLine'
+import priceLabel from './priceLabel'
+import priceLevelLine from './priceLevelLine'
 import priceLine from './priceLine'
+import priceNote from './priceNote'
 import rayLine from './rayLine'
+import rect from './rect'
 import segment from './segment'
-import simpleAnnotation from './simpleAnnotation'
-import simpleTag from './simpleTag'
-import straightLine from './straightLine'
-import verticalRayLine from './verticalRayLine'
-import verticalSegment from './verticalSegment'
-import verticalStraightLine from './verticalStraightLine'
-
+import signpost from './signpost'
 // Annotation overlays
 import simpleAnnotation from './simpleAnnotation'
 import simpleTag from './simpleTag'
-import freePath from './freePath'
-import text from './text'
-import note from './note'
-import callout from './callout'
-import comment from './comment'
-import priceLabel from './priceLabel'
-import priceNote from './priceNote'
-import signpost from './signpost'
-import flagMark from './flagMark'
-import pin from './pin'
+import straightLine from './straightLine'
+import styledSegment from './styledSegment'
 import table from './table'
-import image from './image'
-import emojiMarker from './emojiMarker'
-import measure from './measure'
-
-// Basic shape overlays (Pro overlays with factory pattern)
-import arrow from './arrow'
-import circle from './circle'
-import rect from './rect'
-import triangle from './triangle'
-import parallelogram from './parallelogram'
-import brush from './brush'
-
-// Fibonacci overlays (Pro overlays with factory pattern)
-import fibonacciLine from './fibonacciLine'
-import fibonacciCircle from './fibonacciCircle'
-import fibonacciSegment from './fibonacciSegment'
-import fibonacciSpiral from './fibonacciSpiral'
-import fibonacciSpeedResistanceFan from './fibonacciSpeedResistanceFan'
-import fibonacciExtension from './fibonacciExtension'
-
+import text from './text'
 // Wave pattern overlays (Pro overlays with factory pattern)
 import threeWaves from './threeWaves'
-import fiveWaves from './fiveWaves'
-import eightWaves from './eightWaves'
-import anyWaves from './anyWaves'
-
-// Harmonic pattern overlays (Pro overlays with factory pattern)
-import abcd from './abcd'
-import xabcd from './xabcd'
-
-// Gann overlays (Pro overlays with factory pattern)
-import gannBox from './gannBox'
-
-// Trade line overlay (Pro overlay with factory pattern)
-import tradeLine from './tradeLine'
-
 // Generic primitive overlays (Pro overlays with factory pattern)
 import timeLine from './timeLine'
-import priceLevelLine from './priceLevelLine'
-import styledSegment from './styledSegment'
-import box from './box'
+// Trade line overlay (Pro overlay with factory pattern)
+import tradeLine from './tradeLine'
+import triangle from './triangle'
+import { isProOverlayTemplate } from './types'
+import verticalRayLine from './verticalRayLine'
+import verticalSegment from './verticalSegment'
+import verticalStraightLine from './verticalStraightLine'
+import xabcd from './xabcd'
 
 const overlays: Record<string, OverlayInnerConstructor> = {}
 
 // Standard overlays (direct templates)
-const standardExtensions = [
-  simpleAnnotation, simpleTag, freePath, text, note, callout, comment, priceLabel, priceNote, signpost, flagMark, pin, table, image, measure
-]
+const standardExtensions = [simpleAnnotation, simpleTag, freePath, text, note, callout, comment, priceLabel, priceNote, signpost, flagMark, pin, table, image, measure]
 
 // Pro overlays (factory functions that return templates)
 const proExtensions = [
-  horizontalRayLine, horizontalSegment, horizontalStraightLine,
-  rayLine, segment, straightLine,
+  horizontalRayLine,
+  horizontalSegment,
+  horizontalStraightLine,
+  rayLine,
+  segment,
+  straightLine,
   priceLine,
-  arrow, circle, rect, triangle, parallelogram, brush,
-  parallelStraightLine, priceChannelLine,
-  verticalRayLine, verticalSegment, verticalStraightLine,
-  fibonacciLine, fibonacciCircle, fibonacciSegment, fibonacciSpiral, fibonacciSpeedResistanceFan, fibonacciExtension,
-  threeWaves, fiveWaves, eightWaves, anyWaves,
-  abcd, xabcd,
+  arrow,
+  circle,
+  rect,
+  triangle,
+  parallelogram,
+  brush,
+  parallelStraightLine,
+  priceChannelLine,
+  verticalRayLine,
+  verticalSegment,
+  verticalStraightLine,
+  fibonacciLine,
+  fibonacciCircle,
+  fibonacciSegment,
+  fibonacciSpiral,
+  fibonacciSpeedResistanceFan,
+  fibonacciExtension,
+  threeWaves,
+  fiveWaves,
+  eightWaves,
+  anyWaves,
+  abcd,
+  xabcd,
   gannBox,
   tradeLine,
   timeLine,
@@ -134,7 +142,6 @@ proExtensions.forEach((factory) => {
 })
 
 function registerOverlay<E = unknown>(template: OverlayTemplate<E>): void {
-  // @ts-ignore
   overlays[template.name] = OverlayImp.extend(template)
 }
 
@@ -150,22 +157,18 @@ function getSupportedOverlays(): string[] {
   return Object.keys(overlays)
 }
 
-export { registerOverlay, getOverlayClass, getOverlayInnerClass, getSupportedOverlays }
-
-// Export Pro overlay types and utilities
-export type { OverlayProperties, ProOverlayTemplate, OverlayPropertiesStore, FigureLevel, DeepPartial } from './types'
-export { DEFAULT_OVERLAY_PROPERTIES, isProOverlayTemplate, createPropertiesStore } from './types'
-
-// Export default levels for fibonacci overlays
-export { FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_CHANNEL_LEVELS } from './fibonacciLine'
-export { FIBONACCI_EXTENSION_LEVELS } from './fibonacciExtension'
 export { FIBONACCI_CIRCLE_LEVELS } from './fibonacciCircle'
+export { FIBONACCI_EXTENSION_LEVELS } from './fibonacciExtension'
+// Export default levels for fibonacci overlays
+export { FIBONACCI_CHANNEL_LEVELS, FIBONACCI_RETRACEMENT_LEVELS } from './fibonacciLine'
 export { FIBONACCI_FAN_LEVELS } from './fibonacciSpeedResistanceFan'
-
 // Export price line types and fluent API
-export type { PriceLineProperties, PriceLine, PriceLineEventListener } from './priceLineApi'
+export type { PriceLine, PriceLineEventListener, PriceLineProperties } from './priceLineApi'
 export { createPriceLine } from './priceLineApi'
-
 // Export trade line types and fluent API
-export type { TradeLineProperties, TradeLine, TradeLineOptions } from './tradeLineApi'
+export type { TradeLine, TradeLineOptions, TradeLineProperties } from './tradeLineApi'
 export { createTradeLine } from './tradeLineApi'
+// Export Pro overlay types and utilities
+export type { DeepPartial, FigureLevel, OverlayProperties, OverlayPropertiesStore, ProOverlayTemplate } from './types'
+export { createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES, isProOverlayTemplate } from './types'
+export { getOverlayClass, getOverlayInnerClass, getSupportedOverlays, registerOverlay }

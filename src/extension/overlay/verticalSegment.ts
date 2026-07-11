@@ -14,10 +14,10 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
+import { computeTextPosition } from './textUtils'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-import { computeTextPosition } from './textUtils'
 
 const verticalSegment = (): ProOverlayTemplate => {
   const properties = new Map<string, DeepPartial<OverlayProperties>>()
@@ -78,7 +78,8 @@ const verticalSegment = (): ProOverlayTemplate => {
         figures.push({
           type: 'editableText',
           attrs: {
-            ...computeTextPosition(coordinates[0].x, midY, props, bounding.width, 'center', 'middle'), text
+            ...computeTextPosition(coordinates[0].x, midY, props, bounding.width, 'center', 'middle'),
+            text
           },
           styles: textStyle(id)
         })

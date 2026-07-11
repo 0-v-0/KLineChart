@@ -134,6 +134,10 @@ export default abstract class DrawPane<C extends Axis = Axis> extends Pane {
     return Array.from(this._yAxisComponents.values())
   }
 
+  getAxisComponent(): C {
+    return this.getYAxisComponents()[0] as unknown as C
+  }
+
   getWidgetYAxisComponents(): YAxis[] {
     return Array.from(this._yAxisWidgets.keys()).map((id) => this._yAxisComponents.get(id)!)
   }
@@ -162,6 +166,7 @@ export default abstract class DrawPane<C extends Axis = Axis> extends Pane {
     this._yAxisComponents.delete(yAxisId)
     this._manualYAxisIds.delete(yAxisId)
     if (this._defaultYAxisId === yAxisId) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- ignore
       this._defaultYAxisId = this._yAxisComponents.keys().next().value ?? null
     }
     const yAxisWidget = this._yAxisWidgets.get(yAxisId)

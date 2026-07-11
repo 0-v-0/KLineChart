@@ -14,10 +14,10 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { PolygonStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
+import { computeTextPosition } from './textUtils'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-import { computeTextPosition } from './textUtils'
 
 /**
  * Parallelogram overlay - parallelogram defined by three points
@@ -117,7 +117,8 @@ const parallelogram = (): ProOverlayTemplate => {
       figures.push({
         type: 'editableText',
         attrs: {
-          ...computeTextPosition((point1.x + point2.x + point3.x + point4.x) / 4, (point1.y + point2.y + point3.y + point4.y) / 4, props, bounding.width, 'center', 'middle'), text
+          ...computeTextPosition((point1.x + point2.x + point3.x + point4.x) / 4, (point1.y + point2.y + point3.y + point4.y) / 4, props, bounding.width, 'center', 'middle'),
+          text
         },
         styles: textStyle(id)
       })

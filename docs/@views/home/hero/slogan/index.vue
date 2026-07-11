@@ -6,7 +6,6 @@ import DropText from './DropText.vue'
 import i18n from '../../../../@i18n'
 
 const { lang } = useData()
-
 </script>
 
 <template>

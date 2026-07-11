@@ -48,26 +48,21 @@ export interface ImageStyle {
   opacity: number
 }
 
-function checkCoordinateOnImage (
-  coordinate: Coordinate,
-  attrs: ImageAttrs | ImageAttrs[]
-): boolean {
+function checkCoordinateOnImage(coordinate: Coordinate, attrs: ImageAttrs | ImageAttrs[]): boolean {
   return checkCoordinateOnRect(coordinate, attrs)
 }
 
-function drawImage (
-  ctx: CanvasRenderingContext2D,
-  attrs: ImageAttrs | ImageAttrs[],
-  styles: Partial<ImageStyle>
-): void {
+function drawImage(ctx: CanvasRenderingContext2D, attrs: ImageAttrs | ImageAttrs[], styles: Partial<ImageStyle>): void {
   const list: ImageAttrs[] = ([] as ImageAttrs[]).concat(attrs)
   const opacity = styles.opacity ?? 1
-  if (opacity <= 0) return
+  if (opacity <= 0) {
+    return
+  }
   const prevAlpha = ctx.globalAlpha
   ctx.globalAlpha = prevAlpha * opacity
   try {
     for (const a of list) {
-      if (a.image !== null && a.image.complete && a.image.naturalWidth > 0) {
+      if (a.image?.complete && a.image.naturalWidth > 0) {
         ctx.drawImage(a.image, a.x, a.y, a.width, a.height)
       }
     }

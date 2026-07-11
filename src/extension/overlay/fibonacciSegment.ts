@@ -14,16 +14,13 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, PolygonStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
 import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
-
-import type { OverlayProperties, ProOverlayTemplate } from './types'
-import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-
+import { clone, merge } from '../../common/utils/typeChecks'
 import type { LineAttrs } from '../figure/line'
 import type { TextAttrs } from '../figure/text'
-
 import { FIBONACCI_RETRACEMENT_LEVELS } from './fibonacciLine'
+import type { OverlayProperties, ProOverlayTemplate } from './types'
+import { DEFAULT_OVERLAY_PROPERTIES } from './types'
 
 /** Coerce any CSS colour string to `rgba(r, g, b, alpha)` with
  *  the given alpha (0-1), overriding whatever alpha the input
@@ -49,12 +46,22 @@ const withAlpha = (colour: string, alpha: number): string => {
   const a = Math.max(0, Math.min(1, alpha))
   if (colour.startsWith('#')) {
     const raw = colour.slice(1)
-    const full = raw.length === 3 ? raw.split('').map(c => c + c).join('') : raw
-    if (full.length !== 6) return colour
+    const full =
+      raw.length === 3
+        ? raw
+            .split('')
+            .map((c) => c + c)
+            .join('')
+        : raw
+    if (full.length !== 6) {
+      return colour
+    }
     const r = parseInt(full.slice(0, 2), 16)
     const g = parseInt(full.slice(2, 4), 16)
     const b = parseInt(full.slice(4, 6), 16)
-    if ([r, g, b].some(v => Number.isNaN(v))) return colour
+    if ([r, g, b].some((v) => Number.isNaN(v))) {
+      return colour
+    }
     return `rgba(${r}, ${g}, ${b}, ${a})`
   }
   // Grab the first three numeric components regardless of
@@ -161,7 +168,7 @@ const fibonacciSegment = (): ProOverlayTemplate => {
       } else {
         precision = SymbolDefaultPrecisionConstants.PRICE
         const indicators = chart.getIndicators({ paneId: overlay.paneId })
-        indicators.forEach(indicator => {
+        indicators.forEach((indicator) => {
           precision = Math.max(precision, indicator.precision)
         })
       }
@@ -181,8 +188,7 @@ const fibonacciSegment = (): ProOverlayTemplate => {
       const yDif = anchorNear.y - anchorFar.y
       const valueDif = valueNear - valueFar
 
-      const enabledLevels = ((props.figureLevels?.length ?? 0) > 0 ? props.figureLevels! : FIBONACCI_RETRACEMENT_LEVELS)
-        .filter(l => l.enabled === true)
+      const enabledLevels = ((props.figureLevels?.length ?? 0) > 0 ? props.figureLevels! : FIBONACCI_RETRACEMENT_LEVELS).filter((l) => l.enabled === true)
 
       const decimalFold = chart.getDecimalFold()
       const thousandsSeparator = chart.getThousandsSeparator()
@@ -192,7 +198,7 @@ const fibonacciSegment = (): ProOverlayTemplate => {
       // → lineColor fallback → engine default). Sort ascending by
       // y so background-band rendering has a canonical order.
       const enrichedLevels = enabledLevels
-        .map(level => {
+        .map((level) => {
           const percent = level.value ?? 0
           const y = anchorFar.y + yDif * percent
           const rawPrice = (valueFar + valueDif * percent).toFixed(precision)
@@ -239,11 +245,16 @@ const fibonacciSegment = (): ProOverlayTemplate => {
       // `fbLinesStyle` bag so a Style-tab thickness change
       // moves every level together.
       const baseLineStyle = fbLinesStyle(props)
-      enrichedLevels.forEach(l => {
+      enrichedLevels.forEach((l) => {
         figures.push({
           type: 'line',
           key: `level_${l.percent}`,
-          attrs: { coordinates: [{ x: leftX, y: l.y }, { x: rightX, y: l.y }] } satisfies { coordinates: LineAttrs['coordinates'] },
+          attrs: {
+            coordinates: [
+              { x: leftX, y: l.y },
+              { x: rightX, y: l.y }
+            ]
+          } satisfies { coordinates: LineAttrs['coordinates'] },
           styles: { ...baseLineStyle, color: l.color }
         })
       })
@@ -264,16 +275,17 @@ const fibonacciSegment = (): ProOverlayTemplate => {
         const vAlign = props.textAlignVertical ?? 'top'
         const textX = hAlign === 'right' ? rightX : hAlign === 'center' ? (leftX + rightX) / 2 : leftX
         let canvasAlign: CanvasTextAlign = 'center'
-        if (hAlign === 'left') canvasAlign = 'right'
-        else if (hAlign === 'right') canvasAlign = 'left'
+        if (hAlign === 'left') {
+          canvasAlign = 'right'
+        } else if (hAlign === 'right') {
+          canvasAlign = 'left'
+        }
         const baseline: CanvasTextBaseline = vAlign === 'middle' ? 'middle' : vAlign === 'bottom' ? 'top' : 'bottom'
 
-        const texts: TextAttrs[] = enrichedLevels.map(l => {
+        const texts: TextAttrs[] = enrichedLevels.map((l) => {
           let content = ''
           if (showLevels) {
-            content = levelFormat === 'percent'
-              ? `${(l.percent * 100).toFixed(1)}%`
-              : l.percent.toFixed(3)
+            content = levelFormat === 'percent' ? `${(l.percent * 100).toFixed(1)}%` : l.percent.toFixed(3)
           }
           if (showPrices) {
             content = content.length > 0 ? `${content} (${l.price})` : `(${l.price})`

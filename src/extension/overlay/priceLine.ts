@@ -14,11 +14,10 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
 import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
-
-import type { ProOverlayTemplate } from './types'
+import { clone, merge } from '../../common/utils/typeChecks'
 import type { PriceLineProperties } from './priceLineApi'
+import type { ProOverlayTemplate } from './types'
 
 // ---------------------------------------------------------------------------
 // Default style constants
@@ -100,12 +99,12 @@ const priceLine = (): ProOverlayTemplate => {
     // createPointFigures — horizontal line + optional label
     // -----------------------------------------------------------------------
     createPointFigures: ({ coordinates, bounding, overlay }) => {
-      if (coordinates.length === 0) return []
+      if (coordinates.length === 0) {
+        return []
+      }
 
       // Sync extendData from createPriceLine API into the resolution chain
-      _extRef.data = (overlay.extendData != null && typeof overlay.extendData === 'object')
-        ? overlay.extendData as DeepPartial<PriceLineProperties>
-        : null
+      _extRef.data = overlay.extendData != null && typeof overlay.extendData === 'object' ? (overlay.extendData as DeepPartial<PriceLineProperties>) : null
 
       const y = coordinates[0].y
 
@@ -163,35 +162,24 @@ const priceLine = (): ProOverlayTemplate => {
 
           // Compute label X
           // Priority: textAlignHorizontal (Text tab) > percentX > labelAlign
-          const { labelX, align } = textAlignH != null
-            ? {
-                labelX: textAlignH === 'left'
-                  ? Math.round(bounding.width * 0.04)
-                  : textAlignH === 'right'
-                    ? Math.round(bounding.width * 0.96)
-                    : bounding.width / 2,
-                align: textAlignH as CanvasTextAlign
-              }
-            : percentX >= 0
-              ? { labelX: bounding.width * (percentX / 100), align: labelAlign as CanvasTextAlign }
-              : labelAlign === 'right'
-                ? { labelX: bounding.width - offsetX, align: 'right' as CanvasTextAlign }
-                : labelAlign === 'left'
-                  ? { labelX: offsetX, align: 'left' as CanvasTextAlign }
-                  : { labelX: bounding.width / 2 + offsetX, align: 'center' as CanvasTextAlign }
+          const { labelX, align } =
+            textAlignH != null
+              ? {
+                  labelX: textAlignH === 'left' ? Math.round(bounding.width * 0.04) : textAlignH === 'right' ? Math.round(bounding.width * 0.96) : bounding.width / 2,
+                  align: textAlignH as CanvasTextAlign
+                }
+              : percentX >= 0
+                ? { labelX: bounding.width * (percentX / 100), align: labelAlign as CanvasTextAlign }
+                : labelAlign === 'right'
+                  ? { labelX: bounding.width - offsetX, align: 'right' as CanvasTextAlign }
+                  : labelAlign === 'left'
+                    ? { labelX: offsetX, align: 'left' as CanvasTextAlign }
+                    : { labelX: bounding.width / 2 + offsetX, align: 'center' as CanvasTextAlign }
 
           // Compute label Y — textAlignVertical overrides if set
           const effectiveVAlign = textAlignV ?? (labelPosition === 'above' ? 'top' : labelPosition === 'below' ? 'bottom' : 'middle')
-          const labelY = effectiveVAlign === 'top'
-            ? y - (offsetY > 0 ? offsetY : gap)
-            : effectiveVAlign === 'bottom'
-              ? y + (offsetY > 0 ? offsetY : gap)
-              : y + offsetY
-          const baseline: CanvasTextBaseline = effectiveVAlign === 'top'
-            ? 'bottom'
-            : effectiveVAlign === 'bottom'
-              ? 'top'
-              : 'middle'
+          const labelY = effectiveVAlign === 'top' ? y - (offsetY > 0 ? offsetY : gap) : effectiveVAlign === 'bottom' ? y + (offsetY > 0 ? offsetY : gap) : y + offsetY
+          const baseline: CanvasTextBaseline = effectiveVAlign === 'top' ? 'bottom' : effectiveVAlign === 'bottom' ? 'top' : 'middle'
 
           figures.push({
             type: labelEditable ? 'editableText' : 'text',
@@ -214,15 +202,17 @@ const priceLine = (): ProOverlayTemplate => {
     // createYAxisFigures — price label on Y-axis, always visible
     // -----------------------------------------------------------------------
     createYAxisFigures: ({ chart, overlay, coordinates, bounding, yAxis }) => {
-      if (coordinates.length === 0) return []
+      if (coordinates.length === 0) {
+        return []
+      }
 
       // Sync extendData from createPriceLine API into the resolution chain
-      _extRef.data = (overlay.extendData != null && typeof overlay.extendData === 'object')
-        ? overlay.extendData as DeepPartial<PriceLineProperties>
-        : null
+      _extRef.data = overlay.extendData != null && typeof overlay.extendData === 'object' ? (overlay.extendData as DeepPartial<PriceLineProperties>) : null
 
       const yAxisLabelVisible = prop('yAxisLabelVisible')
-      if (!yAxisLabelVisible) return []
+      if (!yAxisLabelVisible) {
+        return []
+      }
 
       const y = coordinates[0].y
 
@@ -232,15 +222,13 @@ const priceLine = (): ProOverlayTemplate => {
         precision = chart.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE
       } else {
         const indicators = chart.getIndicators({ paneId: overlay.paneId })
-        indicators.forEach(indicator => {
+        indicators.forEach((indicator) => {
           precision = Math.max(precision, indicator.precision)
         })
       }
 
       const { value = 0 } = overlay.points[0]
-      const priceText = chart.getDecimalFold().format(
-        chart.getThousandsSeparator().format(value.toFixed(precision))
-      )
+      const priceText = chart.getDecimalFold().format(chart.getThousandsSeparator().format(value.toFixed(precision)))
 
       // Align to the correct side of the Y-axis
       const yAxisTyped = yAxis as unknown as { isFromZero?: () => boolean } | undefined
@@ -282,9 +270,7 @@ const priceLine = (): ProOverlayTemplate => {
     onRightClick: () => false,
 
     onPressedMoveStart: (event) => {
-      const ext = (event.overlay.extendData != null && typeof event.overlay.extendData === 'object')
-        ? event.overlay.extendData as DeepPartial<PriceLineProperties>
-        : null
+      const ext = event.overlay.extendData != null && typeof event.overlay.extendData === 'object' ? (event.overlay.extendData as DeepPartial<PriceLineProperties>) : null
       const listener = ext?.onMoveStart ?? properties.onMoveStart
       if (listener?.callback != null) {
         listener.callback(listener.params, event)
@@ -293,9 +279,7 @@ const priceLine = (): ProOverlayTemplate => {
     },
 
     onPressedMoving: (event) => {
-      const ext = (event.overlay.extendData != null && typeof event.overlay.extendData === 'object')
-        ? event.overlay.extendData as DeepPartial<PriceLineProperties>
-        : null
+      const ext = event.overlay.extendData != null && typeof event.overlay.extendData === 'object' ? (event.overlay.extendData as DeepPartial<PriceLineProperties>) : null
       const listener = ext?.onMove ?? properties.onMove
       if (listener?.callback != null) {
         listener.callback(listener.params, event)
@@ -304,9 +288,7 @@ const priceLine = (): ProOverlayTemplate => {
     },
 
     onPressedMoveEnd: (event) => {
-      const ext = (event.overlay.extendData != null && typeof event.overlay.extendData === 'object')
-        ? event.overlay.extendData as DeepPartial<PriceLineProperties>
-        : null
+      const ext = event.overlay.extendData != null && typeof event.overlay.extendData === 'object' ? (event.overlay.extendData as DeepPartial<PriceLineProperties>) : null
       const listener = ext?.onMoveEnd ?? properties.onMoveEnd
       if (listener?.callback != null) {
         listener.callback(listener.params, event)

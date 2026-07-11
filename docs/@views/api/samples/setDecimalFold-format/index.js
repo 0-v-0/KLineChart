@@ -16,7 +16,7 @@ const subscriptNumbers = {
 const chart = init('setDecimalFold-format-chart')
 
 chart.setDecimalFold({
-  format: value => {
+  format: (value) => {
     const vl = `${value}`
     const reg = /\.0{3,}[1-9][0-9]*$/
     if (reg.test(vl)) {
@@ -26,7 +26,7 @@ chart.setDecimalFold({
       const match = /0*/.exec(v)
       if (match) {
         const count = `${match[0].length}`
-        result[lastIndex] = v.replace(/0*/, `0${count.replace(/\d/, $1 => subscriptNumbers[$1] ?? '')}`)
+        result[lastIndex] = v.replace(/0*/, `0${count.replace(/\d/, ($1) => subscriptNumbers[$1] ?? '')}`)
         return result.join('.')
       }
     }
@@ -37,12 +37,10 @@ chart.setDecimalFold({
 chart.setSymbol({ ticker: 'TestSymbol', pricePrecision: 10 })
 chart.setPeriod({ span: 1, type: 'day' })
 chart.setDataLoader({
-  getBars: ({
-    callback
-  }) => {
+  getBars: ({ callback }) => {
     fetch('https://klinecharts.com/datas/kline2.json')
-      .then(res => res.json())
-      .then(dataList => {
+      .then((res) => res.json())
+      .then((dataList) => {
         callback(dataList)
       })
   }

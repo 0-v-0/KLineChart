@@ -20,7 +20,7 @@ export interface SetVisibleRangeError extends Error {
   detail: unknown
 }
 
-export function createSetVisibleRangeError (code: SetVisibleRangeErrorCode, detail?: unknown): SetVisibleRangeError {
+export function createSetVisibleRangeError(code: SetVisibleRangeErrorCode, detail?: unknown): SetVisibleRangeError {
   const err = new Error(`setVisibleRange: ${code}`) as SetVisibleRangeError
   err.name = 'SetVisibleRangeError'
   err.code = code
@@ -28,6 +28,6 @@ export function createSetVisibleRangeError (code: SetVisibleRangeErrorCode, deta
   return err
 }
 
-export function isSetVisibleRangeError (e: unknown): e is SetVisibleRangeError {
+export function isSetVisibleRangeError(e: unknown): e is SetVisibleRangeError {
   return e instanceof Error && e.name === 'SetVisibleRangeError'
 }

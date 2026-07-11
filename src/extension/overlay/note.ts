@@ -32,8 +32,8 @@
  * the user's label-background pick to recolour it).
  */
 
-import type { OverlayTemplate, OverlayFigure } from '../../component/Overlay'
 import { calcTextWidth } from '../../common/utils/canvas'
+import type { OverlayFigure, OverlayTemplate } from '../../component/Overlay'
 
 interface NoteOverlayData {
   text?: string
@@ -51,8 +51,8 @@ interface NoteOverlayData {
 
 interface OverlayStyleSlice {
   line?: { color?: string }
-  polygon?: { color?: string, borderColor?: string, borderSize?: number }
-  text?: { color?: string, size?: number, family?: string, weight?: number | string, backgroundColor?: string }
+  polygon?: { color?: string; borderColor?: string; borderSize?: number }
+  text?: { color?: string; size?: number; family?: string; weight?: number | string; backgroundColor?: string }
 }
 
 // Visual defaults — chosen to match TradingView's Note tool.
@@ -67,14 +67,17 @@ const LABEL_BORDER_RADIUS = 4
 const DEFAULT_FONT_SIZE = 14
 const DEFAULT_FONT_FAMILY = 'Helvetica Neue'
 
-function parseExtendData (extendData: unknown): NoteOverlayData {
+function parseExtendData(extendData: unknown): NoteOverlayData {
   if (extendData !== null && typeof extendData === 'object') {
     return extendData as NoteOverlayData
   }
   return {}
 }
 
-interface XY { x: number, y: number }
+interface XY {
+  x: number
+  y: number
+}
 
 /**
  * Return the midpoint of the label-rect edge closest to `anchor`.
@@ -82,10 +85,7 @@ interface XY { x: number, y: number }
  * top / bottom of the rect) is geometrically closest, recomputed
  * each render so the connection stays clean as the label grows.
  */
-function nearestMidpoint (
-  anchor: XY,
-  rect: { x: number, y: number, width: number, height: number }
-): XY {
+function nearestMidpoint(anchor: XY, rect: { x: number; y: number; width: number; height: number }): XY {
   const midX = rect.x + rect.width / 2
   const midY = rect.y + rect.height / 2
   const midpoints: XY[] = [
@@ -117,7 +117,9 @@ const note: OverlayTemplate = {
   needDefaultYAxisFigure: false,
 
   createPointFigures: ({ overlay, coordinates }) => {
-    if (coordinates.length < 2) return []
+    if (coordinates.length < 2) {
+      return []
+    }
 
     const data = parseExtendData(overlay.extendData)
     const styles = (overlay.styles ?? {}) as OverlayStyleSlice
@@ -188,7 +190,9 @@ const note: OverlayTemplate = {
       weight: fontWeight,
       family: fontFamily
     }
-    if (textColor !== undefined) editableTextStyle.color = textColor
+    if (textColor !== undefined) {
+      editableTextStyle.color = textColor
+    }
 
     // Drag scoping — TV semantics:
     //   * Drag the leader line  → whole overlay translates (no pointIndex).

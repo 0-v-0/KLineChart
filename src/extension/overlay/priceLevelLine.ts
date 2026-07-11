@@ -24,8 +24,8 @@
  */
 
 import type DeepPartial from '../../common/DeepPartial'
-import { merge, clone } from '../../common/utils/typeChecks'
 import { calcTextWidth } from '../../common/utils/canvas'
+import { clone, merge } from '../../common/utils/typeChecks'
 
 import type { ProOverlayTemplate } from './types'
 
@@ -103,13 +103,10 @@ const priceLevelLine = (): ProOverlayTemplate => {
   }
 
   /** Resolve a property with a dynamic fallback instead of a static default */
-  const propOr = (key: string, fallback: unknown): unknown =>
-    _ext?.[key] ?? (properties as Record<string, unknown>)[key] ?? fallback
+  const propOr = (key: string, fallback: unknown): unknown => _ext?.[key] ?? (properties as Record<string, unknown>)[key] ?? fallback
 
   const syncExt = (overlay: { extendData?: unknown }): void => {
-    _ext = (overlay.extendData != null && typeof overlay.extendData === 'object')
-      ? overlay.extendData as Record<string, unknown>
-      : null
+    _ext = overlay.extendData != null && typeof overlay.extendData === 'object' ? (overlay.extendData as Record<string, unknown>) : null
   }
 
   return {
@@ -120,7 +117,9 @@ const priceLevelLine = (): ProOverlayTemplate => {
     needDefaultYAxisFigure: false,
 
     createPointFigures: ({ coordinates, bounding, overlay }) => {
-      if (coordinates.length === 0) return []
+      if (coordinates.length === 0) {
+        return []
+      }
       syncExt(overlay)
 
       const y = coordinates[0].y
@@ -135,11 +134,7 @@ const priceLevelLine = (): ProOverlayTemplate => {
 
       // Resolve text position: explicit percent > named align > default
       const textAlign = propOr('textAlign', undefined) as string | undefined
-      const posPercent = Math.max(0, Math.min(100,
-        (propOr('textPositionPercent',
-          textAlign != null ? TEXT_ALIGN_PERCENT[textAlign] : defaults.textPositionPercent
-        )) as number
-      ))
+      const posPercent = Math.max(0, Math.min(100, propOr('textPositionPercent', textAlign != null ? TEXT_ALIGN_PERCENT[textAlign] : defaults.textPositionPercent) as number))
 
       const lineStyles = {
         style: prop('lineStyle'),
@@ -155,7 +150,12 @@ const priceLevelLine = (): ProOverlayTemplate => {
         figures.push({
           type: 'line',
           key: 'line',
-          attrs: { coordinates: [{ x: 0, y }, { x: bounding.width, y }] },
+          attrs: {
+            coordinates: [
+              { x: 0, y },
+              { x: bounding.width, y }
+            ]
+          },
           styles: lineStyles,
           ignoreEvent
         })
@@ -172,7 +172,12 @@ const priceLevelLine = (): ProOverlayTemplate => {
         figures.push({
           type: 'line',
           key: 'line-left',
-          attrs: { coordinates: [{ x: 0, y }, { x: Math.max(0, gapLeft), y }] },
+          attrs: {
+            coordinates: [
+              { x: 0, y },
+              { x: Math.max(0, gapLeft), y }
+            ]
+          },
           styles: lineStyles,
           ignoreEvent
         })
@@ -181,7 +186,12 @@ const priceLevelLine = (): ProOverlayTemplate => {
         figures.push({
           type: 'line',
           key: 'line-right',
-          attrs: { coordinates: [{ x: Math.min(bounding.width, gapRight), y }, { x: bounding.width, y }] },
+          attrs: {
+            coordinates: [
+              { x: Math.min(bounding.width, gapRight), y },
+              { x: bounding.width, y }
+            ]
+          },
           styles: lineStyles,
           ignoreEvent
         })
@@ -216,14 +226,20 @@ const priceLevelLine = (): ProOverlayTemplate => {
 
     // Y-axis label
     createYAxisFigures: ({ overlay, coordinates, chart }) => {
-      if (coordinates.length === 0) return []
+      if (coordinates.length === 0) {
+        return []
+      }
       syncExt(overlay)
 
-      if (!prop('yAxisLabelVisible')) return []
+      if (!prop('yAxisLabelVisible')) {
+        return []
+      }
 
       const y = coordinates[0].y
       const price = overlay.points[0]?.value
-      if (price === undefined) return []
+      if (price === undefined) {
+        return []
+      }
 
       const precision = chart.getSymbol()?.pricePrecision ?? 2
       const priceText = Number(price).toFixed(precision)
@@ -234,23 +250,25 @@ const priceLevelLine = (): ProOverlayTemplate => {
       const textColor = prop('yAxisLabelTextColor')
       const borderColor = propOr('yAxisLabelBorderColor', bgColor) as string
 
-      return [{
-        type: 'text',
-        attrs: { x: 0, y, text: priceText, align: 'left', baseline: 'middle' },
-        styles: {
-          style: 'fill',
-          color: textColor,
-          size: 12,
-          backgroundColor: bgColor,
-          borderColor,
-          paddingLeft: 4,
-          paddingRight: 4,
-          paddingTop: 4,
-          paddingBottom: 4,
-          borderRadius: 0
-        },
-        ignoreEvent
-      }]
+      return [
+        {
+          type: 'text',
+          attrs: { x: 0, y, text: priceText, align: 'left', baseline: 'middle' },
+          styles: {
+            style: 'fill',
+            color: textColor,
+            size: 12,
+            backgroundColor: bgColor,
+            borderColor,
+            paddingLeft: 4,
+            paddingRight: 4,
+            paddingTop: 4,
+            paddingBottom: 4,
+            borderRadius: 0
+          },
+          ignoreEvent
+        }
+      ]
     },
 
     onRightClick: (event) => {

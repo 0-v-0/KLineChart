@@ -329,6 +329,7 @@ export default class CandleTooltipView extends IndicatorTooltipView {
     const prev = dataList[dataIndex - 1] ?? null
     const current = dataList[dataIndex]
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
     const prevClose = prev?.close ?? current.close
     const changeValue = current.close - prevClose
     const mapping = {
@@ -342,8 +343,7 @@ export default class CandleTooltipView extends IndicatorTooltipView {
       turnover: decimalFold.format(thousandsSeparator.format(formatPrecision(current.turnover ?? defaultValue, pricePrecision))),
       change: prevClose === 0 ? defaultValue : `${thousandsSeparator.format(formatPrecision((changeValue / prevClose) * 100))}%`
     }
-    // @ts-ignore
-    const legends: TooltipLegend[] = isFunction(template) ? template({ prev, current, next: dataList[dataIndex + 1] ?? null }, styles) : template
+    const legends = isFunction(template) ? template({ prev, current, next: dataList[dataIndex + 1] ?? null }, styles) : template
     return legends.map(({ title, value }) => {
       let t: TooltipLegendChild = { text: '', color: textColor }
       if (isObject(title)) {

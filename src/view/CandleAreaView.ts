@@ -93,9 +93,7 @@ export default class CandleAreaView extends ChildrenView {
           backgroundColor.forEach(({ offset, color }) => {
             gradient.addColorStop(offset, color)
           })
-        } catch {
-          // Ignore invalid gradient stops.
-        }
+        } catch (_e) {}
         color = gradient
       } else {
         color = backgroundColor

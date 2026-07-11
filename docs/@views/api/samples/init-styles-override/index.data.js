@@ -2,7 +2,7 @@ import fs from 'fs'
 
 export default {
   watch: ['./index.js'],
-  load (watchedFiles) {
+  load(watchedFiles) {
     return watchedFiles.reduce((data, file) => {
       const result = fs.readFileSync(file, 'utf-8')
       let key

@@ -38,15 +38,13 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, PathStyle, PolygonStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
-
-import type { OverlayProperties, FigureLevel, ProOverlayTemplate } from './types'
+import { clone, merge } from '../../common/utils/typeChecks'
+import type { PathAttrs } from '../figure/path'
 
 import type { PolygonAttrs } from '../figure/polygon'
 import type { TextAttrs } from '../figure/text'
-import type { PathAttrs } from '../figure/path'
-
 import { formatFibRatio, resolveFibSettings, withAlpha } from './fibonacciShared'
+import type { FigureLevel, OverlayProperties, ProOverlayTemplate } from './types'
 
 /** Grey palette entry used both as the level-1 default colour
  *  AND the trendline's default. Storing the constant here
@@ -120,7 +118,9 @@ const fibonacciCircle = (): ProOverlayTemplate => {
     needDefaultYAxisFigure: true,
     createPointFigures: ({ coordinates, overlay }) => {
       const props = properties.get(overlay.id) ?? {}
-      if (coordinates.length <= 1) return []
+      if (coordinates.length <= 1) {
+        return []
+      }
 
       const settings = resolveFibSettings(overlay.extendData)
       // Circle-specific default overrides:
@@ -130,7 +130,7 @@ const fibonacciCircle = (): ProOverlayTemplate => {
       // The shared resolver defaults these to false / 20 for
       // the retracement family; override here without touching
       // the shared helper so retracement's defaults stay put.
-      const ext = (overlay.extendData ?? {}) as { showBackground?: boolean, backgroundOpacity?: number, showLevels?: boolean }
+      const ext = (overlay.extendData ?? {}) as { showBackground?: boolean; backgroundOpacity?: number; showLevels?: boolean }
       const showBackground = ext.showBackground !== false
       const backgroundOpacity = typeof ext.backgroundOpacity === 'number' ? ext.backgroundOpacity : DEFAULT_BG_OPACITY
       const showLevels = ext.showLevels !== false
@@ -176,11 +176,10 @@ const fibonacciCircle = (): ProOverlayTemplate => {
       // (anchor/(rxBase·p))² + (anchor/(ryBase·p))² = 1, and
       // at the anchor both terms contribute equally, so
       // rxBase = halfPx · √2 / p.
-      const rxBase = halfPxX * Math.SQRT2 / TRENDLINE_LEVEL
-      const ryBase = halfPxY * Math.SQRT2 / TRENDLINE_LEVEL
+      const rxBase = (halfPxX * Math.SQRT2) / TRENDLINE_LEVEL
+      const ryBase = (halfPxY * Math.SQRT2) / TRENDLINE_LEVEL
 
-      const enabledLevels = ((props.figureLevels?.length ?? 0) > 0 ? props.figureLevels! : FIBONACCI_CIRCLE_LEVELS)
-        .filter(l => l.enabled === true) as FigureLevel[]
+      const enabledLevels = ((props.figureLevels?.length ?? 0) > 0 ? props.figureLevels! : FIBONACCI_CIRCLE_LEVELS).filter((l) => l.enabled === true) as FigureLevel[]
 
       const figures: Array<{
         type: string
@@ -197,8 +196,8 @@ const fibonacciCircle = (): ProOverlayTemplate => {
       // trendline (which lives on `coordinates[0]`/`[1]`) keeps
       // the two visually coupled: any drift in the anchor
       // pixel positions moves rings and trendline as a unit.
-      const sampleEllipse = (p: number): Array<{ x: number, y: number }> => {
-        const verts: Array<{ x: number, y: number }> = []
+      const sampleEllipse = (p: number): Array<{ x: number; y: number }> => {
+        const verts: Array<{ x: number; y: number }> = []
         const rx = rxBase * p
         const ry = ryBase * p
         for (let i = 0; i < ELLIPSE_SAMPLES; i++) {
@@ -217,8 +216,10 @@ const fibonacciCircle = (): ProOverlayTemplate => {
       // Sampling matches the level-ring polygon exactly, so
       // annulus outline and ring stroke stay pixel-perfect
       // aligned regardless of drag/zoom.
-      const vertsToSubpath = (verts: Array<{ x: number, y: number }>): string => {
-        if (verts.length === 0) return ''
+      const vertsToSubpath = (verts: Array<{ x: number; y: number }>): string => {
+        if (verts.length === 0) {
+          return ''
+        }
         let s = `M ${verts[0].x} ${verts[0].y}`
         for (let i = 1; i < verts.length; i++) {
           s += ` L ${verts[i].x} ${verts[i].y}`
@@ -256,7 +257,7 @@ const fibonacciCircle = (): ProOverlayTemplate => {
       // per-ring toggle).
       const polygons: PolygonAttrs[] = []
       const texts: TextAttrs[] = []
-      enabledLevels.forEach(level => {
+      enabledLevels.forEach((level) => {
         const percent = level.value
         const levelKey = `circle_${percent}`
         const verts = sampleEllipse(percent)

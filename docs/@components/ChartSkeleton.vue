@@ -54,7 +54,7 @@ const rootClass = computed(() => {
   return props.className ? `chart-skeleton-root ${props.className}` : 'chart-skeleton-root'
 })
 
-function generateCandles (count) {
+function generateCandles(count) {
   const raw = []
   let close = 50
 
@@ -62,14 +62,7 @@ function generateCandles (count) {
     const open = close
     const progress = i / (count - 1)
 
-    const trend =
-      progress < 0.22
-        ? -0.9 - Math.sin(i * 0.9) * 0.55
-        : progress < 0.38
-          ? Math.sin(i * 1.4) * 0.65 - 0.12
-          : progress < 0.82
-            ? 1.1 + Math.sin(i * 0.42) * 0.42
-            : -0.62 - Math.sin(i * 0.75) * 0.35
+    const trend = progress < 0.22 ? -0.9 - Math.sin(i * 0.9) * 0.55 : progress < 0.38 ? Math.sin(i * 1.4) * 0.65 - 0.12 : progress < 0.82 ? 1.1 + Math.sin(i * 0.42) * 0.42 : -0.62 - Math.sin(i * 0.75) * 0.35
 
     const noise = Math.sin(i * 1.17) * 0.55 + Math.cos(i * 0.63) * 0.38
     close = open + trend + noise

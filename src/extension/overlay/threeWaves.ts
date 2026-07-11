@@ -14,10 +14,10 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
-import type { OverlayProperties, ProOverlayTemplate } from './types'
+import { clone, merge } from '../../common/utils/typeChecks'
 import type { LineAttrs } from '../figure/line'
 import type { TextAttrs } from '../figure/text'
+import type { OverlayProperties, ProOverlayTemplate } from './types'
 
 /**
  * Three Waves overlay - 3-wave Elliott wave pattern

@@ -103,7 +103,7 @@ export default class Event implements EventHandler {
   // Defer single-click action so a following double-click can cancel it.
   private _pendingClickTimer: ReturnType<typeof setTimeout> | null = null
 
-  private readonly _boundKeyBoardDownEvent: ((event: KeyboardEvent) => void) = (event: KeyboardEvent) => {
+  private readonly _boundKeyBoardDownEvent: (event: KeyboardEvent) => void = (event: KeyboardEvent) => {
     const target = event.target as Nullable<HTMLElement>
     const tagName = target?.tagName.toLowerCase()
     if (tagName === 'input' || tagName === 'textarea' || target?.isContentEditable === true) {
@@ -269,7 +269,7 @@ export default class Event implements EventHandler {
     return true
   }
 
-  pinchEvent(e: MouseTouchEvent, scale = 1): boolean {
+  pinchEvent(e: MouseTouchEvent, scale: number): boolean {
     const { pane, widget } = this._findWidgetByEvent(e)
     if (pane?.getId() !== PaneIdConstants.X_AXIS && widget?.getName() === WidgetNameConstants.MAIN) {
       const event = this._makeWidgetEvent(e, widget)
@@ -281,14 +281,14 @@ export default class Event implements EventHandler {
     return false
   }
 
-  mouseWheelHortEvent(_: MouseTouchEvent, distance = 0): boolean {
+  mouseWheelHortEvent(_: MouseTouchEvent, distance: number): boolean {
     const store = this._chart.getChartStore()
     store.startScroll()
     store.scroll(distance)
     return true
   }
 
-  mouseWheelVertEvent(e: MouseTouchEvent, scale = 0): boolean {
+  mouseWheelVertEvent(e: MouseTouchEvent, scale: number): boolean {
     const { widget } = this._findWidgetByEvent(e)
     const event = this._makeWidgetEvent(e, widget)
     const name = widget?.getName()
@@ -409,6 +409,7 @@ export default class Event implements EventHandler {
       const name = widget.getName()
       switch (name) {
         case WidgetNameConstants.MAIN: {
+          // eslint-disable-next-line @typescript-eslint/init-declarations -- ignore
           let crosshair: Crosshair | undefined
           const consumed = widget.dispatchEvent('pressedMouseMoveEvent', event)
           if (!consumed) {
@@ -457,7 +458,7 @@ export default class Event implements EventHandler {
     return consumed
   }
 
-  mouseClickEvent (e: MouseTouchEvent): boolean {
+  mouseClickEvent(e: MouseTouchEvent): boolean {
     const { pane, widget } = this._findWidgetByEvent(e)
     if (widget !== null) {
       const event = this._makeWidgetEvent(e, widget)
@@ -470,7 +471,9 @@ export default class Event implements EventHandler {
           const crosshair = chartStore.getCrosshair()
           const payload = { x: event.x, y: event.y, pageX: event.pageX, pageY: event.pageY, ...crosshair }
           // Defer so a following double-click can cancel it
-          if (this._pendingClickTimer !== null) clearTimeout(this._pendingClickTimer)
+          if (this._pendingClickTimer !== null) {
+            clearTimeout(this._pendingClickTimer)
+          }
           this._pendingClickTimer = setTimeout(() => {
             this._pendingClickTimer = null
             chartStore.executeAction('onChartClick', payload)
@@ -482,7 +485,7 @@ export default class Event implements EventHandler {
     return false
   }
 
-  mouseRightClickEvent (e: MouseTouchEvent): boolean {
+  mouseRightClickEvent(e: MouseTouchEvent): boolean {
     const { pane, widget } = this._findWidgetByEvent(e)
     let consumed = false
     if (widget !== null) {
@@ -518,7 +521,7 @@ export default class Event implements EventHandler {
   }
 
   mouseDoubleClickEvent(e: MouseTouchEvent): boolean {
-    const { widget } = this._findWidgetByEvent(e)
+    const { widget, pane } = this._findWidgetByEvent(e)
     if (widget !== null) {
       const name = widget.getName()
       switch (name) {
@@ -765,7 +768,9 @@ export default class Event implements EventHandler {
               pageY: event.pageY,
               ...crosshair
             }
-            if (this._pendingClickTimer !== null) clearTimeout(this._pendingClickTimer)
+            if (this._pendingClickTimer !== null) {
+              clearTimeout(this._pendingClickTimer)
+            }
             this._pendingClickTimer = setTimeout(() => {
               this._pendingClickTimer = null
               chartStore.executeAction('onChartClick', payload)

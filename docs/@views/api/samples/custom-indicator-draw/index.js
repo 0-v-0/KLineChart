@@ -5,16 +5,14 @@ registerIndicator({
   shortName: 'Volume',
   zLevel: -1,
   figures: [],
-  calc: dataList => dataList.map(data => ({ ...data })),
+  calc: (dataList) => dataList.map((data) => ({ ...data })),
   createTooltipDataSource: ({ indicator, crosshair }) => {
     const result = indicator.result
     const data = result[crosshair.dataIndex]
     if (data) {
       const color = data.open < data.close ? 'rgb(224, 152, 199)' : 'rgb(143, 211, 232)'
       return {
-        legends: [
-          { title: '', value: { text: data.volume, color } }
-        ]
+        legends: [{ title: '', value: { text: data.volume, color } }]
       }
     }
     return {}
@@ -35,7 +33,7 @@ registerIndicator({
     for (let i = realFrom; i < realTo; i++) {
       const data = result[i]
       if (data) {
-        const height = Math.round(data.volume / maxVolume * totalHeight)
+        const height = Math.round((data.volume / maxVolume) * totalHeight)
         const color = data.open < data.close ? 'rgba(224, 152, 199, 0.6)' : 'rgba(143, 211, 232, 0.6)'
         new Rect({
           name: 'rect',
@@ -60,12 +58,10 @@ chart.createIndicator({ name: 'customIndicatorDraw', paneId: 'candle_pane' })
 chart.setSymbol({ ticker: 'TestSymbol' })
 chart.setPeriod({ span: 1, type: 'day' })
 chart.setDataLoader({
-  getBars: ({
-    callback
-  }) => {
+  getBars: ({ callback }) => {
     fetch('https://klinecharts.com/datas/kline.json')
-      .then(res => res.json())
-      .then(dataList => {
+      .then((res) => res.json())
+      .then((dataList) => {
         callback(dataList)
       })
   }

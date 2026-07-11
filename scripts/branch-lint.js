@@ -1,5 +1,5 @@
-import { styleText } from 'node:util'
 import childProcess from 'child_process'
+import { styleText } from 'node:util'
 
 const branchName = childProcess.execSync('git branch --show-current').toString().trim()
 if (!/^(feature|fix)\/[A-Za-z0-9]+([-][A-Za-z0-9]+)*$/.test(branchName)) {

@@ -1,5 +1,5 @@
-import { styleText } from 'node:util'
 import fs from 'fs'
+import { styleText } from 'node:util'
 
 import { resolvePath } from '../utils.js'
 
@@ -36,7 +36,7 @@ function deleteFiles(dir) {
           process.stdout.clearLine(0)
           process.stdout.cursorTo(0)
         }
-        const percent = `${Math.round(deletedFileCount / totalFileCount * 100)}%`
+        const percent = `${Math.round((deletedFileCount / totalFileCount) * 100)}%`
         process.stdout.write(`${styleText('blue', `${percent}(${deletedFileCount}/${totalFileCount}): ${file}`)}`, 'utf-8')
       }
     })
@@ -44,7 +44,7 @@ function deleteFiles(dir) {
   }
 }
 
-function clean () {
+function clean() {
   eachFiles(buildDir)
   deleteFiles(buildDir)
 

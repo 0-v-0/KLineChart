@@ -6,6 +6,6 @@ const locales = {
   'en-US': enUS
 }
 
-export default function i18n (key, locale = 'zh-CN') {
+export default function i18n(key, locale = 'zh-CN') {
   return (locales[locale] || {})[key] || key
 }

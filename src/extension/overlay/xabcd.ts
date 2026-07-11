@@ -13,12 +13,12 @@
  */
 
 import type DeepPartial from '../../common/DeepPartial'
-import type { LineStyle, TextStyle, PolygonStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
-import type { OverlayProperties, ProOverlayTemplate } from './types'
+import type { LineStyle, PolygonStyle, TextStyle } from '../../common/Styles'
+import { clone, merge } from '../../common/utils/typeChecks'
 import type { LineAttrs } from '../figure/line'
-import type { TextAttrs } from '../figure/text'
 import type { PolygonAttrs } from '../figure/polygon'
+import type { TextAttrs } from '../figure/text'
+import type { OverlayProperties, ProOverlayTemplate } from './types'
 
 /**
  * XABCD overlay - XABCD harmonic pattern

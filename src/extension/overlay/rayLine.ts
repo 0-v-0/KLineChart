@@ -13,13 +13,14 @@
  */
 
 import type Bounding from '../../common/Bounding'
+import type Coordinate from '../../common/Coordinate'
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
-import type { OverlayProperties, ProOverlayTemplate } from './types'
-import { DEFAULT_OVERLAY_PROPERTIES } from './types'
+import { clone, merge } from '../../common/utils/typeChecks'
 import { getLinearYFromCoordinates, type LineAttrs } from '../figure/line'
 import { computeTextPosition } from './textUtils'
+import type { OverlayProperties, ProOverlayTemplate } from './types'
+import { DEFAULT_OVERLAY_PROPERTIES } from './types'
 
 export function getRayLine(coordinates: Coordinate[], bounding: Bounding): LineAttrs | LineAttrs[] {
   if (coordinates.length > 1) {

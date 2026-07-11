@@ -22,8 +22,8 @@
  * geometry (anchor mapping, x-limits).
  */
 
-import type { LineStyle, PolygonStyle, TextStyle } from '../../common/Styles'
 import type DeepPartial from '../../common/DeepPartial'
+import type { LineStyle, PolygonStyle, TextStyle } from '../../common/Styles'
 import type { FigureLevel, OverlayProperties } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
 
@@ -64,8 +64,7 @@ export const FIB_LEVEL_COLOURS: Record<string, string> = {
  *  each time. Returns undefined when the ratio isn't in the
  *  palette so callers can fall through to `props.lineColor`
  *  at render time. */
-export const fibLevelDefaultColour = (ratio: number): string | undefined =>
-  FIB_LEVEL_COLOURS[ratio]
+export const fibLevelDefaultColour = (ratio: number): string | undefined => FIB_LEVEL_COLOURS[ratio]
 
 /** All extendData fields the fib Style tab exposes (ALTD-1894). */
 export interface FibExtendData {
@@ -145,12 +144,22 @@ export const withAlpha = (colour: string, alpha: number): string => {
   const a = Math.max(0, Math.min(1, alpha))
   if (colour.startsWith('#')) {
     const raw = colour.slice(1)
-    const full = raw.length === 3 ? raw.split('').map(c => c + c).join('') : raw
-    if (full.length !== 6) return colour
+    const full =
+      raw.length === 3
+        ? raw
+            .split('')
+            .map((c) => c + c)
+            .join('')
+        : raw
+    if (full.length !== 6) {
+      return colour
+    }
     const r = parseInt(full.slice(0, 2), 16)
     const g = parseInt(full.slice(2, 4), 16)
     const b = parseInt(full.slice(4, 6), 16)
-    if ([r, g, b].some(v => Number.isNaN(v))) return colour
+    if ([r, g, b].some((v) => Number.isNaN(v))) {
+      return colour
+    }
     return `rgba(${r}, ${g}, ${b}, ${a})`
   }
   const match = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i.exec(colour)
@@ -178,12 +187,12 @@ export interface EnrichedFibLevel {
  *  own point → level mapping. */
 export const buildEnrichedLevels = (opts: {
   levels: FigureLevel[]
-  anchorFar: { x: number, y: number }
-  anchorNear: { x: number, y: number }
+  anchorFar: { x: number; y: number }
+  anchorNear: { x: number; y: number }
   valueFar: number
   valueNear: number
   precision: number
-  chart: { getDecimalFold: () => { format: (v: string) => string }, getThousandsSeparator: () => { format: (v: string) => string } }
+  chart: { getDecimalFold: () => { format: (v: string) => string }; getThousandsSeparator: () => { format: (v: string) => string } }
   lineColour: string
   reverse: boolean
 }): EnrichedFibLevel[] => {
@@ -198,7 +207,7 @@ export const buildEnrichedLevels = (opts: {
   const decimalFold = chart.getDecimalFold()
   const thousandsSeparator = chart.getThousandsSeparator()
   return levels
-    .map(level => {
+    .map((level) => {
       const percent = level.value
       const y = far.y + yDif * percent
       const rawPrice = (farVal + valueDif * percent).toFixed(precision)
@@ -228,13 +237,10 @@ export interface FibFigureSpec {
  *  applied via `withAlpha` — the level colour's own alpha is
  *  ignored so the Style-tab Background slider stays
  *  authoritative regardless of what the level colour carries. */
-export const buildBackgroundBands = (
-  enriched: EnrichedFibLevel[],
-  leftX: number,
-  rightX: number,
-  backgroundOpacity: number
-): FibFigureSpec[] => {
-  if (enriched.length < 2) return []
+export const buildBackgroundBands = (enriched: EnrichedFibLevel[], leftX: number, rightX: number, backgroundOpacity: number): FibFigureSpec[] => {
+  if (enriched.length < 2) {
+    return []
+  }
   const figures: FibFigureSpec[] = []
   for (let i = 0; i < enriched.length - 1; i++) {
     const top = enriched[i]
@@ -267,23 +273,22 @@ export const buildBackgroundBands = (
  *  canvas without an engine change. Width / style / dash still
  *  come from the shared `styles` bag so a Style-tab thickness
  *  change moves every ring together. */
-export const buildLevelLines = (
-  enriched: EnrichedFibLevel[],
-  leftX: number,
-  rightX: number,
-  styles: Partial<LineStyle>
-): FibFigureSpec[] =>
-  enriched.map(l => ({
+export const buildLevelLines = (enriched: EnrichedFibLevel[], leftX: number, rightX: number, styles: Partial<LineStyle>): FibFigureSpec[] =>
+  enriched.map((l) => ({
     type: 'line',
     key: `level_${l.percent}`,
-    attrs: { coordinates: [{ x: leftX, y: l.y }, { x: rightX, y: l.y }] },
+    attrs: {
+      coordinates: [
+        { x: leftX, y: l.y },
+        { x: rightX, y: l.y }
+      ]
+    },
     styles: { ...styles, color: l.color }
   }))
 
 /** Ratio text — percent or decimal, per `levelFormat`. Extracted
  *  so the label-composer stays declarative. */
-export const formatFibRatio = (percent: number, levelFormat: 'values' | 'percent'): string =>
-  levelFormat === 'percent' ? `${(percent * 100).toFixed(1)}%` : percent.toFixed(3)
+export const formatFibRatio = (percent: number, levelFormat: 'values' | 'percent'): string => (levelFormat === 'percent' ? `${(percent * 100).toFixed(1)}%` : percent.toFixed(3))
 
 /** Level labels — one text figure per enriched level, emitted
  *  only when `showText` AND at least one of `showLevels` /
@@ -292,15 +297,10 @@ export const formatFibRatio = (percent: number, levelFormat: 'values' | 'percent
  *  `textAlignHorizontal` picks the x anchor from the level
  *  segment's leftX / midpoint / rightX; `textAlignVertical`
  *  maps to canvas baseline. */
-export const buildLevelLabels = (
-  enriched: EnrichedFibLevel[],
-  leftX: number,
-  rightX: number,
-  settings: ResolvedFibSettings,
-  props: DeepPartial<OverlayProperties>,
-  labelStyles: Partial<TextStyle>
-): FibFigureSpec | null => {
-  if (!settings.showText || (!settings.showLevels && !settings.showPrices)) return null
+export const buildLevelLabels = (enriched: EnrichedFibLevel[], leftX: number, rightX: number, settings: ResolvedFibSettings, props: DeepPartial<OverlayProperties>, labelStyles: Partial<TextStyle>): FibFigureSpec | null => {
+  if (!settings.showText || (!settings.showLevels && !settings.showPrices)) {
+    return null
+  }
   const hAlign = props.textAlignHorizontal ?? 'left'
   const vAlign = props.textAlignVertical ?? 'top'
   const textX = hAlign === 'right' ? rightX : hAlign === 'center' ? (leftX + rightX) / 2 : leftX
@@ -309,13 +309,20 @@ export const buildLevelLabels = (
   // canvas text-align flips so glyphs run AWAY from the fib.
   // 'center' keeps the natural centred behaviour inside.
   let canvasAlign: CanvasTextAlign = 'center'
-  if (hAlign === 'left') canvasAlign = 'right'
-  else if (hAlign === 'right') canvasAlign = 'left'
+  if (hAlign === 'left') {
+    canvasAlign = 'right'
+  } else if (hAlign === 'right') {
+    canvasAlign = 'left'
+  }
   const baseline: CanvasTextBaseline = vAlign === 'middle' ? 'middle' : vAlign === 'bottom' ? 'top' : 'bottom'
-  const texts = enriched.map(l => {
+  const texts = enriched.map((l) => {
     let content = ''
-    if (settings.showLevels) content = formatFibRatio(l.percent, settings.levelFormat)
-    if (settings.showPrices) content = content.length > 0 ? `${content} (${l.price})` : `(${l.price})`
+    if (settings.showLevels) {
+      content = formatFibRatio(l.percent, settings.levelFormat)
+    }
+    if (settings.showPrices) {
+      content = content.length > 0 ? `${content} (${l.price})` : `(${l.price})`
+    }
     return {
       key: `level_${l.percent}_text`,
       x: textX,
@@ -337,12 +344,10 @@ export const buildLevelLabels = (
  *  extendData's diagonal-specific fields — no fallback to
  *  `props.lineColor` etc, so changing the general Line row
  *  never bleeds into the Trend Line. */
-export const buildDiagonal = (
-  start: { x: number, y: number },
-  end: { x: number, y: number },
-  settings: ResolvedFibSettings
-): FibFigureSpec | null => {
-  if (!settings.showDiagonal) return null
+export const buildDiagonal = (start: { x: number; y: number }, end: { x: number; y: number }, settings: ResolvedFibSettings): FibFigureSpec | null => {
+  if (!settings.showDiagonal) {
+    return null
+  }
   const dColor = settings.diagonalColor ?? DEFAULT_OVERLAY_PROPERTIES.lineColor
   const dWidth = settings.diagonalWidth ?? DEFAULT_OVERLAY_PROPERTIES.lineWidth
   const dStyle = (settings.diagonalStyle ?? DEFAULT_OVERLAY_PROPERTIES.lineStyle) as LineStyle['style']

@@ -38,35 +38,16 @@ export interface EditableTextPosition {
  * - 'middle': centered on the anchor
  * - 'bottom': below the anchor with a gap
  */
-export function computeTextPosition (
-  anchorX: number,
-  anchorY: number,
-  props: DeepPartial<OverlayProperties>,
-  boundingWidth: number,
-  defaultHAlign: 'left' | 'center' | 'right' = 'center',
-  defaultVAlign: 'top' | 'middle' | 'bottom' = 'top'
-): EditableTextPosition {
+export function computeTextPosition(anchorX: number, anchorY: number, props: DeepPartial<OverlayProperties>, boundingWidth: number, defaultHAlign: 'left' | 'center' | 'right' = 'center', defaultVAlign: 'top' | 'middle' | 'bottom' = 'top'): EditableTextPosition {
   const hAlign = props.textAlignHorizontal ?? defaultHAlign
   const vAlign = props.textAlignVertical ?? defaultVAlign
 
   // Horizontal position on the chart
-  const x = hAlign === 'left'
-    ? Math.round(boundingWidth * 0.04)
-    : hAlign === 'right'
-      ? Math.round(boundingWidth * 0.96)
-      : anchorX
+  const x = hAlign === 'left' ? Math.round(boundingWidth * 0.04) : hAlign === 'right' ? Math.round(boundingWidth * 0.96) : anchorX
 
   // Vertical position with gap from anchor
-  const y = vAlign === 'top'
-    ? anchorY - TEXT_GAP
-    : vAlign === 'bottom'
-      ? anchorY + TEXT_GAP
-      : anchorY
-  const baseline: CanvasTextBaseline = vAlign === 'top'
-    ? 'bottom'
-    : vAlign === 'bottom'
-      ? 'top'
-      : 'middle'
+  const y = vAlign === 'top' ? anchorY - TEXT_GAP : vAlign === 'bottom' ? anchorY + TEXT_GAP : anchorY
+  const baseline: CanvasTextBaseline = vAlign === 'top' ? 'bottom' : vAlign === 'bottom' ? 'top' : 'middle'
 
   return { x, y, align: hAlign as CanvasTextAlign, baseline }
 }

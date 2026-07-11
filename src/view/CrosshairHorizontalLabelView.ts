@@ -84,6 +84,7 @@ export default class CrosshairHorizontalLabelView<C extends Axis = YAxis> extend
     const yAxisRange = yAxis.getRange()
     let text = yAxis.displayValueToText(yAxis.realValueToDisplayValue(yAxis.valueToRealValue(value, { range: yAxisRange }), { range: yAxisRange }), precision)
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
     if (shouldFormatBigNumber) {
       text = chartStore.getInnerFormatter().formatBigNumber(text)
     }

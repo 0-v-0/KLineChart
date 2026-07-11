@@ -14,12 +14,11 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
+import { getParallelLines } from './parallelStraightLine'
+import { computeTextPosition } from './textUtils'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-import { computeTextPosition } from './textUtils'
-
-import { getParallelLines } from './parallelStraightLine'
 
 const priceChannelLine = (): ProOverlayTemplate => {
   const properties = new Map<string, DeepPartial<OverlayProperties>>()
@@ -82,7 +81,8 @@ const priceChannelLine = (): ProOverlayTemplate => {
         figures.push({
           type: 'editableText',
           attrs: {
-            ...computeTextPosition(firstCoord.x, firstCoord.y, props, bounding.width, 'center', 'top'), text
+            ...computeTextPosition(firstCoord.x, firstCoord.y, props, bounding.width, 'center', 'top'),
+            text
           },
           styles: textStyle(id)
         })

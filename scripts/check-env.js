@@ -19,12 +19,8 @@ if (process.env.npm_command === 'install') {
       const curr = currParts[i] || 0
       const req = reqParts[i] || 0
 
-      if (curr > req) {
-        return operator.includes('>')
-      }
-      if (curr < req) {
-        return operator.includes('<')
-      }
+      if (curr > req) return operator.includes('>')
+      if (curr < req) return operator.includes('<')
     }
 
     return operator.includes('=')

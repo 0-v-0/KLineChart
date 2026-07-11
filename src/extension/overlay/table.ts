@@ -35,8 +35,8 @@
  * default-point-figure look + visual border-hover glow.
  */
 
-import type { OverlayTemplate, OverlayFigure } from '../../component/Overlay'
 import type ChartImp from '../../Chart'
+import type { OverlayFigure, OverlayTemplate } from '../../component/Overlay'
 import { wrapText } from '../figure/text'
 
 interface TableOverlayData {
@@ -53,9 +53,9 @@ interface TableOverlayData {
 }
 
 interface OverlayStyleSlice {
-  polygon?: { color?: string, borderColor?: string }
-  rect?: { color?: string, borderColor?: string }
-  text?: { color?: string, size?: number, family?: string, weight?: number | string }
+  polygon?: { color?: string; borderColor?: string }
+  rect?: { color?: string; borderColor?: string }
+  text?: { color?: string; size?: number; family?: string; weight?: number | string }
 }
 
 const DEFAULT_COLS = 3
@@ -81,7 +81,7 @@ const CELL_PADDING_V = 3
 // without losing the "tight grid" feel.
 const LINE_HEIGHT_FACTOR = 1.4
 
-function parseExtendData (extendData: unknown): TableOverlayData {
+function parseExtendData(extendData: unknown): TableOverlayData {
   const fallback: TableOverlayData = {
     rows: DEFAULT_ROWS,
     cols: DEFAULT_COLS,
@@ -90,7 +90,9 @@ function parseExtendData (extendData: unknown): TableOverlayData {
     rowHeights: Array.from({ length: DEFAULT_ROWS }, () => DEFAULT_ROW_HEIGHT),
     textAlign: 'center'
   }
-  if (extendData === null || typeof extendData !== 'object') return fallback
+  if (extendData === null || typeof extendData !== 'object') {
+    return fallback
+  }
   const ed = extendData as Partial<TableOverlayData>
   const rows = ed.rows ?? fallback.rows
   const cols = ed.cols ?? fallback.cols
@@ -143,22 +145,30 @@ const CORNER_SIGNS: Record<string, CornerSign> = {
 // Inner-border intersections — drag both borders together. Key
 // encodes the (row-border-index, col-border-index) the cell touches.
 const intersectionKey = (rowBorder: number, colBorder: number): string => `corner-${rowBorder}-${colBorder}`
-function parseIntersectionKey (key: string): { rowBorder: number, colBorder: number } | null {
+function parseIntersectionKey(key: string): { rowBorder: number; colBorder: number } | null {
   const m = /^corner-(\d+)-(\d+)$/.exec(key)
-  if (m === null) return null
+  if (m === null) {
+    return null
+  }
   return { rowBorder: parseInt(m[1], 10), colBorder: parseInt(m[2], 10) }
 }
 
-function parseCellKey (key: string): { row: number, col: number } | null {
+function parseCellKey(key: string): { row: number; col: number } | null {
   const m = /^cell-(\d+)-(\d+)$/.exec(key)
-  if (m === null) return null
+  if (m === null) {
+    return null
+  }
   return { row: parseInt(m[1], 10), col: parseInt(m[2], 10) }
 }
-function parseBorderKey (key: string): { kind: 'col' | 'row', index: number } | null {
+function parseBorderKey(key: string): { kind: 'col' | 'row'; index: number } | null {
   const colM = /^col-border-(\d+)$/.exec(key)
-  if (colM !== null) return { kind: 'col', index: parseInt(colM[1], 10) }
+  if (colM !== null) {
+    return { kind: 'col', index: parseInt(colM[1], 10) }
+  }
   const rowM = /^row-border-(\d+)$/.exec(key)
-  if (rowM !== null) return { kind: 'row', index: parseInt(rowM[1], 10) }
+  if (rowM !== null) {
+    return { kind: 'row', index: parseInt(rowM[1], 10) }
+  }
   return null
 }
 
@@ -179,7 +189,9 @@ const table: OverlayTemplate = {
     // ChartImp, not the public Chart interface (same pattern Pin
     // and Signpost use).
     const { chart, overlay, coordinates } = params as typeof params & { chart: ChartImp }
-    if (coordinates.length < 1) return []
+    if (coordinates.length < 1) {
+      return []
+    }
 
     const data = parseExtendData(overlay.extendData)
     const styles = (overlay.styles ?? {}) as OverlayStyleSlice
@@ -222,7 +234,9 @@ const table: OverlayTemplate = {
         const wrapped = wrapText(txt, wrapWidth, fontSize, fontWeight as number | string | undefined, fontFamily)
         const lc = Math.max(1, wrapped.length)
         counts.push(lc)
-        if (lc > maxLines) maxLines = lc
+        if (lc > maxLines) {
+          maxLines = lc
+        }
       }
       lineCounts.push(counts)
       // Use the leading-aware factor so a single `\n` (2 lines) is
@@ -285,7 +299,12 @@ const table: OverlayTemplate = {
     const drawOuterLine = (x1: number, y1: number, x2: number, y2: number): void => {
       figures.push({
         type: 'line',
-        attrs: { coordinates: [{ x: x1, y: y1 }, { x: x2, y: y2 }] },
+        attrs: {
+          coordinates: [
+            { x: x1, y: y1 },
+            { x: x2, y: y2 }
+          ]
+        },
         styles: { color: borderColor, size: 1, style: 'solid' },
         ignoreEvent: true
       })
@@ -355,7 +374,12 @@ const table: OverlayTemplate = {
       }
       figures.push({
         type: 'line',
-        attrs: { coordinates: [{ x, y: anchor.y }, { x, y: anchor.y + totalHeight }] },
+        attrs: {
+          coordinates: [
+            { x, y: anchor.y },
+            { x, y: anchor.y + totalHeight }
+          ]
+        },
         styles: { color: borderColor, size: 1, style: 'solid' },
         ignoreEvent: true
       })
@@ -396,7 +420,12 @@ const table: OverlayTemplate = {
       }
       figures.push({
         type: 'line',
-        attrs: { coordinates: [{ x: anchor.x, y }, { x: anchor.x + totalWidth, y }] },
+        attrs: {
+          coordinates: [
+            { x: anchor.x, y },
+            { x: anchor.x + totalWidth, y }
+          ]
+        },
         styles: { color: borderColor, size: 1, style: 'solid' },
         ignoreEvent: true
       })
@@ -466,11 +495,7 @@ const table: OverlayTemplate = {
         // right → x - w. We want the rect to always span the full
         // cell, so we move x to the cell-edge that matches the
         // alignment instead of leaving x at the centre.
-        const cellAnchorX = textAlign === 'left'
-          ? cellX
-          : textAlign === 'right'
-            ? cellX + cellW
-            : cellX + cellW / 2
+        const cellAnchorX = textAlign === 'left' ? cellX : textAlign === 'right' ? cellX + cellW : cellX + cellW / 2
         figures.push({
           key: cellKey(r, c),
           type: 'editableText',
@@ -522,10 +547,9 @@ const table: OverlayTemplate = {
     //    making them true resize handles would require remapping
     //    the anchor through chart coordinates, which we defer.
     const chartStore = chart.getChartStore()
-    const isActive = chartStore.getHoverOverlayInfo().overlay?.id === overlay.id ||
-      chartStore.getClickOverlayInfo().overlay?.id === overlay.id
+    const isActive = chartStore.getHoverOverlayInfo().overlay?.id === overlay.id || chartStore.getClickOverlayInfo().overlay?.id === overlay.id
     if (isActive) {
-      const corners: Array<{ x: number, y: number, cursor: string, key: string }> = [
+      const corners: Array<{ x: number; y: number; cursor: string; key: string }> = [
         { x: anchor.x, y: anchor.y, cursor: 'nwse-resize', key: CORNER_TL_KEY },
         { x: anchor.x + totalWidth, y: anchor.y, cursor: 'nesw-resize', key: CORNER_TR_KEY },
         { x: anchor.x, y: anchor.y + totalHeight, cursor: 'nesw-resize', key: CORNER_BL_KEY },
@@ -579,8 +603,10 @@ const table: OverlayTemplate = {
   onTextChange: ({ overlay, figureKey, text: newText }) => {
     const data = parseExtendData(overlay.extendData)
     const target = figureKey !== undefined ? parseCellKey(figureKey) : null
-    if (target === null) return
-    const nextCells = data.cells.map(row => row.slice())
+    if (target === null) {
+      return
+    }
+    const nextCells = data.cells.map((row) => row.slice())
     nextCells[target.row] ??= []
     nextCells[target.row][target.col] = newText
     overlay.extendData = { ...data, cells: nextCells }
@@ -596,9 +622,11 @@ const table: OverlayTemplate = {
   onPressedMoveStart: (params) => {
     const { chart, overlay, figure, ...event } = params as typeof params & { chart: ChartImp }
     const key = figure?.key
-    if (key === undefined || key === '') return
+    if (key === undefined || key === '') {
+      return
+    }
     const data = parseExtendData(overlay.extendData)
-    const ev = event as { pageX?: number, pageY?: number }
+    const ev = event as { pageX?: number; pageY?: number }
     const baseW = data.colWidths.slice()
     const baseH = data.rowHeights.slice()
     if (key in CORNER_SIGNS) {
@@ -615,10 +643,14 @@ const table: OverlayTemplate = {
       const baseAnchorPxX = typeof point.dataIndex === 'number' ? xAxis.convertToPixel(point.dataIndex) : 0
       const baseAnchorPxY = yAxis !== undefined && typeof point.value === 'number' ? yAxis.convertToPixel(point.value) : 0
       interface CornerStash {
-        px: number, py: number
-        baseW: number[], baseH: number[]
-        baseTotalW: number, baseTotalH: number
-        baseAnchorPxX: number, baseAnchorPxY: number
+        px: number
+        py: number
+        baseW: number[]
+        baseH: number[]
+        baseTotalW: number
+        baseTotalH: number
+        baseAnchorPxX: number
+        baseAnchorPxY: number
       }
       ;(overlay as unknown as { _tableCornerStash?: CornerStash })._tableCornerStash = {
         px: ev.pageX ?? 0,
@@ -632,13 +664,8 @@ const table: OverlayTemplate = {
       }
       return
     }
-    if (
-      parseBorderKey(key) !== null ||
-      parseIntersectionKey(key) !== null ||
-      key === RIGHT_EDGE_KEY ||
-      key === BOTTOM_EDGE_KEY
-    ) {
-      ;(overlay as unknown as { _tableDragStash?: { px: number, py: number, baseW: number[], baseH: number[] } })._tableDragStash = {
+    if (parseBorderKey(key) !== null || parseIntersectionKey(key) !== null || key === RIGHT_EDGE_KEY || key === BOTTOM_EDGE_KEY) {
+      ;(overlay as unknown as { _tableDragStash?: { px: number; py: number; baseW: number[]; baseH: number[] } })._tableDragStash = {
         px: ev.pageX ?? 0,
         py: ev.pageY ?? 0,
         baseW,
@@ -655,9 +682,11 @@ const table: OverlayTemplate = {
   onPressedMoving: (params) => {
     const { chart, overlay, figure, ...event } = params as typeof params & { chart: ChartImp }
     const key = figure?.key
-    if (key === undefined || key === '') return
+    if (key === undefined || key === '') {
+      return
+    }
     const data = parseExtendData(overlay.extendData)
-    const ev = event as { pageX?: number, pageY?: number }
+    const ev = event as { pageX?: number; pageY?: number }
 
     // Corner resize — applies to all 4 corners. Each corner's
     // sign vector tells us (a) which axes the anchor moves on and
@@ -666,13 +695,19 @@ const table: OverlayTemplate = {
     const sign = key in CORNER_SIGNS ? CORNER_SIGNS[key] : null
     if (sign !== null) {
       interface CornerStash {
-        px: number, py: number
-        baseW: number[], baseH: number[]
-        baseTotalW: number, baseTotalH: number
-        baseAnchorPxX: number, baseAnchorPxY: number
+        px: number
+        py: number
+        baseW: number[]
+        baseH: number[]
+        baseTotalW: number
+        baseTotalH: number
+        baseAnchorPxX: number
+        baseAnchorPxY: number
       }
       const cornerStash = (overlay as unknown as { _tableCornerStash?: CornerStash })._tableCornerStash
-      if (cornerStash === undefined) return
+      if (cornerStash === undefined) {
+        return
+      }
       const dx = (ev.pageX ?? 0) - cornerStash.px
       const dy = (ev.pageY ?? 0) - cornerStash.py
       // Effective signed delta on each dimension: dx flipped for
@@ -686,8 +721,8 @@ const table: OverlayTemplate = {
       const minScaleY = MIN_ROW_HEIGHT / Math.max(...cornerStash.baseH)
       const sx = Math.max(minScaleX, (cornerStash.baseTotalW + dxSigned) / cornerStash.baseTotalW)
       const sy = Math.max(minScaleY, (cornerStash.baseTotalH + dySigned) / cornerStash.baseTotalH)
-      const nextWidths = cornerStash.baseW.map(w => Math.max(MIN_COL_WIDTH, w * sx))
-      const nextHeights = cornerStash.baseH.map(h => Math.max(MIN_ROW_HEIGHT, h * sy))
+      const nextWidths = cornerStash.baseW.map((w) => Math.max(MIN_COL_WIDTH, w * sx))
+      const nextHeights = cornerStash.baseH.map((h) => Math.max(MIN_ROW_HEIGHT, h * sy))
       const nextExtendData = { ...data, colWidths: nextWidths, rowHeights: nextHeights }
       // Anchor follows the cursor on axes where the corner is
       // grabbing the leading edge. We convert the new anchor's
@@ -715,8 +750,10 @@ const table: OverlayTemplate = {
     // as a single-border drag, applied in parallel.
     const inter = parseIntersectionKey(key)
     if (inter !== null) {
-      const stash = (overlay as unknown as { _tableDragStash?: { px: number, py: number, baseW: number[], baseH: number[] } })._tableDragStash
-      if (stash === undefined) return
+      const stash = (overlay as unknown as { _tableDragStash?: { px: number; py: number; baseW: number[]; baseH: number[] } })._tableDragStash
+      if (stash === undefined) {
+        return
+      }
       const dx = (ev.pageX ?? 0) - stash.px
       const dy = (ev.pageY ?? 0) - stash.py
       const nextWidths = stash.baseW.slice()
@@ -732,17 +769,21 @@ const table: OverlayTemplate = {
     // trailing column / row.
     let target = parseBorderKey(key)
     if (target === null) {
-      if (key === RIGHT_EDGE_KEY) target = { kind: 'col', index: -1 }
-      else if (key === BOTTOM_EDGE_KEY) target = { kind: 'row', index: -1 }
-      else return
+      if (key === RIGHT_EDGE_KEY) {
+        target = { kind: 'col', index: -1 }
+      } else if (key === BOTTOM_EDGE_KEY) {
+        target = { kind: 'row', index: -1 }
+      } else {
+        return
+      }
     }
     // Resolve sentinel -1 → trailing column / row.
-    const idx = target.index === -1
-      ? (target.kind === 'col' ? data.cols - 1 : data.rows - 1)
-      : target.index
+    const idx = target.index === -1 ? (target.kind === 'col' ? data.cols - 1 : data.rows - 1) : target.index
     const resolved = { kind: target.kind, index: idx }
-    const stash = (overlay as unknown as { _tableDragStash?: { px: number, py: number, baseW: number[], baseH: number[] } })._tableDragStash
-    if (stash === undefined) return
+    const stash = (overlay as unknown as { _tableDragStash?: { px: number; py: number; baseW: number[]; baseH: number[] } })._tableDragStash
+    if (stash === undefined) {
+      return
+    }
     const dx = (ev.pageX ?? 0) - stash.px
     const dy = (ev.pageY ?? 0) - stash.py
     if (resolved.kind === 'col') {

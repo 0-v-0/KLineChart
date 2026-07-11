@@ -13,14 +13,14 @@
  */
 
 import type Bounding from '../../common/Bounding'
+import type Coordinate from '../../common/Coordinate'
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
+import { getLinearSlopeIntercept, type LineAttrs } from '../figure/line'
+import { computeTextPosition } from './textUtils'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-import { computeTextPosition } from './textUtils'
-
-import { getLinearSlopeIntercept, type LineAttrs } from '../figure/line'
 
 /**
  * 获取平行线
@@ -36,13 +36,31 @@ export function getParallelLines(coordinates: Coordinate[], bounding: Bounding, 
     if (coordinates[0].x === coordinates[1].x) {
       const startY = 0
       const endY = bounding.height
-      lines.push({ key: `line_${lines.length}`, coordinates: [{ x: coordinates[0].x, y: startY }, { x: coordinates[0].x, y: endY }] })
+      lines.push({
+        key: `line_${lines.length}`,
+        coordinates: [
+          { x: coordinates[0].x, y: startY },
+          { x: coordinates[0].x, y: endY }
+        ]
+      })
       if (coordinates.length > 2) {
-        lines.push({ key: `line_${lines.length}`, coordinates: [{ x: coordinates[2].x, y: startY }, { x: coordinates[2].x, y: endY }] })
+        lines.push({
+          key: `line_${lines.length}`,
+          coordinates: [
+            { x: coordinates[2].x, y: startY },
+            { x: coordinates[2].x, y: endY }
+          ]
+        })
         const distance = coordinates[0].x - coordinates[2].x
         for (let i = 0; i < count; i++) {
           const d = distance * (i + 1)
-          lines.push({ key: `line_${lines.length}`, coordinates: [{ x: coordinates[0].x + d, y: startY }, { x: coordinates[0].x + d, y: endY }] })
+          lines.push({
+            key: `line_${lines.length}`,
+            coordinates: [
+              { x: coordinates[0].x + d, y: startY },
+              { x: coordinates[0].x + d, y: endY }
+            ]
+          })
         }
       }
     } else {
@@ -51,14 +69,32 @@ export function getParallelLines(coordinates: Coordinate[], bounding: Bounding, 
       const kb = getLinearSlopeIntercept(coordinates[0], coordinates[1])!
       const k = kb[0]
       const b = kb[1]
-      lines.push({ key: `line_${lines.length}`, coordinates: [{ x: startX, y: startX * k + b }, { x: endX, y: endX * k + b }] })
+      lines.push({
+        key: `line_${lines.length}`,
+        coordinates: [
+          { x: startX, y: startX * k + b },
+          { x: endX, y: endX * k + b }
+        ]
+      })
       if (coordinates.length > 2) {
         const b1 = coordinates[2].y - k * coordinates[2].x
-        lines.push({ key: `line_${lines.length}`, coordinates: [{ x: startX, y: startX * k + b1 }, { x: endX, y: endX * k + b1 }] })
+        lines.push({
+          key: `line_${lines.length}`,
+          coordinates: [
+            { x: startX, y: startX * k + b1 },
+            { x: endX, y: endX * k + b1 }
+          ]
+        })
         const distance = b - b1
         for (let i = 0; i < count; i++) {
           const b2 = b + distance * (i + 1)
-          lines.push({ key: `line_${lines.length}`, coordinates: [{ x: startX, y: startX * k + b2 }, { x: endX, y: endX * k + b2 }] })
+          lines.push({
+            key: `line_${lines.length}`,
+            coordinates: [
+              { x: startX, y: startX * k + b2 },
+              { x: endX, y: endX * k + b2 }
+            ]
+          })
         }
       }
     }
@@ -127,7 +163,8 @@ const parallelStraightLine = (): ProOverlayTemplate => {
         figures.push({
           type: 'editableText',
           attrs: {
-            ...computeTextPosition(firstCoord.x, firstCoord.y, props, bounding.width, 'center', 'top'), text
+            ...computeTextPosition(firstCoord.x, firstCoord.y, props, bounding.width, 'center', 'top'),
+            text
           },
           styles: textStyle(id)
         })

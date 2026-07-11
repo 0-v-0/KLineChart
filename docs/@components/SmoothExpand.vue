@@ -22,7 +22,6 @@ const onLeave = (el) => {
   el.offsetHeight // 强制重排
   el.style.height = '0'
 }
-
 </script>
 
 <template>

@@ -28,7 +28,7 @@ const words = computed(() => {
   return props.text.split(/(\s+)/)
 })
 
-function normalizeChar (char) {
+function normalizeChar(char) {
   return char === ' ' ? '\u00A0' : char
 }
 
@@ -36,16 +36,15 @@ const animateDelay = computed(() => {
   return 1.8 / props.text.length
 })
 
-function getCharAnimDelay (currentWordIndex, currentCharIndex) {
+function getCharAnimDelay(currentWordIndex, currentCharIndex) {
   let delay = 0
   for (let i = 0; i < currentWordIndex; i++) {
     const word = words.value[i]
-    delay += (word.length * animateDelay.value)
+    delay += word.length * animateDelay.value
   }
-  delay += (currentCharIndex * animateDelay.value)
+  delay += currentCharIndex * animateDelay.value
   return delay
 }
-
 </script>
 
 <template>

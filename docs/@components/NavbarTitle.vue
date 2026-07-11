@@ -9,23 +9,11 @@ const { site, theme } = useData()
 const { hasSidebar } = useLayout()
 const { currentLang } = useLangs()
 
-const link = computed(() =>
-  typeof theme.value.logoLink === 'string'
-    ? theme.value.logoLink
-    : theme.value.logoLink?.link
-)
+const link = computed(() => (typeof theme.value.logoLink === 'string' ? theme.value.logoLink : theme.value.logoLink?.link))
 
-const rel = computed(() =>
-  typeof theme.value.logoLink === 'string'
-    ? undefined
-    : theme.value.logoLink?.rel
-)
+const rel = computed(() => (typeof theme.value.logoLink === 'string' ? undefined : theme.value.logoLink?.rel))
 
-const target = computed(() =>
-  typeof theme.value.logoLink === 'string'
-    ? undefined
-    : theme.value.logoLink?.target
-)
+const target = computed(() => (typeof theme.value.logoLink === 'string' ? undefined : theme.value.logoLink?.target))
 </script>
 
 <template>

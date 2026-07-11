@@ -31,7 +31,7 @@
  * the nearest bar on drop.
  */
 
-import type { OverlayTemplate, OverlayFigure } from '../../component/Overlay'
+import type { OverlayFigure, OverlayTemplate } from '../../component/Overlay'
 
 interface FlagMarkOverlayData {
   /** User-set fill colour for the flag rect. */
@@ -58,7 +58,7 @@ const RECT_WIDTH = 18
 const POLE_RECT_GAP = 2
 const V_DEPTH = 4
 
-function parseExtendData (extendData: unknown): FlagMarkOverlayData {
+function parseExtendData(extendData: unknown): FlagMarkOverlayData {
   if (extendData !== null && typeof extendData === 'object') {
     return extendData as FlagMarkOverlayData
   }
@@ -77,7 +77,9 @@ const flagMark: OverlayTemplate = {
   needDefaultYAxisFigure: false,
 
   createPointFigures: ({ overlay, coordinates }) => {
-    if (coordinates.length < 1) return []
+    if (coordinates.length < 1) {
+      return []
+    }
 
     const data = parseExtendData(overlay.extendData)
     const styles = (overlay.styles ?? {}) as OverlayStyleSlice

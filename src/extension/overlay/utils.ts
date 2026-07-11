@@ -12,34 +12,24 @@
  * limitations under the License.
  */
 
-import type Coordinate from '../../common/Coordinate'
 import type Bounding from '../../common/Bounding'
+import type Coordinate from '../../common/Coordinate'
 
 import { getLinearYFromCoordinates, type LineAttrs } from '../figure/line'
 
 /**
  * Get rotated coordinate around a target point
  */
-export function getRotateCoordinate (
-  coordinate: Coordinate,
-  targetCoordinate: Coordinate,
-  angle: number
-): Coordinate {
-  const x =
-    (coordinate.x - targetCoordinate.x) * Math.cos(angle) -
-    (coordinate.y - targetCoordinate.y) * Math.sin(angle) +
-    targetCoordinate.x
-  const y =
-    (coordinate.x - targetCoordinate.x) * Math.sin(angle) +
-    (coordinate.y - targetCoordinate.y) * Math.cos(angle) +
-    targetCoordinate.y
+export function getRotateCoordinate(coordinate: Coordinate, targetCoordinate: Coordinate, angle: number): Coordinate {
+  const x = (coordinate.x - targetCoordinate.x) * Math.cos(angle) - (coordinate.y - targetCoordinate.y) * Math.sin(angle) + targetCoordinate.x
+  const y = (coordinate.x - targetCoordinate.x) * Math.sin(angle) + (coordinate.y - targetCoordinate.y) * Math.cos(angle) + targetCoordinate.y
   return { x, y }
 }
 
 /**
  * Get ray line extending to bounding edge
  */
-export function getRayLine (coordinates: Coordinate[], bounding: Bounding): LineAttrs | LineAttrs[] {
+export function getRayLine(coordinates: Coordinate[], bounding: Bounding): LineAttrs | LineAttrs[] {
   if (coordinates.length > 1) {
     let coordinate = { x: 0, y: 0 }
     if (coordinates[0].x === coordinates[1].x && coordinates[0].y !== coordinates[1].y) {
@@ -73,7 +63,7 @@ export function getRayLine (coordinates: Coordinate[], bounding: Bounding): Line
 /**
  * Get distance between two coordinates
  */
-export function getDistance (coordinate1: Coordinate, coordinate2: Coordinate): number {
+export function getDistance(coordinate1: Coordinate, coordinate2: Coordinate): number {
   const xDis = Math.abs(coordinate1.x - coordinate2.x)
   const yDis = Math.abs(coordinate1.y - coordinate2.y)
   return Math.sqrt(xDis * xDis + yDis * yDis)

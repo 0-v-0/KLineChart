@@ -35,9 +35,9 @@
  * update so the figure picks up the loaded bitmap on its next pass.
  */
 
-import type { OverlayTemplate, OverlayFigure } from '../../component/Overlay'
 import type ChartImp from '../../Chart'
 import { UpdateLevel } from '../../common/Updater'
+import type { OverlayFigure, OverlayTemplate } from '../../component/Overlay'
 
 interface ImageOverlayData {
   /** Data URI (`data:image/...;base64,...`). Empty until upload completes. */
@@ -85,10 +85,14 @@ const CORNER_DIRS: Record<string, CornerDirection> = {
 // practice for a hand-curated chart.
 const imageCache = new Map<string, HTMLImageElement>()
 
-function getOrLoadImage (src: string, chart: ChartImp): HTMLImageElement | null {
-  if (src === '') return null
+function getOrLoadImage(src: string, chart: ChartImp): HTMLImageElement | null {
+  if (src === '') {
+    return null
+  }
   const cached = imageCache.get(src)
-  if (cached !== undefined) return cached
+  if (cached !== undefined) {
+    return cached
+  }
   // `document.createElement('img')` instead of `new Image()` —
   // identical result, but the eslint config flags the latter
   // global as undefined.
@@ -109,14 +113,16 @@ function getOrLoadImage (src: string, chart: ChartImp): HTMLImageElement | null 
   return img
 }
 
-function parseExtendData (extendData: unknown): ImageOverlayData {
+function parseExtendData(extendData: unknown): ImageOverlayData {
   const fallback: ImageOverlayData = {
     src: '',
     opacity: 1,
     width: DEFAULT_WIDTH,
     height: DEFAULT_HEIGHT
   }
-  if (extendData === null || typeof extendData !== 'object') return fallback
+  if (extendData === null || typeof extendData !== 'object') {
+    return fallback
+  }
   const ed = extendData as Partial<ImageOverlayData>
   return {
     src: ed.src ?? fallback.src,
@@ -135,7 +141,9 @@ const image: OverlayTemplate = {
 
   createPointFigures: (params) => {
     const { chart, overlay, coordinates } = params as typeof params & { chart: ChartImp }
-    if (coordinates.length < 1) return []
+    if (coordinates.length < 1) {
+      return []
+    }
 
     const data = parseExtendData(overlay.extendData)
 
@@ -148,7 +156,7 @@ const image: OverlayTemplate = {
     const slops: OverlayFigure[] = []
 
     const loadedImage = getOrLoadImage(data.src, chart)
-    const ready = loadedImage !== null && loadedImage.complete && loadedImage.naturalWidth > 0
+    const ready = loadedImage?.complete && loadedImage.naturalWidth > 0
 
     if (ready) {
       figures.push({
@@ -186,8 +194,7 @@ const image: OverlayTemplate = {
     // hit-circles. Same split as Table: visible figure has
     // ignoreEvent: true; the slop owns the press / hover events.
     const chartStore = chart.getChartStore()
-    const isActive = chartStore.getHoverOverlayInfo().overlay?.id === overlay.id ||
-      chartStore.getClickOverlayInfo().overlay?.id === overlay.id
+    const isActive = chartStore.getHoverOverlayInfo().overlay?.id === overlay.id || chartStore.getClickOverlayInfo().overlay?.id === overlay.id
     if (isActive && data.src !== '') {
       const corners = [
         { x: anchor.x, y: anchor.y, key: CORNER_TL_KEY },
@@ -220,9 +227,11 @@ const image: OverlayTemplate = {
   onPressedMoveStart: (params) => {
     const { chart, overlay, figure, ...event } = params as typeof params & { chart: ChartImp }
     const key = figure?.key
-    if (key === undefined || !(key in CORNER_DIRS)) return
+    if (key === undefined || !(key in CORNER_DIRS)) {
+      return
+    }
     const data = parseExtendData(overlay.extendData)
-    const ev = event as { pageX?: number, pageY?: number }
+    const ev = event as { pageX?: number; pageY?: number }
     // Stash the anchor's pixel position + base width/height so
     // every drag tick can compute new dims + new anchor relative
     // to the press-start point — not relative to a moving
@@ -234,9 +243,12 @@ const image: OverlayTemplate = {
     const baseAnchorPxX = typeof point.dataIndex === 'number' ? xAxis.convertToPixel(point.dataIndex) : 0
     const baseAnchorPxY = yAxis !== undefined && typeof point.value === 'number' ? yAxis.convertToPixel(point.value) : 0
     interface CornerStash {
-      px: number, py: number
-      baseW: number, baseH: number
-      baseAnchorPxX: number, baseAnchorPxY: number
+      px: number
+      py: number
+      baseW: number
+      baseH: number
+      baseAnchorPxX: number
+      baseAnchorPxY: number
     }
     ;(overlay as unknown as { _imgCornerStash?: CornerStash })._imgCornerStash = {
       px: ev.pageX ?? 0,
@@ -251,17 +263,24 @@ const image: OverlayTemplate = {
   onPressedMoving: (params) => {
     const { chart, overlay, figure, ...event } = params as typeof params & { chart: ChartImp }
     const key = figure?.key
-    if (key === undefined || !(key in CORNER_DIRS)) return
+    if (key === undefined || !(key in CORNER_DIRS)) {
+      return
+    }
     const dir = CORNER_DIRS[key]
     const data = parseExtendData(overlay.extendData)
-    const ev = event as { pageX?: number, pageY?: number }
+    const ev = event as { pageX?: number; pageY?: number }
     interface CornerStash {
-      px: number, py: number
-      baseW: number, baseH: number
-      baseAnchorPxX: number, baseAnchorPxY: number
+      px: number
+      py: number
+      baseW: number
+      baseH: number
+      baseAnchorPxX: number
+      baseAnchorPxY: number
     }
     const stash = (overlay as unknown as { _imgCornerStash?: CornerStash })._imgCornerStash
-    if (stash === undefined) return
+    if (stash === undefined) {
+      return
+    }
     const dx = (ev.pageX ?? 0) - stash.px
     const dy = (ev.pageY ?? 0) - stash.py
     // Project the cursor delta onto the image's diagonal so the
@@ -290,8 +309,8 @@ const image: OverlayTemplate = {
       const xAxis = chart.getXAxisPane().getAxisComponent()
       const pane = chart.getDrawPaneById(overlay.paneId)
       const yAxis = pane?.getAxisComponent()
-      const newAnchorPxX = stash.baseAnchorPxX + (dir.ax === 1 ? (W - newW) : 0)
-      const newAnchorPxY = stash.baseAnchorPxY + (dir.ay === 1 ? (H - newH) : 0)
+      const newAnchorPxX = stash.baseAnchorPxX + (dir.ax === 1 ? W - newW : 0)
+      const newAnchorPxY = stash.baseAnchorPxY + (dir.ay === 1 ? H - newH : 0)
       const chartStore = chart.getChartStore()
       const newDataIndex = xAxis.convertFromPixel(newAnchorPxX)
       const newTimestamp = chartStore.dataIndexToTimestamp(newDataIndex) ?? undefined

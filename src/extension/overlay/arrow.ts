@@ -14,12 +14,12 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, PolygonStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
+import { getLinearSlopeIntercept } from '../figure/line'
+import { computeTextPosition } from './textUtils'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-import { computeTextPosition } from './textUtils'
 import { getRotateCoordinate } from './utils'
-import { getLinearSlopeIntercept } from '../figure/line'
 
 /**
  * Arrow overlay - line with arrowhead at the end point
@@ -109,16 +109,8 @@ const arrow = (): ProOverlayTemplate => {
 
       // Calculate arrowhead points
       const arrowAngle = Math.PI / 6 // 30 degrees
-      const arrowPoint1 = getRotateCoordinate(
-        { x: end.x - arrowSize, y: end.y },
-        end,
-        angle + arrowAngle
-      )
-      const arrowPoint2 = getRotateCoordinate(
-        { x: end.x - arrowSize, y: end.y },
-        end,
-        angle - arrowAngle
-      )
+      const arrowPoint1 = getRotateCoordinate({ x: end.x - arrowSize, y: end.y }, end, angle + arrowAngle)
+      const arrowPoint2 = getRotateCoordinate({ x: end.x - arrowSize, y: end.y }, end, angle - arrowAngle)
 
       const figures: Array<{ type: string; attrs: unknown; styles?: unknown }> = [
         {
@@ -150,9 +142,7 @@ const arrow = (): ProOverlayTemplate => {
     // re-renders + StorageAdapter round-trips. The closure `properties`
     // Map isn't read by syncOverlay, so text stored there would be lost.
     onTextChange: ({ overlay, text }) => {
-      const current = (typeof overlay.extendData === 'object' && overlay.extendData !== null)
-        ? overlay.extendData as Record<string, unknown>
-        : {}
+      const current = typeof overlay.extendData === 'object' && overlay.extendData !== null ? (overlay.extendData as Record<string, unknown>) : {}
       overlay.extendData = { ...current, text }
     },
     setProperties,

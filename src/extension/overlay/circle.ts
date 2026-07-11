@@ -14,10 +14,10 @@
 
 import type DeepPartial from '../../common/DeepPartial'
 import type { PolygonStyle, TextStyle } from '../../common/Styles'
-import { merge, clone } from '../../common/utils/typeChecks'
+import { clone, merge } from '../../common/utils/typeChecks'
+import { computeTextPosition } from './textUtils'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
-import { computeTextPosition } from './textUtils'
 import { getDistance } from './utils'
 
 /**
@@ -99,7 +99,8 @@ const circle = (): ProOverlayTemplate => {
       figures.push({
         type: 'editableText',
         attrs: {
-          ...computeTextPosition(center.x, center.y, props, bounding.width, 'center', 'middle'), text
+          ...computeTextPosition(center.x, center.y, props, bounding.width, 'center', 'middle'),
+          text
         },
         styles: textStyle(id)
       })
@@ -110,9 +111,7 @@ const circle = (): ProOverlayTemplate => {
     // re-renders + StorageAdapter round-trips. The closure `properties`
     // Map isn't read by syncOverlay, so text stored there would be lost.
     onTextChange: ({ overlay, text }) => {
-      const current = (typeof overlay.extendData === 'object' && overlay.extendData !== null)
-        ? overlay.extendData as Record<string, unknown>
-        : {}
+      const current = typeof overlay.extendData === 'object' && overlay.extendData !== null ? (overlay.extendData as Record<string, unknown>) : {}
       overlay.extendData = { ...current, text }
     },
     setProperties,

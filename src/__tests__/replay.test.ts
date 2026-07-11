@@ -12,18 +12,13 @@
  * limitations under the License.
  */
 
-import { describe, it, expect } from 'vitest'
-import StoreImp from '../Store'
-import type { ReplayEngine } from '../replay/ReplayEngine'
-import type { KLineData } from '../common/Data'
-import type {
-  DataLoader,
-  DataLoaderGetBarsParams,
-  DataLoaderGetRangeParams,
-  DataLoaderGetFirstCandleTimeParams
-} from '../common/DataLoader'
-import type { Period } from '../common/Period'
+import { describe, expect, it } from 'vitest'
 import type Chart from '../Chart'
+import type { KLineData } from '../common/Data'
+import type { DataLoader, DataLoaderGetBarsParams, DataLoaderGetFirstCandleTimeParams, DataLoaderGetRangeParams } from '../common/DataLoader'
+import type { Period } from '../common/Period'
+import type { ReplayEngine } from '../replay/ReplayEngine'
+import StoreImp from '../Store'
 
 // ---------------------------------------------------------------------------
 // Time constants — period is hour/1, so candles are spaced 1 h apart.
@@ -45,11 +40,13 @@ const H5 = BASE + HOUR_MS * 5
 // Mock helpers
 // ---------------------------------------------------------------------------
 
-function createMockChart (): Chart {
+function createMockChart(): Chart {
   return {
-    layout: (_opts?: unknown) => { /* noop */
+    layout: (_opts?: unknown) => {
+      /* noop */
     },
-    updatePane: (_level?: unknown, _paneId?: unknown) => { /* noop */
+    updatePane: (_level?: unknown, _paneId?: unknown) => {
+      /* noop */
     }
   } as unknown as Chart
 }
@@ -69,7 +66,7 @@ interface MockDataLoaderResult {
 }
 
 /** Convert a Period to milliseconds */
-function periodToMs (period: { type: string; span: number }): number {
+function periodToMs(period: { type: string; span: number }): number {
   switch (period.type) {
     case 'second':
       return period.span * 1000
@@ -89,21 +86,22 @@ function periodToMs (period: { type: string; span: number }): number {
 }
 
 /** Generate candles at the given period spacing, covering [start, end) */
-function generateCandles (start: number, end: number, pMs: number): KLineData[] {
+function generateCandles(start: number, end: number, pMs: number): KLineData[] {
   // Align start to period boundary
   const alignedStart = Math.floor(start / pMs) * pMs
   const result: KLineData[] = []
   for (let t = alignedStart; t < end; t += pMs) {
-    if (t >= start - pMs * 500) { // don't generate infinitely far back
+    if (t >= start - pMs * 500) {
+      // don't generate infinitely far back
       result.push(candle(t))
     }
   }
   return result
 }
 
-function createMockDataLoader (options: MockDataLoaderOptions = {}): MockDataLoaderResult {
+function createMockDataLoader(options: MockDataLoaderOptions = {}): MockDataLoaderResult {
   const { candles, rangeCandles, firstCandleTime = null, dataStart } = options
-  const defaultDataStart = dataStart ?? (BASE - 100 * HOUR_MS)
+  const defaultDataStart = dataStart ?? BASE - 100 * HOUR_MS
 
   const loader: DataLoader = {
     getBars: (params: DataLoaderGetBarsParams) => {
@@ -126,18 +124,16 @@ function createMockDataLoader (options: MockDataLoaderOptions = {}): MockDataLoa
         }
       }
     },
-    subscribeBar: (_params) => { /* noop */
+    subscribeBar: (_params) => {
+      /* noop */
     },
-    unsubscribeBar: (_params) => { /* noop */
+    unsubscribeBar: (_params) => {
+      /* noop */
     },
     getRange: (params: DataLoaderGetRangeParams) => {
       if (rangeCandles !== undefined) {
         // Legacy: filter static candles
-        params.callback(
-          rangeCandles.filter(
-            (c: KLineData) => c.timestamp >= params.from && c.timestamp < params.to
-          )
-        )
+        params.callback(rangeCandles.filter((c: KLineData) => c.timestamp >= params.from && c.timestamp < params.to))
       } else {
         // Realistic: generate candles between from and to
         const pMs = periodToMs(params.period)
@@ -158,7 +154,7 @@ function createMockDataLoader (options: MockDataLoaderOptions = {}): MockDataLoa
 }
 
 /** Generate a candle with deterministic prices based on timestamp */
-function candle (timestamp: number, open?: number, close?: number): KLineData {
+function candle(timestamp: number, open?: number, close?: number): KLineData {
   if (open !== undefined && close !== undefined) {
     return {
       timestamp,
@@ -179,17 +175,17 @@ function candle (timestamp: number, open?: number, close?: number): KLineData {
 }
 
 /** Merge multiple candles into one (same logic as the engine's partial construction) */
-function mergeCandles (candles: KLineData[]): {
-  open: number;
-  high: number;
-  low: number;
-  close: number;
+function mergeCandles(candles: KLineData[]): {
+  open: number
+  high: number
+  low: number
+  close: number
   volume: number
 } {
   return {
     open: candles[0].open,
-    high: Math.max(...candles.map(c => c.high)),
-    low: Math.min(...candles.map(c => c.low)),
+    high: Math.max(...candles.map((c) => c.high)),
+    low: Math.min(...candles.map((c) => c.low)),
     close: candles[candles.length - 1].close,
     volume: candles.reduce((sum, c) => sum + (c.volume ?? 0), 0)
   }
@@ -202,7 +198,7 @@ interface TestStore {
   chart: Chart
 }
 
-function createTestStore (options: MockDataLoaderOptions = {}, period: Period = { type: 'hour', span: 1 }): TestStore {
+function createTestStore(options: MockDataLoaderOptions = {}, period: Period = { type: 'hour', span: 1 }): TestStore {
   const chart = createMockChart()
   const store = new StoreImp(chart)
   const mock = createMockDataLoader(options)
@@ -226,7 +222,7 @@ describe('setCurrentTime — status transitions', () => {
       candles: [candle(H0), candle(H1), candle(H2)],
       rangeCandles: [candle(H3), candle(H4)]
     })
-    engine.onReplayStatusChange(s => {
+    engine.onReplayStatusChange((s) => {
       statuses.push(s)
     })
 
@@ -257,7 +253,7 @@ describe('setCurrentTime — status transitions', () => {
       rangeCandles: [],
       firstCandleTime: H4
     })
-    engine.onReplayError(e => {
+    engine.onReplayError((e) => {
       errors.push(e)
     })
 
@@ -478,12 +474,12 @@ describe('playUntil — guards', () => {
     engine.step()
     // Buffer now has [H4]
 
-    engine.onReplayStatusChange(s => {
+    engine.onReplayStatusChange((s) => {
       statuses.push(s)
     })
     engine.playUntil(H2, 1000)
 
-    await new Promise<void>(resolve => {
+    await new Promise<void>((resolve) => {
       setTimeout(resolve, 50)
     })
 
@@ -515,7 +511,7 @@ describe('callbacks — unsubscribe', () => {
     })
 
     const statuses: string[] = []
-    const unsub = engine.onReplayStatusChange(s => {
+    const unsub = engine.onReplayStatusChange((s) => {
       statuses.push(s)
     })
 
@@ -525,7 +521,7 @@ describe('callbacks — unsubscribe', () => {
     engine.step()
     engine.step() // finished, but unsub'd
 
-    expect(statuses.every(s => s === 'loading' || s === 'ready')).toBe(true)
+    expect(statuses.every((s) => s === 'loading' || s === 'ready')).toBe(true)
   })
 })
 
@@ -539,7 +535,7 @@ describe('data boundary post-processing', () => {
     await engine.setCurrentTime(H2)
 
     const dataList = store.getDataList()
-    expect(dataList.every(d => d.timestamp < H2)).toBe(true)
+    expect(dataList.every((d) => d.timestamp < H2)).toBe(true)
 
     engine.step()
     expect(store.getDataList()[store.getDataList().length - 1].timestamp).toBe(H2)
@@ -658,7 +654,7 @@ describe('PRD Example 1: 1min→1hr, cursor 09:07', () => {
 
     // 3. Switch to 1hr
     store.setPeriod({ type: 'hour', span: 1 })
-    await new Promise<void>(resolve => {
+    await new Promise<void>((resolve) => {
       setTimeout(resolve, 100)
     })
 
@@ -729,7 +725,7 @@ describe('PRD Example 2: 1min→1hr, cursor 10:24', () => {
 
     // Switch to 1hr
     store.setPeriod({ type: 'hour', span: 1 })
-    await new Promise<void>(resolve => {
+    await new Promise<void>((resolve) => {
       setTimeout(resolve, 100)
     })
 
@@ -798,7 +794,7 @@ describe('PRD Example 3: 1min→4hr, cursor 09:07 (boundary partial)', () => {
 
     // Switch to 4hr
     store.setPeriod({ type: 'hour', span: 4 })
-    await new Promise<void>(resolve => {
+    await new Promise<void>((resolve) => {
       setTimeout(resolve, 100)
     })
 
@@ -866,7 +862,7 @@ describe('PRD Example 4: 1min→1hr, cursor 10:00 (exact boundary)', () => {
 
     // Switch to 1hr — exact boundary, no partial
     store.setPeriod({ type: 'hour', span: 1 })
-    await new Promise<void>(resolve => {
+    await new Promise<void>((resolve) => {
       setTimeout(resolve, 100)
     })
 
@@ -912,7 +908,7 @@ describe('PRD Example 5: 1hr→1D, cursor Apr 3 14:00', () => {
 
     // Switch to 1D
     store.setPeriod({ type: 'day', span: 1 })
-    await new Promise<void>(resolve => {
+    await new Promise<void>((resolve) => {
       setTimeout(resolve, 100)
     })
 
@@ -944,7 +940,9 @@ describe('PRD Example 5: 1hr→1D, cursor Apr 3 14:00', () => {
     for (let i = 0; i < 10; i++) {
       await engine.stepBack()
       const ct = engine.getReplayCurrentTime()!
-      if (ct === prevCt) break // blocked
+      if (ct === prevCt) {
+        break // blocked
+      }
       prevCt = ct
     }
     // Should be blocked at or near START
@@ -985,7 +983,7 @@ describe('Regression: partial candle present after 1m→1H switch at mid-hour cu
 
     // 3. Switch to 1H
     store.setPeriod({ type: 'hour', span: 1 })
-    await new Promise<void>(resolve => {
+    await new Promise<void>((resolve) => {
       setTimeout(resolve, 100)
     })
 
@@ -1040,7 +1038,7 @@ describe('Regression: cursor preserved when switching back from higher resolutio
 
     // 3. Switch to 1H — shows partial 09:00 candle
     store.setPeriod({ type: 'hour', span: 1 })
-    await new Promise<void>(resolve => {
+    await new Promise<void>((resolve) => {
       setTimeout(resolve, 100)
     })
 
@@ -1049,7 +1047,7 @@ describe('Regression: cursor preserved when switching back from higher resolutio
 
     // 4. Switch back to 1m — cursor must stay at 09:03, not jump to 10:00
     store.setPeriod({ type: 'minute', span: 1 })
-    await new Promise<void>(resolve => {
+    await new Promise<void>((resolve) => {
       setTimeout(resolve, 100)
     })
 
@@ -1078,7 +1076,9 @@ describe('currentTime capped at endTime', () => {
     while (engine.getReplayStatus() !== 'finished') {
       engine.step()
       steps++
-      if (steps > 100) break // safety
+      if (steps > 100) {
+        break // safety
+      }
     }
 
     expect(steps).toBeGreaterThan(0)

@@ -12,47 +12,6 @@
  * limitations under the License.
  */
 
-import type Nullable from './common/Nullable'
-import type PickPartial from './common/PickPartial'
-import type DeepPartial from './common/DeepPartial'
-import type { KLineData, VisibleRangeData } from './common/Data'
-import type VisibleRange from './common/VisibleRange'
-import type Coordinate from './common/Coordinate'
-import { getDefaultVisibleRange } from './common/VisibleRange'
-import TaskScheduler from './common/TaskScheduler'
-import type Crosshair from './common/Crosshair'
-import type BarSpace from './common/BarSpace'
-import type { Period } from './common/Period'
-import { SymbolDefaultPrecisionConstants, type SymbolInfo } from './common/SymbolInfo'
-
-import Action from './common/Action'
-import type { ActionType, ActionCallback } from './common/Action'
-import { formatValue, formatTimestampByTemplate, formatBigNumber, formatThousands, formatFoldDecimal } from './common/utils/format'
-import { getDefaultStyles, type Styles, type TooltipLegend } from './common/Styles'
-import { isArray, isString, isValid, isNumber, isBoolean, merge } from './common/utils/typeChecks'
-import { createId } from './common/utils/id'
-import { binarySearchNearest } from './common/utils/number'
-import { logWarn } from './common/utils/logger'
-import { UpdateLevel } from './common/Updater'
-import type { DataLoader, DataLoaderGetBarsParams, DataLoadMore, DataLoadType } from './common/DataLoader'
-
-import type { Options, Formatter, ThousandsSeparator, DecimalFold, BarSpaceLimit, FormatDateType, FormatDateParams, FormatBigNumber, FormatExtendText, FormatExtendTextParams, ZoomAnchor, ZoomAnchorType, Hotkey, Layout } from './Options'
-
-import type { IndicatorOverride, IndicatorCreate, IndicatorFilter } from './component/Indicator'
-import type IndicatorImp from './component/Indicator'
-import { getIndicatorClass } from './extension/indicator/index'
-
-import type OverlayImp from './component/Overlay'
-import { type OverlayCreate, OVERLAY_ID_PREFIX, type OverlayFilter, type OverlayFigure, type OverlayOverride } from './component/Overlay'
-import { getOverlayInnerClass } from './extension/overlay/index'
-
-import { getStyles as getExtensionStyles } from './extension/styles/index'
-
-import { ReplayEngine as ReplayEngineImp } from './replay/ReplayEngine'
-import type { ReplayStatus, ReplayEngine } from './replay/types'
-
-import { PaneIdConstants } from './pane/types'
-
 import type Chart from './Chart'
 import type { ActionCallback, ActionType } from './common/Action'
 import Action from './common/Action'
@@ -86,8 +45,10 @@ import { getSupportedLocales } from './extension/i18n/index'
 import { getIndicatorClass } from './extension/indicator/index'
 import { getOverlayInnerClass } from './extension/overlay/index'
 import { getStyles as getExtensionStyles } from './extension/styles/index'
-import type { DecimalFold, FormatBigNumber, FormatDateParams, FormatDateType, FormatExtendText, FormatExtendTextParams, Formatter, Hotkey, Layout, Options, ThousandsSeparator, ZoomAnchor, ZoomAnchorType } from './Options'
+import type { BarSpaceLimit, DecimalFold, FormatBigNumber, FormatDateParams, FormatDateType, FormatExtendText, FormatExtendTextParams, Formatter, Hotkey, Layout, Options, ThousandsSeparator, ZoomAnchor, ZoomAnchorType } from './Options'
 import { PaneIdConstants } from './pane/types'
+import { ReplayEngine as ReplayEngineImp } from './replay/ReplayEngine'
+import type { ReplayEngine, ReplayStatus } from './replay/types'
 
 const DEFAULT_BAR_SPACE_LIMIT = {
   MIN: 1,
@@ -286,7 +247,7 @@ export default class StoreImp implements Store {
   private _initLoadGeneration = 0
 
   /**
-  * Whether there are forward and backward more flag
+   * Whether there are forward and backward more flag
    */
   private readonly _dataLoadMore = { forward: false, backward: false }
 
@@ -620,7 +581,7 @@ export default class StoreImp implements Store {
       let dateTimeFormat: Nullable<Intl.DateTimeFormat> = null
       try {
         dateTimeFormat = new Intl.DateTimeFormat('en', options)
-      } catch {
+      } catch (_e) {
         logWarn('', '', 'Timezone is error!!!')
       }
       if (dateTimeFormat !== null) {
@@ -665,13 +626,14 @@ export default class StoreImp implements Store {
     return this._hotKey
   }
 
-  setSymbol (symbol: PickPartial<SymbolInfo, 'pricePrecision' | 'volumePrecision'>): void {
+  setSymbol(symbol: PickPartial<SymbolInfo, 'pricePrecision' | 'volumePrecision'>): void {
     if (this._replayEngine.isInReplay()) {
       // Exit playback mode before changing symbol
       this._replayEngine.exitPlayback()
     }
     this.resetData(() => {
-      // @ts-ignore
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- ignore
+      // @ts-expect-error
       this._symbol = {
         pricePrecision: SymbolDefaultPrecisionConstants.PRICE,
         volumePrecision: SymbolDefaultPrecisionConstants.VOLUME,
@@ -686,11 +648,13 @@ export default class StoreImp implements Store {
     return this._symbol
   }
 
-  setPeriod (period: Period): void {
+  setPeriod(period: Period): void {
     if (this._replayEngine.isInReplay()) {
       // Playback mode: delegate to engine which handles period change logic
       this._replayEngine.handlePeriodChange(period, () => {
-        this.resetData(() => { this._period = period })
+        this.resetData(() => {
+          this._period = period
+        })
       })
     } else {
       this.resetData(() => {
@@ -703,20 +667,20 @@ export default class StoreImp implements Store {
     return this._period
   }
 
-  getDataList (mutateToCandleType = false): KLineData[] {
+  getDataList(mutateToCandleType = false): KLineData[] {
     if (!mutateToCandleType || this._styles.candle.type !== 'heikin_ashi') {
       return this._dataList
     }
 
     let prevHaBar: Nullable<KLineData> = null
-    return this._dataList.map(value => {
+    return this._dataList.map((value) => {
       const data = this.ohlcvToHeikinAshi(value, prevHaBar)
       prevHaBar = data
       return data
     })
   }
 
-  getVisibleRangeDataList (mutateToCandleType = false): VisibleRangeData[] {
+  getVisibleRangeDataList(mutateToCandleType = false): VisibleRangeData[] {
     if (!mutateToCandleType || this._styles.candle.type !== 'heikin_ashi') {
       return this._visibleRangeDataList
     }
@@ -762,7 +726,7 @@ export default class StoreImp implements Store {
     return this._visibleRangeHighLowPrice
   }
 
-  private ohlcvToHeikinAshi (currentBar: KLineData, prevHaBar: Nullable<KLineData>): KLineData {
+  private ohlcvToHeikinAshi(currentBar: KLineData, prevHaBar: Nullable<KLineData>): KLineData {
     if (prevHaBar === null) {
       const firstHaBar: KLineData = {
         timestamp: currentBar.timestamp,
@@ -791,11 +755,7 @@ export default class StoreImp implements Store {
     return newHaBar
   }
 
-  private _addData (
-    data: KLineData | KLineData[],
-    type: DataLoadType,
-    more?: DataLoadMore
-  ): void {
+  private _addData(data: KLineData | KLineData[], type: DataLoadType, more?: DataLoadMore): void {
     let success = false
     let adjustFlag = false
     if (isArray<KLineData>(data)) {
@@ -885,19 +845,19 @@ export default class StoreImp implements Store {
     })
   }
 
-  isInitLoadInFlight (): boolean {
+  isInitLoadInFlight(): boolean {
     return this._initLoadInFlight
   }
 
-  getDefaultBarSpace (): number {
+  getDefaultBarSpace(): number {
     return DEFAULT_BAR_SPACE
   }
 
-  getDefaultOffsetRightDistance (): number {
+  getDefaultOffsetRightDistance(): number {
     return DEFAULT_OFFSET_RIGHT_DISTANCE
   }
 
-  async fetchFirstCandleTime (): Promise<number | null> {
+  async fetchFirstCandleTime(): Promise<number | null> {
     const dataLoader = this._dataLoader
     const symbol = this._symbol
     const period = this._period
@@ -905,19 +865,13 @@ export default class StoreImp implements Store {
       return null
     }
     const getFirstCandleTime = dataLoader.getFirstCandleTime
-    return await new Promise<number | null>(resolve => {
+    return await new Promise<number | null>((resolve) => {
       void getFirstCandleTime({ symbol, period, callback: resolve })
     })
   }
 
-  loadRangeBackward (from: number, to: number, callback: () => void): void {
-    if (
-      !isValid(this._dataLoader) ||
-      !isValid(this._symbol) ||
-      !isValid(this._period) ||
-      this._dataLoader.getRange == null ||
-      this._replayEngine.isInReplay()
-    ) {
+  loadRangeBackward(from: number, to: number, callback: () => void): void {
+    if (!isValid(this._dataLoader) || !isValid(this._symbol) || !isValid(this._period) || this._dataLoader.getRange == null || this._replayEngine.isInReplay()) {
       callback()
       return
     }
@@ -934,7 +888,7 @@ export default class StoreImp implements Store {
           return
         }
         const firstTimestamp = this._dataList[0].timestamp
-        const filtered = data.filter(d => d.timestamp < firstTimestamp)
+        const filtered = data.filter((d) => d.timestamp < firstTimestamp)
         if (filtered.length > 0) {
           this._addData(filtered, 'forward', { forward: true, backward: this._dataLoadMore.backward })
         }
@@ -943,7 +897,7 @@ export default class StoreImp implements Store {
     })
   }
 
-  private _calcOptimalBarSpace (): void {
+  private _calcOptimalBarSpace(): void {
     const specialBarSpace = 4
     const ratio = 1 - (BAR_GAP_RATIO * Math.atan(Math.max(specialBarSpace, this._barSpace) - specialBarSpace)) / (Math.PI * 0.5)
     let gapBarSpace = Math.min(Math.floor(this._barSpace * ratio), Math.floor(this._barSpace))
@@ -1109,11 +1063,11 @@ export default class StoreImp implements Store {
   // Replay engine accessor
   // ---------------------------------------------------------------------------
 
-  getReplayEngine (): ReplayEngine {
+  getReplayEngine(): ReplayEngine {
     return this._replayEngine
   }
 
-  getBarSpace (): BarSpace {
+  getBarSpace(): BarSpace {
     return {
       bar: this._barSpace,
       halfBar: this._barSpace / 2,
@@ -1122,7 +1076,7 @@ export default class StoreImp implements Store {
     }
   }
 
-  setBarSpaceLimit (limit: Partial<BarSpaceLimit>): void {
+  setBarSpaceLimit(limit: Partial<BarSpaceLimit>): void {
     if (isValid(limit.min) && isNumber(limit.min)) {
       this._barSpaceLimit.min = Math.max(0, limit.min)
     }
@@ -1131,11 +1085,11 @@ export default class StoreImp implements Store {
     }
   }
 
-  getBarSpaceLimit (): BarSpaceLimit {
+  getBarSpaceLimit(): BarSpaceLimit {
     return { ...this._barSpaceLimit }
   }
 
-  setBarSpace (barSpace: number, adjustBeforeFunc?: () => void): void {
+  setBarSpace(barSpace: number, adjustBeforeFunc?: () => void): void {
     if (barSpace < this._barSpaceLimit.min || barSpace > this._barSpaceLimit.max || this._barSpace === barSpace) {
       return
     }
@@ -1155,11 +1109,11 @@ export default class StoreImp implements Store {
     return this._layoutOptions
   }
 
-  getTotalBarSpace (): number {
+  getTotalBarSpace(): number {
     return this._totalBarSpace
   }
 
-  setTotalBarSpace (totalSpace: number): void {
+  setTotalBarSpace(totalSpace: number): void {
     if (this._totalBarSpace !== totalSpace) {
       this._totalBarSpace = totalSpace
       this._adjustVisibleRange()
@@ -1738,9 +1692,9 @@ export default class StoreImp implements Store {
     return indicators
   }
 
-  removeIndicator(filter?: IndicatorFilter): boolean {
+  removeIndicator(filter: IndicatorFilter): boolean {
     let removed = false
-    const filterIndicators = this.getIndicatorsByFilter(filter ?? {})
+    const filterIndicators = this.getIndicatorsByFilter(filter)
     filterIndicators.forEach((indicator) => {
       const paneIndicators = this.getIndicatorsByPaneId(indicator.paneId)
       const index = paneIndicators.findIndex((ins) => ins.id === indicator.id)
@@ -1827,9 +1781,11 @@ export default class StoreImp implements Store {
       }
     })
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
     if (sortFlag) {
       this._sortIndicators()
     }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
     return updateFlag || sortFlag
   }
 
@@ -1837,11 +1793,11 @@ export default class StoreImp implements Store {
    * Force recalculation of indicators matching the filter.
    * Clears existing results first to prevent stale data from being rendered.
    */
-  recalcIndicator (filter: IndicatorFilter): void {
+  recalcIndicator(filter: IndicatorFilter): void {
     const indicators = this.getIndicatorsByFilter(filter)
     if (indicators.length > 0) {
       // Clear existing results to prevent stale data flickering
-      indicators.forEach(indicator => {
+      indicators.forEach((indicator) => {
         indicator.result = []
       })
       // Force immediate synchronous redraw with cleared data before async calc starts
@@ -1854,9 +1810,9 @@ export default class StoreImp implements Store {
    * Clear indicator results without recalculating.
    * Use this when you want to clear stale data but will trigger recalc later.
    */
-  clearIndicatorResults (filter: IndicatorFilter): void {
+  clearIndicatorResults(filter: IndicatorFilter): void {
     const indicators = this.getIndicatorsByFilter(filter)
-    indicators.forEach(indicator => {
+    indicators.forEach((indicator) => {
       indicator.result = []
     })
     if (indicators.length > 0) {
@@ -1864,7 +1820,7 @@ export default class StoreImp implements Store {
     }
   }
 
-  getOverlaysByFilter (filter: OverlayFilter): OverlayImp[] {
+  getOverlaysByFilter(filter: OverlayFilter): OverlayImp[] {
     const { id, groupId, paneId, name } = filter
     const match: (overlay: OverlayImp) => boolean = (overlay) => {
       if (isValid(id)) {
@@ -2013,6 +1969,7 @@ export default class StoreImp implements Store {
       }
     })
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
     if (sortFlag) {
       this._sortOverlays()
     }
@@ -2026,9 +1983,9 @@ export default class StoreImp implements Store {
     return false
   }
 
-  removeOverlay(filter?: OverlayFilter): boolean {
+  removeOverlay(filter: OverlayFilter): boolean {
     const updatePaneIds: string[] = []
-    const filterOverlays = this.getOverlaysByFilter(filter ?? {})
+    const filterOverlays = this.getOverlaysByFilter(filter)
     filterOverlays.forEach((overlay) => {
       const paneId = overlay.paneId
       const paneOverlays = this.getOverlaysByPaneId(overlay.paneId)
@@ -2137,7 +2094,7 @@ export default class StoreImp implements Store {
     return this._overlays.size === 0 && this._progressOverlayInfo === null
   }
 
-  isOverlayDrawing (): boolean {
+  isOverlayDrawing(): boolean {
     const info = this._progressOverlayInfo
     if (info !== null) {
       return info.overlay.isDrawing()

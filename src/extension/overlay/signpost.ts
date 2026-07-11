@@ -34,11 +34,11 @@
  * picker / ring colour is a Pass-2 follow-up.
  */
 
-import type { OverlayTemplate, OverlayFigure } from '../../component/Overlay'
 import type ChartImp from '../../Chart'
 import { calcTextWidth } from '../../common/utils/canvas'
-import { glyphFigure, ICON_SOURCE_VIEWBOX, ICON_VALUE_PREFIX } from './emojiGlyph'
 import { isNumber } from '../../common/utils/typeChecks'
+import type { OverlayFigure, OverlayTemplate } from '../../component/Overlay'
+import { glyphFigure, ICON_SOURCE_VIEWBOX, ICON_VALUE_PREFIX } from './emojiGlyph'
 
 interface SignpostOverlayData {
   text?: string
@@ -57,8 +57,8 @@ interface SignpostOverlayData {
 
 interface OverlayStyleSlice {
   line?: { color?: string }
-  polygon?: { color?: string, borderColor?: string, borderSize?: number }
-  text?: { color?: string, size?: number, family?: string, weight?: number | string, backgroundColor?: string }
+  polygon?: { color?: string; borderColor?: string; borderSize?: number }
+  text?: { color?: string; size?: number; family?: string; weight?: number | string; backgroundColor?: string }
 }
 
 // Visual defaults — same palette as Note / Price Note.
@@ -91,14 +91,17 @@ const EMOJI_HALF_SPACE = EMOJI_RING_RADIUS + 2
 // implementation across overlays.
 const ICON_RENDER_SIZE = ICON_SOURCE_VIEWBOX * 0.75
 
-function parseExtendData (extendData: unknown): SignpostOverlayData {
+function parseExtendData(extendData: unknown): SignpostOverlayData {
   if (extendData !== null && typeof extendData === 'object') {
     return extendData as SignpostOverlayData
   }
   return {}
 }
 
-interface XY { x: number, y: number }
+interface XY {
+  x: number
+  y: number
+}
 
 const signpost: OverlayTemplate = {
   name: 'signpost',
@@ -114,7 +117,9 @@ const signpost: OverlayTemplate = {
   needDefaultYAxisFigure: false,
 
   createPointFigures: ({ chart, overlay, coordinates, bounding, yAxis }) => {
-    if (coordinates.length < 1) return []
+    if (coordinates.length < 1) {
+      return []
+    }
 
     const data = parseExtendData(overlay.extendData)
     const styles = (overlay.styles ?? {}) as OverlayStyleSlice
@@ -140,9 +145,7 @@ const signpost: OverlayTemplate = {
     // width — TV's Signpost label hugs its content.
     const sizingText = textValue.length > 0 ? textValue : '+ Add text'
     const lines = sizingText.split('\n')
-    const maxLineWidth = lines.length === 1
-      ? calcTextWidth(sizingText, fontSize, fontWeight, fontFamily)
-      : Math.max(...lines.map(l => calcTextWidth(l, fontSize, fontWeight, fontFamily)))
+    const maxLineWidth = lines.length === 1 ? calcTextWidth(sizingText, fontSize, fontWeight, fontFamily) : Math.max(...lines.map((l) => calcTextWidth(l, fontSize, fontWeight, fontFamily)))
     const labelWidth = maxLineWidth + LABEL_PADDING_H * 2
     const labelHeight = lines.length * fontSize + LABEL_PADDING_V * 2
 
@@ -163,9 +166,7 @@ const signpost: OverlayTemplate = {
     const point = overlay.points[0]
     const dataList = chart.getDataList()
     const dataIndex = isNumber(point.dataIndex) ? point.dataIndex : null
-    const candle = (dataIndex !== null && dataIndex >= 0 && dataIndex < dataList.length)
-      ? dataList[dataIndex]
-      : null
+    const candle = dataIndex !== null && dataIndex >= 0 && dataIndex < dataList.length ? dataList[dataIndex] : null
 
     let lineStart: XY | null = null
     let lineEnd: XY | null = null
@@ -218,7 +219,9 @@ const signpost: OverlayTemplate = {
       paddingTop: LABEL_PADDING_V,
       paddingBottom: LABEL_PADDING_V
     }
-    if (textColor !== undefined) editableTextStyle.color = textColor
+    if (textColor !== undefined) {
+      editableTextStyle.color = textColor
+    }
 
     const figures: OverlayFigure[] = []
 
@@ -228,9 +231,7 @@ const signpost: OverlayTemplate = {
     // accommodate the ring), draw a single uninterrupted line.
     if (lineStart !== null && lineEnd !== null && lineMidpoint !== null) {
       const lineLength = Math.abs(lineEnd.y - lineStart.y)
-      const shouldShowEmoji = emojiEnabled &&
-        emojiGlyph.length > 0 &&
-        lineLength > EMOJI_HALF_SPACE * 2 + 4
+      const shouldShowEmoji = emojiEnabled && emojiGlyph.length > 0 && lineLength > EMOJI_HALF_SPACE * 2 + 4
 
       if (shouldShowEmoji) {
         const dir = lineStart.y < lineEnd.y ? 1 : -1
@@ -262,14 +263,16 @@ const signpost: OverlayTemplate = {
         // mode renders at `ICON_RENDER_SIZE` (~18 px) so it
         // matches the ring's inner diameter, emoji renders at
         // the configured font size.
-        figures.push(glyphFigure({
-          x: lineMidpoint.x,
-          y: lineMidpoint.y,
-          value: emojiGlyph,
-          size: emojiGlyph.startsWith(ICON_VALUE_PREFIX) ? ICON_RENDER_SIZE : EMOJI_FONT_SIZE,
-          color: emojiRingColor,
-          fontFamily: DEFAULT_FONT_FAMILY
-        }))
+        figures.push(
+          glyphFigure({
+            x: lineMidpoint.x,
+            y: lineMidpoint.y,
+            value: emojiGlyph,
+            size: emojiGlyph.startsWith(ICON_VALUE_PREFIX) ? ICON_RENDER_SIZE : EMOJI_FONT_SIZE,
+            color: emojiRingColor,
+            fontFamily: DEFAULT_FONT_FAMILY
+          })
+        )
       } else {
         figures.push({
           type: 'line',
@@ -329,16 +332,21 @@ const signpost: OverlayTemplate = {
     // the impl class — not the public Chart interface — so we widen
     // just `chart` here. Every other param keeps its inferred type.
     const { chart, overlay, coordinates } = params as typeof params & { chart: ChartImp }
-    if (coordinates.length < 1) return []
+    if (coordinates.length < 1) {
+      return []
+    }
     const point = overlay.points[0]
-    if (!isNumber(point.timestamp)) return []
-    const text = chart.getChartStore().getInnerFormatter()
-      .formatDate(point.timestamp, 'YYYY-MM-DD HH:mm', 'crosshair')
-    return [{
-      type: 'text',
-      attrs: { x: coordinates[0].x, y: 0, text, align: 'center' },
-      ignoreEvent: true
-    }]
+    if (!isNumber(point.timestamp)) {
+      return []
+    }
+    const text = chart.getChartStore().getInnerFormatter().formatDate(point.timestamp, 'YYYY-MM-DD HH:mm', 'crosshair')
+    return [
+      {
+        type: 'text',
+        attrs: { x: coordinates[0].x, y: 0, text, align: 'center' },
+        ignoreEvent: true
+      }
+    ]
   },
 
   onTextChange: ({ overlay, text: newText }) => {
