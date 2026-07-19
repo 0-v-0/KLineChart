@@ -20,8 +20,7 @@ import { SymbolDefaultPrecisionConstants } from '../common/SymbolInfo'
 import View from './View'
 
 import type { FigureCreate } from '../component/Figure'
-import type YAxis from '../component/YAxis'
-import type YAxisWidget from '../widget/YAxisWidget'
+import type { YAxis } from '../component/YAxis'
 import type { TextAttrs } from '../extension/figure/text'
 
 export default class CandleLastPriceLabelView extends View<YAxis> {
@@ -35,7 +34,7 @@ export default class CandleLastPriceLabelView extends View<YAxis> {
     const lastPriceMarkTextStyles = lastPriceMarkStyles.text
     if (priceMarkStyles.show && lastPriceMarkStyles.show && lastPriceMarkTextStyles.show) {
       const precision = chartStore.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE
-      const yAxis = pane.getAxisComponent() as YAxis
+      const yAxis = pane.getAxisComponent()
       const dataList = chartStore.getDataList(true)
       const data = dataList[dataList.length - 1]
 

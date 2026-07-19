@@ -507,7 +507,7 @@ export default class Event implements EventHandler {
   }
 
   mouseDoubleClickEvent (e: MouseTouchEvent): boolean {
-    const { widget } = this._findWidgetByEvent(e)
+    const { widget, pane } = this._findWidgetByEvent(e)
     if (widget !== null) {
       const name = widget.getName()
       switch (name) {

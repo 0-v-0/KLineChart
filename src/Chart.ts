@@ -25,7 +25,7 @@ import type Crosshair from './common/Crosshair'
 import type { ActionType, ActionCallback } from './common/Action'
 import type { DataLoader } from './common/DataLoader'
 import type VisibleRange from './common/VisibleRange'
-import type { Formatter, DecimalFold, LayoutChild, Options, ThousandsSeparator, BarSpaceLimit, ZoomAnchor, ZoomAnchorType, Hotkey } from './Options'
+import type { Formatter, DecimalFold, Options, ThousandsSeparator, BarSpaceLimit, ZoomAnchor, ZoomAnchorType, Hotkey } from './Options'
 import Animation from './common/Animation'
 import { createId } from './common/utils/id'
 import { createDom } from './common/utils/dom'
@@ -862,7 +862,7 @@ export default class ChartImp implements Chart {
         pane = this._createPane(IndicatorPane, { ...this._chartStore.getLayoutOptions().pane, id: indicator.paneId })
         shouldSort = true
       }
-      this._createOrUseIndicatorYAxis(pane, indicator.yAxisId)
+      this._createOrUseIndicatorYAxis(pane as unknown as DrawPane<YAxis>, indicator.yAxisId)
       this._removeOrphanYAxes()
       this.layout({
         sort: shouldSort,
@@ -887,7 +887,7 @@ export default class ChartImp implements Chart {
     filterIndicators.forEach(indicator => {
       const pane = this.getDrawPaneById(indicator.paneId)
       if (isValid(pane)) {
-        updated = this._createOrUseIndicatorYAxis(pane, indicator.yAxisId) || updated
+        updated = this._createOrUseIndicatorYAxis(pane as unknown as DrawPane<YAxis>, indicator.yAxisId) || updated
       }
     })
 
@@ -1472,14 +1472,9 @@ export default class ChartImp implements Chart {
     } else {
       window.removeEventListener('resize', this._scheduleResize)
     }
-    if (this._pendingVisibleRange !== null) {
-      this._pendingVisibleRange.reject(createSetVisibleRangeError('aborted', { reason: 'chart_destroyed' }))
-      this._pendingVisibleRange = null
-    }
     if (this._pendingInitAction !== null) {
       this._pendingInitAction.reject(createSetVisibleRangeError('aborted', { reason: 'chart_destroyed' }))
       this._pendingInitAction = null
-    }
     }
     this._chartStore.unsubscribeAction('onInitLoadComplete', this._onInitLoadCompleteHandler)
     this._chartEvent.destroy()

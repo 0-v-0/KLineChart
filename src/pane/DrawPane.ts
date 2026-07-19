@@ -138,6 +138,10 @@ export default abstract class DrawPane<C extends Axis = Axis> extends Pane {
     return Array.from(this._yAxisComponents.values())
   }
 
+  getAxisComponent (): C {
+    return this.getYAxisComponents()[0] as unknown as C
+  }
+
   getWidgetYAxisComponents (): YAxis[] {
     return Array.from(this._yAxisWidgets.keys()).map(id => this._yAxisComponents.get(id)!)
   }

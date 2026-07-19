@@ -12,13 +12,13 @@
  * limitations under the License.
  */
 
-import type { BarSpaceLimit } from './common/BarSpace'
 import type { KLineData } from './common/Data'
 import type DeepPartial from './common/DeepPartial'
 import type DeepRequired from './common/DeepRequired'
 import type { Styles } from './common/Styles'
 import type { YAxisOverride } from './component/YAxis'
 import type { PaneOptions } from './pane/types'
+import type { IndicatorCreate } from './component/Indicator'
 
 export type FormatDateType = 'tooltip' | 'crosshair' | 'xAxis'
 
@@ -99,6 +99,14 @@ export interface Hotkey {
 export interface BarSpaceLimit {
   min: number
   max: number
+}
+
+export type LayoutChildType = 'candle' | 'indicator' | 'xAxis'
+
+export interface LayoutChild {
+  type: LayoutChildType
+  content?: Array<string | IndicatorCreate>
+  options?: PaneOptions
 }
 
 export interface Options {

@@ -56,6 +56,10 @@ export default class XAxisPane extends DrawPane<XAxis> {
     return this._xAxis
   }
 
+  getAxisComponent (): XAxis {
+    return this.getXAxisComponent()
+  }
+
   private createXAxisComponent (name: string): XAxis {
     const XAxisClass = getXAxisClass(name)
     return new XAxisClass(this)
