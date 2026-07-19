@@ -76,7 +76,7 @@ const TAIL_HEIGHT = 14
 const DEFAULT_FONT_SIZE = 12
 // Price Label text is bold per TV — distinguishes it from Comment /
 // Note's regular weight.
-const DEFAULT_FONT_WEIGHT = 'bold' as const
+const DEFAULT_FONT_WEIGHT = 'bold'
 const DEFAULT_FONT_FAMILY = 'Helvetica Neue'
 const ARC_SEGMENTS = 6
 
