@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type BarSpace from '../common/BarSpace'
 import type { VisibleRangeData } from '../common/Data'
 import type { MouseTouchEvent } from '../common/EventHandler'
-import type { CandleBarColor } from '../common/Styles'
+import type { FootprintBarData } from '../common/Footprint'
+import type { CandleBarColor, CandleFootprintVariant } from '../common/Styles'
 import { getDefaultStyles } from '../common/Styles'
 import { PaneIdConstants } from '../pane/types'
 import CandleBarView from '../view/CandleBarView'
@@ -19,15 +20,30 @@ interface Harness {
   actions: Array<{ type: string; data: unknown }>
 }
 
+interface HarnessOptions {
+  type?: string
+  isMain?: boolean
+  upBorder?: string
+  space?: BarSpace
+  variant?: CandleFootprintVariant
+  /** Footprint rows by bar timestamp. */
+  footprint?: Map<number, FootprintBarData>
+}
+
 const barSpace: BarSpace = { bar: 10, halfBar: 5, gapBar: 8, halfGapBar: 4 }
 
 /** The pane is 100px tall, so price 30 is y 70 and price 70 is y 30. */
-function harness(bars: VisibleRangeData[], options: { type?: string; isMain?: boolean; upBorder?: string } = {}): Harness {
-  const { type = 'candle_solid', isMain = true, upBorder } = options
+function harness(bars: VisibleRangeData[], options: HarnessOptions = {}): Harness {
+  const { type = 'candle_solid', isMain = true, upBorder, variant } = options
+  const space = options.space ?? barSpace
+  const footprint = options.footprint ?? new Map<number, FootprintBarData>()
   const ops: string[] = []
   const actions: Array<{ type: string; data: unknown }> = []
   const styles = getDefaultStyles()
   styles.candle.type = type as never
+  if (variant !== undefined) {
+    styles.candle.footprint.variant = variant
+  }
   // The default palette draws a border in the body colour, so a case that wants
   // the two apart has to say so.
   if (upBorder !== undefined) {
@@ -38,17 +54,29 @@ function harness(bars: VisibleRangeData[], options: { type?: string; isMain?: bo
     fillStyle: '',
     strokeStyle: '',
     lineWidth: 0,
+    font: '',
+    textAlign: '',
+    textBaseline: '',
+    globalAlpha: 1,
     setLineDash: (value: number[]) => ops.push(`dash(${value.join(',')})`),
     beginPath: () => ops.push('begin'),
     rect: (x: number, y: number, width: number, height: number) => ops.push(`rect(${x},${y},${width},${height})`),
     fill: () => ops.push(`fill(${String(ctx.fillStyle)})`),
     stroke: () => ops.push(`stroke(${String(ctx.strokeStyle)})`),
-    fillRect: (x: number, y: number, width: number, height: number) => ops.push(`fillRect(${x},${y},${width},${height})`)
+    fillRect: (x: number, y: number, width: number, height: number) => ops.push(`fillRect(${x},${y},${width},${height})`),
+    strokeRect: (x: number, y: number, width: number, height: number) => ops.push(`strokeRect(${x},${y},${width},${height})`),
+    fillText: (text: string, x: number, y: number) => ops.push(`text(${text}@${x},${y})`),
+    moveTo: (x: number, y: number) => ops.push(`moveTo(${x},${y})`),
+    lineTo: (x: number, y: number) => ops.push(`lineTo(${x},${y})`),
+    save: () => ops.push('save'),
+    restore: () => ops.push('restore'),
+    measureText: (text: string) => ({ width: text.length * 5 })
   }
 
   const chartStore = {
-    getBarSpace: () => barSpace,
+    getBarSpace: () => space,
     getVisibleRangeDataList: () => bars,
+    getFootprint: (data: { timestamp: number }) => footprint.get(data.timestamp) ?? null,
     executeAction: (action: string, data?: unknown) => actions.push({ type: action, data })
   }
   const chart = { getStyles: () => styles, getChartStore: () => chartStore }
@@ -137,5 +165,65 @@ describe('CandleBarView hit test', () => {
     expect(view.checkEventOn(click(90, 95))).toBe(false)
     view.onEvent('mouseClickEvent', click(90, 95))
     expect(actions).toEqual([])
+  })
+})
+
+/**
+ * A footprint bar keeps a thin OHLC body on its left edge and spends the rest of
+ * its width on the volume at each price. The rows below are one 20px price band
+ * with three sold and seven bought, which is also an ask imbalance against the
+ * row under it — the case that gets a bold number and an outline.
+ */
+const rows: FootprintBarData = { rowSize: 20, poc: 60, rows: [[60, 3, 7]] }
+const withRows = (x: number): Map<number, FootprintBarData> => new Map([[x, rows]])
+
+describe('CandleBarView footprint', () => {
+  it('falls back to a solid candle for a bar the host has no rows for', () => {
+    const { ops } = harness([upBar(10)], { type: 'footprint' })
+    expect(ops).toContain('rect(6,30,9,40)')
+    expect(ops.some((op) => op.startsWith('fillRect'))).toBe(false)
+  })
+
+  it('falls back for the whole chart while the bars are too narrow to read', () => {
+    const { ops } = harness([upBar(10)], { type: 'footprint', space: { bar: 2, halfBar: 1, gapBar: 2, halfGapBar: 1 }, footprint: withRows(10) })
+    expect(ops.some((op) => op.startsWith('fillRect'))).toBe(false)
+  })
+
+  it('draws the bid and ask columns, the POC and the numbers in a wide bar', () => {
+    const { ops } = harness([upBar(100)], { type: 'footprint', space: { bar: 40, halfBar: 20, gapBar: 40, halfGapBar: 20 }, footprint: withRows(100) })
+    // The body shrinks to the layout's three pixels, the wick moves with it.
+    expect(ops).toContain('rect(81,30,1,40)')
+    expect(ops).toContain('rect(80,30,3,40)')
+    // Bid then ask, each inset by a pixel, with the POC drawn over both.
+    expect(ops).toContain('fillRect(85,20,16,19)')
+    expect(ops).toContain('fillRect(102,20,16,19)')
+    expect(ops).toContain('strokeRect(85.5,20.5,32,18)')
+    expect(ops).toContain('text(3@93.5,30)')
+    expect(ops).toContain('text(7@110.5,30)')
+  })
+
+  it('gives a narrow footprint bar one delta column instead of two', () => {
+    const { ops } = harness([upBar(100)], { type: 'footprint', footprint: withRows(100) })
+    // `adaptive` at 8px: one column, holding ask - bid, five pixels wide.
+    expect(ops.filter((op) => op.startsWith('fillRect')).length).toBe(1)
+    // Even "+4" needs ten pixels, so the number is dropped rather than squeezed.
+    expect(ops.some((op) => op.startsWith('text('))).toBe(false)
+  })
+
+  it('prints the delta in the delta variant, where the column has room', () => {
+    const { ops } = harness([upBar(100)], { type: 'footprint', variant: 'delta', space: { bar: 40, halfBar: 20, gapBar: 40, halfGapBar: 20 }, footprint: withRows(100) })
+    expect(ops).toContain('fillRect(85,20,34,19)')
+    expect(ops).toContain('text(+4@102.5,30)')
+  })
+
+  it('draws the histogram variant as two histograms and a dashed value area', () => {
+    const { ops } = harness([upBar(100)], { type: 'footprint', variant: 'histogram', space: { bar: 40, halfBar: 20, gapBar: 40, halfGapBar: 20 }, footprint: withRows(100) })
+    expect(ops).toContain('fillRect(86,20,13,19)')
+    expect(ops).toContain('fillRect(102,20,18,19)')
+    expect(ops).toContain('dash(3,2)')
+    expect(ops).toContain('moveTo(86,40.5)')
+    expect(ops).toContain('lineTo(160,40.5)')
+    // No numbers in this variant, however tall the rows are.
+    expect(ops.some((op) => op.startsWith('text('))).toBe(false)
   })
 })

@@ -263,7 +263,7 @@ export interface CandleTooltipStyle extends TooltipStyle {
   rect: CandleTooltipRectStyle
 }
 
-export type CandleType = 'candle_solid' | 'candle_stroke' | 'candle_up_stroke' | 'candle_down_stroke' | 'ohlc' | 'area' | 'heikin_ashi'
+export type CandleType = 'candle_solid' | 'candle_stroke' | 'candle_up_stroke' | 'candle_down_stroke' | 'ohlc' | 'area' | 'heikin_ashi' | 'footprint'
 
 /**
  * How a footprint bar splits its volume into columns. `adaptive` is the chart
