@@ -25,6 +25,7 @@ import type { Axis } from '../component/Axis'
 import type OverlayImp from '../component/Overlay'
 import type { Overlay, OverlayExtraHandle, OverlayFigure } from '../component/Overlay'
 import { checkOverlayFigureEvent, OVERLAY_FIGURE_KEY_PREFIX } from '../component/Overlay'
+import { setDrawingOverlay } from '../component/Figure'
 import type { YAxis } from '../component/YAxis'
 import type { TextAttrs } from '../extension/figure/text'
 import { getTextRect } from '../extension/figure/text'
@@ -880,15 +881,23 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
   }
 
   override drawImp(ctx: CanvasRenderingContext2D): void {
-    const overlays = this.getCompleteOverlays()
-    overlays.forEach((overlay) => {
-      if (overlay.visible) {
-        this._drawOverlay(ctx, overlay)
+    // Scopes the hit-area debug halo to the overlays: with `setHitAreaDebug`
+    // on, a candle or an indicator does not get one, so what the halo shows
+    // is the tolerance of the figures that are actually draggable.
+    setDrawingOverlay(true)
+    try {
+      const overlays = this.getCompleteOverlays()
+      overlays.forEach((overlay) => {
+        if (overlay.visible) {
+          this._drawOverlay(ctx, overlay)
+        }
+      })
+      const progressOverlay = this.getProgressOverlay()
+      if (isValid(progressOverlay) && progressOverlay.visible) {
+        this._drawOverlay(ctx, progressOverlay)
       }
-    })
-    const progressOverlay = this.getProgressOverlay()
-    if (isValid(progressOverlay) && progressOverlay.visible) {
-      this._drawOverlay(ctx, progressOverlay)
+    } finally {
+      setDrawingOverlay(false)
     }
   }
 

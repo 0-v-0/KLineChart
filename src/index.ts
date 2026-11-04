@@ -40,6 +40,7 @@ import type { ActionType } from './common/Action'
 import type { Indicator, IndicatorCreate, IndicatorSeries, IndicatorTemplate } from './component/Indicator'
 import type { Overlay, OverlayCreate, OverlayEvent, OverlayTemplate, OverlayMode, OverlayDrawingMode, OverlayTextChangeEvent, OverlayTextChangeCallback } from './component/Overlay'
 import type { FigureTemplate } from './component/Figure'
+import { setHitAreaDebug } from './component/Figure'
 import type { YAxisOverride } from './component/YAxis'
 
 import type { FormatDateType, Layout, Options, ZoomAnchor } from './Options'
@@ -256,6 +257,8 @@ export {
   registerStyles,
   registerXAxis,
   registerYAxis,
+  // Development aid: paint every figure's click tolerance.
+  setHitAreaDebug,
   utils,
   version
 }
