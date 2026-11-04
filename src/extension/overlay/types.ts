@@ -27,6 +27,14 @@ export interface FigureLevel {
   enabled: boolean
   /** Per-level color override (falls back to overlay's lineColor/borderColor) */
   color?: string
+  /** Per-level line style override (falls back to the overlay's lineStyle) */
+  lineStyle?: 'solid' | 'dashed'
+  /** Per-level line width override (falls back to the overlay's lineWidth) */
+  lineWidth?: number
+  /** Dash pattern for `lineStyle: 'dashed'` (falls back to the overlay's lineDashedValue) */
+  lineDashedValue?: number[]
+  /** Custom text shown on the level, placed by the level text alignment */
+  text?: string
 }
 
 /**

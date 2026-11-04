@@ -286,12 +286,56 @@ export interface Overlay<E = unknown> extends OverlayEventCollection<E> {
    * In drawing, special handling callback when moving events
    */
   performEventMoveForDrawing: Nullable<(params: OverlayPerformEventParams) => void>
+
+  /**
+   * Called once the drawing clicks are done, before the overlay is finished.
+   * The chart is available here, so a tool that needs anchors no point sits on
+   * (a position's stop and target, a channel's right edge) can add them.
+   */
+  completeDrawing: Nullable<(params: { overlay: Overlay<E>; chart: Chart }) => void>
+
+  /**
+   * Drag handles beyond the one per point: corners and edge midpoints of a
+   * rectangle, the far ends of a channel. Returned in pane pixels, derived from
+   * the points' pixels; `square` draws a square edge handle instead of a ring.
+   */
+  createExtraHandles: Nullable<(params: { overlay: Overlay<E>; coordinates: Coordinate[] }) => OverlayExtraHandle[]>
+
+  /**
+   * The cursor over handle `index` — the points' handles first, then the extra
+   * ones. Unset or undefined keeps the default pointer.
+   */
+  handleCursor: Nullable<(params: { overlay: Overlay<E>; coordinates: Coordinate[]; index: number }) => string | undefined>
+
+  /**
+   * Applies a drag of extra handle `index` at `coordinate` (pane pixels) by
+   * rewriting `overlay.points`; `toPoint` turns pixels back into a point.
+   */
+  moveExtraHandle: Nullable<(params: { overlay: Overlay<E>; index: number; coordinate: Coordinate; coordinates: Coordinate[]; toPoint: (coordinate: Coordinate) => Partial<Point> }) => void>
+
+  /**
+   * Open the inline text editor as soon as an interactive draw completes, so
+   * the user can type straight away. Text tools only: on any other drawing an
+   * empty label would leave a focused, invisible editor swallowing the next click.
+   */
+  editTextOnCreate: boolean
 }
 
 export type OverlayTemplate<E = unknown> = ExcludePickPartial<Omit<Overlay<E>, 'id' | 'groupId' | 'paneId' | 'points' | 'currentStep'>, 'name'>
 
-export type OverlayCreate<E = unknown> = ExcludePickPartial<Omit<Overlay<E>, 'drawingMode' | 'currentStep' | 'totalStep' | 'createPointFigures' | 'createXAxisFigures' | 'createYAxisFigures' | 'performEventPressedMove' | 'performEventMoveForDrawing'>, 'name'>
-export type OverlayOverride<E = unknown> = Partial<Omit<Overlay<E>, 'drawingMode' | 'currentStep' | 'totalStep' | 'createPointFigures' | 'createXAxisFigures' | 'createYAxisFigures' | 'performEventPressedMove' | 'performEventMoveForDrawing'>>
+export interface OverlayExtraHandle {
+  x: number
+  y: number
+  square?: boolean
+}
+
+export type OverlayCreate<E = unknown> = ExcludePickPartial<
+  Omit<Overlay<E>, 'drawingMode' | 'currentStep' | 'totalStep' | 'createPointFigures' | 'createXAxisFigures' | 'createYAxisFigures' | 'performEventPressedMove' | 'performEventMoveForDrawing' | 'completeDrawing' | 'createExtraHandles' | 'moveExtraHandle' | 'handleCursor'>,
+  'name'
+>
+export type OverlayOverride<E = unknown> = Partial<
+  Omit<Overlay<E>, 'drawingMode' | 'currentStep' | 'totalStep' | 'createPointFigures' | 'createXAxisFigures' | 'createYAxisFigures' | 'performEventPressedMove' | 'performEventMoveForDrawing' | 'completeDrawing' | 'createExtraHandles' | 'moveExtraHandle' | 'handleCursor'>
+>
 
 export type OverlayFilter<E = unknown> = Partial<Pick<Overlay<E>, 'id' | 'groupId' | 'name' | 'paneId'>>
 
@@ -338,6 +382,11 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
   createYAxisFigures: Nullable<OverlayCreateFiguresCallback<E>> = null
   performEventPressedMove: Nullable<(params: OverlayPerformEventParams) => void> = null
   performEventMoveForDrawing: Nullable<(params: OverlayPerformEventParams) => void> = null
+  completeDrawing: Nullable<(params: { overlay: Overlay<E>; chart: Chart }) => void> = null
+  createExtraHandles: Nullable<(params: { overlay: Overlay<E>; coordinates: Coordinate[] }) => OverlayExtraHandle[]> = null
+  handleCursor: Nullable<(params: { overlay: Overlay<E>; coordinates: Coordinate[]; index: number }) => string | undefined> = null
+  moveExtraHandle: Nullable<(params: { overlay: Overlay<E>; index: number; coordinate: Coordinate; coordinates: Coordinate[]; toPoint: (coordinate: Coordinate) => Partial<Point> }) => void> = null
+  editTextOnCreate = false
   onDrawStart: Nullable<OverlayEventCallback<E>> = null
   onDrawing: Nullable<OverlayEventCallback<E>> = null
   onDrawEnd: Nullable<OverlayEventCallback<E>> = null
