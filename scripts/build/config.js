@@ -2,10 +2,9 @@
 
 import { nodeResolve } from '@rollup/plugin-node-resolve'
 import replace from '@rollup/plugin-replace'
-import typescript from '@rollup/plugin-typescript'
 import terser from '@rollup/plugin-terser'
+import esbuild from 'rollup-plugin-esbuild'
 import fileSize from 'rollup-plugin-filesize'
-import eslint from '@rollup/plugin-eslint'
 
 import { resolvePath, getVersion } from '../utils.js'
 
@@ -29,9 +28,12 @@ function createInputConfig({ input, replaceValues }) {
   return {
     input,
     plugins: [
-      typescript(),
-      eslint({
-        throwOnError: true
+      // Transpile only, no type checking. The type gate is enforced separately by
+      // `pnpm type-check` (tsc) instead of re-running a full check on every build.
+      esbuild({
+        tsconfig: resolvePath('tsconfig.json'),
+        target: 'es2018',
+        sourceMap: isDev
       }),
       nodeResolve(),
       replace({

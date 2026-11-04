@@ -14,6 +14,8 @@ minimumReleaseAgeExclude:
 # dts-bundle-generator relies on the TypeScript JS compiler API, which TypeScript 7
 # no longer exports (it only ships a native binary). Pin its internal typescript to
 # 5.9.3 to decouple it from the root dependency: type checking runs on TS 7 (fast),
-# while the d.ts bundle keeps using TS 5.
+# while the d.ts bundle keeps using TS 5. Note that overrides do not apply to
+# peerDependencies, so the build pipeline now transpiles with rollup-plugin-esbuild
+# instead of depending on the TS compiler API.
 overrides:
   dts-bundle-generator>typescript: 5.9.3
