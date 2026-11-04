@@ -100,6 +100,10 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
             overlay.nextStep()
             if (!overlay.isDrawing()) {
               chartStore.progressOverlayComplete()
+              // The tool tidies up what it was given — swapping the two
+              // corners so they read top-left to bottom-right, filling in
+              // extendData — while it is still the drawing the user made.
+              overlay.completeDrawing?.({ chart, overlay })
               overlay.onDrawEnd?.({ chart, overlay, ...event })
               // TradingView-style auto-edit: if the freshly-drawn overlay
               // includes an editableText figure with empty text (i.e. a
@@ -137,6 +141,10 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
             overlay.forceComplete()
             if (!overlay.isDrawing()) {
               chartStore.progressOverlayComplete()
+              // The tool tidies up what it was given — swapping the two
+              // corners so they read top-left to bottom-right, filling in
+              // extendData — while it is still the drawing the user made.
+              overlay.completeDrawing?.({ chart, overlay })
               overlay.onDrawEnd?.({ chart, overlay, ...event })
             }
           }
@@ -187,6 +195,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
           if (overlay.isContinuousDrawing() && overlay.isDrawing() && !overlay.isStart()) {
             overlay.completeContinuousDrawing()
             chartStore.progressOverlayComplete()
+            overlay.completeDrawing?.({ chart, overlay })
             overlay.onDrawEnd?.({ chart, overlay, ...event })
             return true
           }
