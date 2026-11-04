@@ -143,45 +143,153 @@ export function formatThousands(value: string | number, sign: string): string {
   return vl.replace(/(\d)(?=(\d{3})+$)/g, ($1) => `${$1}${sign}`)
 }
 
-/** ALTD-1896 — compact form for small decimals with `threshold`+
- *  leading zeros between the decimal point and the first
- *  non-zero digit. Two behaviours worth calling out:
+const SUBSCRIPT_DIGITS = '₀₁₂₃₄₅₆₇₈₉'
+
+function toSubscript(n: number): string {
+  return `${n}`.replace(/\d/g, (d) => SUBSCRIPT_DIGITS[+d])
+}
+
+// `0.000000024` -> sign, integer, separator, fraction. Only values below 1
+// fold, so the integer part is a bare zero. The separator may be `,` when the
+// host formats with a European decimal comma.
+const FOLDABLE = /^(-?)0([.,])(\d+)$/
+
+/**
+ * ALT-34: compact form for small decimals, TradingView's subscript notation.
+ * `0.000000024` renders `0.0₈24`: the subscript counts every zero between the
+ * separator and the first significant digit.
  *
- *  1. Notation absorbs the literal `0` into the count. Value
- *     `0.0001200` renders as `0.{4}12`, not `0.0{3}1200`. The
- *     old form put a literal `0` before the `{n}` and was read
- *     as "0.0 plus annotation" — visually ambiguous by an
- *     off-by-one. `0.{n}significand` reads as "0. followed by
- *     n zeros, then the significand" with one unambiguous
- *     subscript.
+ * The values are folded as a set, the way the price axis needs them:
  *
- *  2. Trailing zeros in the significand are trimmed. A price
- *     of 0.00012 coming through `.toFixed(pricePrecision)` at
- *     precision 7 arrives here as `"0.0001200"`; users saw the
- *     three trailing zeros as if they were meaningful digits.
- *     After the trim it renders `0.{4}12`.
+ *  1. One zero count for all of them, the smallest among them, so labels up
+ *     an axis never switch from `₉` to `₈` partway. A value with more zeros
+ *     keeps the extra ones as digits (`0.0₈09`).
+ *  2. Trailing zeros are `.toFixed()` padding, not meaningful digits. They are
+ *     trimmed, but only as far as every value in the set allows, so the
+ *     labels keep a common length.
  *
- *  `threshold` still counts the minimum leading zeros in the
- *  fractional part required to trigger the fold. Values below
- *  the threshold pass through unchanged with their `.toFixed`
- *  padding intact — same as the old behaviour there. */
-export function formatFoldDecimal(value: string | number, threshold: number): string {
-  const vl = `${value}`
-  const reg = new RegExp('\\.0{' + threshold + ',}[1-9][0-9]*$')
-  if (reg.test(vl)) {
-    const [integer, fraction] = vl.split('.')
-    const match = /^0*/.exec(fraction)
-    if (isValid(match)) {
-      const zeroCount = match[0].length
-      // Trim trailing zeros — they're `.toFixed()` padding, not
-      // meaningful digits. The regex above guarantees the
-      // significand starts with a non-zero digit, so an empty
-      // string can't come out of this.
-      const significand = fraction.slice(zeroCount).replace(/0+$/, '')
-      return `${integer}.{${zeroCount}}${significand}`
+ * Nothing folds unless that shared count reaches `threshold`: a set holding
+ * `0.0009` (three zeros) prints in full. Values that are not decimals below 1
+ * pass through unchanged and, since they have no leading zeros to share,
+ * stop the set folding at all.
+ */
+export function formatFoldDecimals(values: Array<string | number>, threshold: number): string[] {
+  const texts = values.map((value) => `${value}`)
+  const parts = texts.map((text) => FOLDABLE.exec(text))
+  let zeroCount = Number.MAX_SAFE_INTEGER
+  for (let i = 0; i < texts.length; i++) {
+    const match = parts[i]
+    if (match === null) {
+      // `-`, `NaN` and friends carry no digits to fold; anything else is >= 1.
+      if (/[1-9]/.test(texts[i])) {
+        return texts
+      }
+      continue
+    }
+    const fraction = match[3]
+    const leading = /^0*/.exec(fraction)![0].length
+    if (leading < fraction.length) {
+      zeroCount = Math.min(zeroCount, leading)
     }
   }
-  return vl
+  if (zeroCount === Number.MAX_SAFE_INTEGER) {
+    // All zero. Padding long enough to fold (`0.000000000` at precision 9)
+    // says nothing, so it prints as `0`; short padding (`0.00`) stays.
+    return texts.map((text, i) => {
+      const match = parts[i]
+      return match !== null && match[3].length >= threshold ? '0' : text
+    })
+  }
+  if (zeroCount < threshold) {
+    return texts
+  }
+  let length = 1
+  parts.forEach((match) => {
+    if (match !== null) {
+      length = Math.max(length, match[3].slice(zeroCount).replace(/0+$/, '').length)
+    }
+  })
+  return texts.map((text, i) => {
+    const match = parts[i]
+    if (match === null) {
+      return text
+    }
+    const [, sign, separator, fraction] = match
+    const significand = fraction.slice(zeroCount, zeroCount + length).padEnd(length, '0')
+    if (!/[1-9]/.test(significand)) {
+      return '0'
+    }
+    return `${sign}0${separator}0${toSubscript(zeroCount)}${significand}`
+  })
+}
+
+/** One value on its own: see `formatFoldDecimals`. */
+export function formatFoldDecimal(value: string | number, threshold: number): string {
+  return formatFoldDecimals([value], threshold)[0]
+}
+
+/**
+ * The zero count `formatFoldDecimals` would give this set, or null when the
+ * set does not fold. The price axis records it so every other price label on
+ * that axis can fold to the same count (see `formatFoldDecimalsAt`).
+ */
+export function foldZeroCount(values: Array<string | number>, threshold: number): number | null {
+  let zeroCount = Number.MAX_SAFE_INTEGER
+  for (const value of values) {
+    const text = `${value}`
+    const match = FOLDABLE.exec(text)
+    if (match === null) {
+      if (/[1-9]/.test(text)) {
+        return null
+      }
+      continue
+    }
+    const fraction = match[3]
+    const leading = /^0*/.exec(fraction)![0].length
+    if (leading < fraction.length) {
+      zeroCount = Math.min(zeroCount, leading)
+    }
+  }
+  return zeroCount === Number.MAX_SAFE_INTEGER || zeroCount < threshold ? null : zeroCount
+}
+
+/**
+ * Folds `values` to a given zero count, the price axis's, so a label beside
+ * the axis reads in its terms: on an axis of `0.0₈16`…`0.0₈48`, the current
+ * price 0.00000000076 is `0.0₈076`, not `0.0₉76`. A value with fewer zeros
+ * than that (above the axis's scale) cannot be written at it without losing
+ * digits and folds on its own, as does everything when `zeroCount` is null.
+ * Trailing padding is trimmed as far as every folded value allows, as in
+ * `formatFoldDecimals`.
+ */
+export function formatFoldDecimalsAt(values: Array<string | number>, zeroCount: number | null, threshold: number): string[] {
+  if (zeroCount === null) {
+    return formatFoldDecimals(values, threshold)
+  }
+  const texts = values.map((value) => `${value}`)
+  const parts = texts.map((text) => {
+    const match = FOLDABLE.exec(text)
+    if (match === null) {
+      return null
+    }
+    const fraction = match[3]
+    const leading = /^0*/.exec(fraction)![0].length
+    return leading >= zeroCount && leading < fraction.length ? match : null
+  })
+  let length = 1
+  parts.forEach((match) => {
+    if (match !== null) {
+      length = Math.max(length, match[3].slice(zeroCount).replace(/0+$/, '').length)
+    }
+  })
+  return texts.map((text, i) => {
+    const match = parts[i]
+    if (match === null) {
+      return formatFoldDecimal(text, threshold)
+    }
+    const [, sign, separator, fraction] = match
+    return `${sign}0${separator}0${toSubscript(zeroCount)}${fraction.slice(zeroCount, zeroCount + length).padEnd(length, '0')}`
+  })
 }
 
 export function formatTemplateString(template: string, params: Record<string, unknown>): string {

@@ -34,7 +34,7 @@ import type Point from './common/Point'
 import { logError, logTag, logWarn } from './common/utils/logger'
 
 import { clone, merge, isString, isNumber, isValid, isObject, isArray, isFunction, isBoolean } from './common/utils/typeChecks'
-import { formatValue, formatPrecision, formatBigNumber, formatThousands, formatFoldDecimal, formatTimestampByTemplate } from './common/utils/format'
+import { formatValue, formatPrecision, formatBigNumber, formatThousands, formatFoldDecimal, formatFoldDecimals, formatTimestampByTemplate } from './common/utils/format'
 import { calcTextWidth } from './common/utils/canvas'
 import type { ActionType } from './common/Action'
 import type { Indicator, IndicatorCreate, IndicatorSeries, IndicatorTemplate } from './component/Indicator'
@@ -161,6 +161,7 @@ const utils = {
   formatDate: formatTimestampByTemplate,
   formatThousands,
   formatFoldDecimal,
+  formatFoldDecimals,
   calcTextWidth,
   getLinearSlopeIntercept,
   getLinearYFromSlopeIntercept,
