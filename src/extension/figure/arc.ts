@@ -16,7 +16,7 @@ import type Coordinate from '../../common/Coordinate'
 import { getDistance } from '../../common/Coordinate'
 import type { LineStyle } from '../../common/Styles'
 
-import { DEVIATION, type FigureTemplate } from '../../component/Figure'
+import { DEVIATION, type FigureTemplate, isHitAreaDebug } from '../../component/Figure'
 
 import type { CircleAttrs } from './circle'
 
@@ -50,9 +50,30 @@ export function checkCoordinateOnArc(coordinate: Coordinate, attrs: ArcAttrs | A
   return false
 }
 
+/**
+ * Paints the band `checkCoordinateOnArc` accepts around each arc. Debug only;
+ * `setHitAreaDebug` gates it.
+ */
+function drawArcHitArea(ctx: CanvasRenderingContext2D, arcs: ArcAttrs[]): void {
+  ctx.save()
+  ctx.lineWidth = DEVIATION * 2
+  ctx.strokeStyle = 'rgba(21, 93, 252, 0.22)'
+  ctx.setLineDash([])
+  arcs.forEach(({ x, y, r, startAngle, endAngle }) => {
+    ctx.beginPath()
+    ctx.arc(x, y, r, startAngle, endAngle)
+    ctx.stroke()
+    ctx.closePath()
+  })
+  ctx.restore()
+}
+
 export function drawArc(ctx: CanvasRenderingContext2D, attrs: ArcAttrs | ArcAttrs[], styles: Partial<LineStyle>): void {
   let arcs: ArcAttrs[] = []
   arcs = arcs.concat(attrs)
+  if (isHitAreaDebug()) {
+    drawArcHitArea(ctx, arcs)
+  }
   const { style = 'solid', size = 1, color = 'currentColor', dashedValue = [2, 2] } = styles
   ctx.lineWidth = size
   ctx.strokeStyle = color

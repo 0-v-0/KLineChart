@@ -12,11 +12,12 @@
  * limitations under the License.
  */
 
-import type Coordinate from '../../common/Coordinate'
 import type Nullable from '../../common/Nullable'
+import type Coordinate from '../../common/Coordinate'
 import type { SmoothLineStyle } from '../../common/Styles'
-import { isNumber, isString } from '../../common/utils/typeChecks'
-import { DEVIATION, type FigureTemplate } from '../../component/Figure'
+
+import { type FigureTemplate, DEVIATION, isHitAreaDebug } from '../../component/Figure'
+import { isNumber } from '../../common/utils/typeChecks'
 
 export function checkCoordinateOnLine(coordinate: Coordinate, attrs: LineAttrs | LineAttrs[]): boolean {
   let lines: LineAttrs[] = []
@@ -131,24 +132,49 @@ export function lineTo(ctx: CanvasRenderingContext2D, coordinates: Coordinate[],
   }
 }
 
+/**
+ * Paints the grab band around each line — a flat translucent stroke as wide as
+ * the hit test is tolerant. Debug only; `setHitAreaDebug` gates it.
+ */
+function drawLineHitArea(ctx: CanvasRenderingContext2D, lines: LineAttrs[], smooth: SmoothLineStyle['smooth']): void {
+  ctx.save()
+  ctx.lineWidth = DEVIATION * 2
+  ctx.strokeStyle = 'rgba(21, 93, 252, 0.22)'
+  ctx.lineCap = 'butt'
+  ctx.lineJoin = 'round'
+  ctx.setLineDash([])
+  lines.forEach(({ coordinates }) => {
+    if (coordinates.length > 1) {
+      ctx.beginPath()
+      ctx.moveTo(coordinates[0].x, coordinates[0].y)
+      lineTo(ctx, coordinates, smooth)
+      ctx.stroke()
+      ctx.closePath()
+    }
+  })
+  ctx.restore()
+}
+
 export function drawLine(ctx: CanvasRenderingContext2D, attrs: LineAttrs | LineAttrs[], styles: Partial<SmoothLineStyle> & { lineCap?: CanvasLineCap; lineJoin?: CanvasLineJoin }): void {
   let lines: LineAttrs[] = []
   lines = lines.concat(attrs)
   const { style = 'solid', smooth = false, size = 1, color = 'currentColor', dashedValue = [2, 2], lineCap, lineJoin } = styles
-  const isSmooth = isNumber(smooth) ? smooth > 0 : smooth
+  if (isHitAreaDebug()) {
+    drawLineHitArea(ctx, lines, smooth)
+  }
   ctx.lineWidth = size
   ctx.strokeStyle = color
   // Use explicit lineCap/lineJoin if provided, otherwise default based on smooth
-  if (isString(lineCap)) {
+  if (lineCap !== undefined) {
     ctx.lineCap = lineCap
-  } else if (isSmooth) {
+  } else if (smooth !== false && smooth !== 0) {
     ctx.lineCap = 'round'
   } else {
     ctx.lineCap = 'butt'
   }
-  if (isString(lineJoin)) {
+  if (lineJoin !== undefined) {
     ctx.lineJoin = lineJoin
-  } else if (isSmooth) {
+  } else if (smooth !== false && smooth !== 0) {
     ctx.lineJoin = 'round'
   } else {
     ctx.lineJoin = 'miter'
@@ -186,6 +212,12 @@ export function drawLine(ctx: CanvasRenderingContext2D, attrs: LineAttrs | LineA
       }
     }
   })
+  // The dash is context state, so it outlives this call: a custom indicator
+  // drawn next stroked every line dashed until it reset it (Superchart
+  // ALT-6, where a cross marker lost its centre to the gap).
+  if (style === 'dashed') {
+    ctx.setLineDash([])
+  }
 }
 
 export interface LineAttrs {
