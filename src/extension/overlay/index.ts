@@ -72,6 +72,13 @@ import timeLine from './timeLine'
 // Trade line overlay (Pro overlay with factory pattern)
 import tradeLine from './tradeLine'
 import triangle from './triangle'
+// TradingView-parity tools, grouped by family; each group owns its own folder.
+import { factories as tvAnnotationFactories } from './tv/annotations'
+import { factories as tvFibCycleFactories } from './tv/fibCycles'
+import { factories as tvForecastDataFactories } from './tv/forecastData'
+import { factories as tvLineShapeFactories } from './tv/linesShapes'
+import { factories as tvPatternFactories } from './tv/patterns'
+import { factories as tvPitchforkGannFactories } from './tv/pitchforkGann'
 import { isProOverlayTemplate } from './types'
 import verticalRayLine from './verticalRayLine'
 import verticalSegment from './verticalSegment'
@@ -121,7 +128,14 @@ const proExtensions = [
   priceLevelLine,
   styledSegment,
   box,
-  emojiMarker
+  emojiMarker,
+  // TradingView-parity drawing tools.
+  ...tvAnnotationFactories,
+  ...tvFibCycleFactories,
+  ...tvForecastDataFactories,
+  ...tvLineShapeFactories,
+  ...tvPatternFactories,
+  ...tvPitchforkGannFactories
 ]
 
 // Register standard overlays (direct templates)

@@ -90,6 +90,7 @@ const priceLine = (): ProOverlayTemplate => {
 
   return {
     name: 'priceLine',
+    editTextOnCreate: true,
     totalStep: 2,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

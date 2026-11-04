@@ -59,6 +59,7 @@ const priceChannelLine = (): ProOverlayTemplate => {
 
   return {
     name: 'priceChannelLine',
+    editTextOnCreate: true,
     totalStep: 4,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

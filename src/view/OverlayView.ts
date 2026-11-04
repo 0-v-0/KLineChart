@@ -528,15 +528,19 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
   /**
    * Called by the click-driven drawing flow right after the engine has
    * fired `onDrawEnd` for a freshly-completed overlay. If the overlay
-   * exposes an `editableText` figure with empty text, we open the
-   * inline editor immediately so the user can start typing — matching
-   * TradingView's behaviour for Text/Note/Callout tools.
+   * declares `editTextOnCreate` and exposes an `editableText` figure with
+   * empty text, we open the inline editor immediately so the user can start
+   * typing — matching TradingView's behaviour for Text/Note/Callout tools.
+   *
+   * The flag is what keeps the editor to the tools that want it: an empty
+   * label is also how a channel or an ellipse starts out, and those should
+   * open with nothing over the drawing.
    *
    * Walks the same coordinate computation as `_drawOverlay` so the
    * editor mounts at the figure's actual screen position.
    */
   private _maybeAutoStartEditingAfterDraw(overlay: OverlayImp): void {
-    if (overlay.createPointFigures == null) {
+    if (!overlay.editTextOnCreate || overlay.createPointFigures == null) {
       return
     }
 

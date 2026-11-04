@@ -99,6 +99,7 @@ const tradeLine = (): ProOverlayTemplate => {
 
   return {
     name: 'tradeLine',
+    editTextOnCreate: true,
     totalStep: 2,
     needDefaultPointFigure: false,
     needDefaultXAxisFigure: false,

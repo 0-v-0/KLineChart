@@ -126,6 +126,7 @@ function parseExtendData(extendData: unknown): PinOverlayData {
 
 const pin: OverlayTemplate = {
   name: 'pin',
+  editTextOnCreate: true,
   totalStep: 2,
   needDefaultPointFigure: false,
   needDefaultXAxisFigure: false,

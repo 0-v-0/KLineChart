@@ -64,6 +64,7 @@ const triangle = (): ProOverlayTemplate => {
 
   return {
     name: 'triangle',
+    editTextOnCreate: true,
     totalStep: 4,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

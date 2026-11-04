@@ -58,6 +58,7 @@ const horizontalStraightLine = (): ProOverlayTemplate => {
 
   return {
     name: 'horizontalStraightLine',
+    editTextOnCreate: true,
     totalStep: 2,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

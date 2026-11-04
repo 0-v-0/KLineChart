@@ -58,6 +58,7 @@ const verticalSegment = (): ProOverlayTemplate => {
 
   return {
     name: 'verticalSegment',
+    editTextOnCreate: true,
     totalStep: 3,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

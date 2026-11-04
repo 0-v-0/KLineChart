@@ -65,6 +65,7 @@ const parallelogram = (): ProOverlayTemplate => {
 
   return {
     name: 'parallelogram',
+    editTextOnCreate: true,
     totalStep: 4,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

@@ -59,6 +59,7 @@ const horizontalSegment = (): ProOverlayTemplate => {
 
   return {
     name: 'horizontalSegment',
+    editTextOnCreate: true,
     totalStep: 3,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

@@ -147,6 +147,7 @@ const segment = (): ProOverlayTemplate => {
 
   return {
     name: 'segment',
+    editTextOnCreate: true,
     totalStep: 3,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

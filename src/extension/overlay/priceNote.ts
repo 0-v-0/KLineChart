@@ -117,6 +117,7 @@ function nearestMidpoint(anchor: XY, rect: { x: number; y: number; width: number
 
 const priceNote: OverlayTemplate = {
   name: 'priceNote',
+  editTextOnCreate: true,
   // 2 clicks (anchor + label centre). totalStep = clicks + 1.
   totalStep: 3,
   needDefaultPointFigure: false,

@@ -58,6 +58,7 @@ const verticalRayLine = (): ProOverlayTemplate => {
 
   return {
     name: 'verticalRayLine',
+    editTextOnCreate: true,
     totalStep: 3,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

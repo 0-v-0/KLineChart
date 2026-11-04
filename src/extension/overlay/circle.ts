@@ -65,6 +65,7 @@ const circle = (): ProOverlayTemplate => {
 
   return {
     name: 'circle',
+    editTextOnCreate: true,
     totalStep: 3,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

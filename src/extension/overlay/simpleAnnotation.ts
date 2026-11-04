@@ -43,6 +43,7 @@ function parseExtendData(extendData: unknown, overlay: Parameters<NonNullable<Ov
 
 const simpleAnnotation: OverlayTemplate = {
   name: 'simpleAnnotation',
+  editTextOnCreate: true,
   totalStep: 2,
   styles: {
     line: { style: 'dashed' }

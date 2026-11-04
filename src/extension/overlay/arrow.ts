@@ -76,6 +76,7 @@ const arrow = (): ProOverlayTemplate => {
 
   return {
     name: 'arrow',
+    editTextOnCreate: true,
     totalStep: 3,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

@@ -141,6 +141,7 @@ const parallelStraightLine = (): ProOverlayTemplate => {
 
   return {
     name: 'parallelStraightLine',
+    editTextOnCreate: true,
     totalStep: 4,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

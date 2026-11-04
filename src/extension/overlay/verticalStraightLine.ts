@@ -58,6 +58,7 @@ const verticalStraightLine = (): ProOverlayTemplate => {
 
   return {
     name: 'verticalStraightLine',
+    editTextOnCreate: true,
     totalStep: 2,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

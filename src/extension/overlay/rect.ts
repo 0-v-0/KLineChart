@@ -64,6 +64,7 @@ const rect = (): ProOverlayTemplate => {
 
   return {
     name: 'rect',
+    editTextOnCreate: true,
     totalStep: 3,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

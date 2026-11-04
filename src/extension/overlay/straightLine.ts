@@ -59,6 +59,7 @@ const straightLine = (): ProOverlayTemplate => {
 
   return {
     name: 'straightLine',
+    editTextOnCreate: true,
     totalStep: 3,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

@@ -92,6 +92,7 @@ const rayLine = (): ProOverlayTemplate => {
 
   return {
     name: 'rayLine',
+    editTextOnCreate: true,
     totalStep: 3,
     needDefaultPointFigure: true,
     needDefaultXAxisFigure: true,

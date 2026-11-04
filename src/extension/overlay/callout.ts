@@ -296,6 +296,7 @@ function buildBubblePolygon(rect: { x: number; y: number; width: number; height:
 
 const callout: OverlayTemplate = {
   name: 'callout',
+  editTextOnCreate: true,
   totalStep: 3,
   // Only the anchor (index 0) gets the engine's default point handle.
   // The bubble centre (index 1) IS the bubble polygon — putting a

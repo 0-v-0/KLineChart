@@ -66,6 +66,7 @@ const text: OverlayTemplate = {
   // `totalStep: 2` = single-click drawing (engine convention is
   // N + 1 for an N-click overlay; see view/OverlayView.ts → nextStep).
   name: 'text',
+  editTextOnCreate: true,
   totalStep: 2,
   // No default point figure — the text itself is the drag handle and
   // hit target. The default circle handle looks out of place under a

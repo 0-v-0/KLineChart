@@ -105,6 +105,7 @@ interface XY {
 
 const signpost: OverlayTemplate = {
   name: 'signpost',
+  editTextOnCreate: true,
   // Single-click overlay; engine convention is clicks + 1.
   totalStep: 2,
   needDefaultPointFigure: false,

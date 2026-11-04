@@ -68,6 +68,7 @@ const horizontalRayLine = (): ProOverlayTemplate => {
 
   return {
     name: 'horizontalRayLine',
+    editTextOnCreate: true,
     // Single-click placement (ALTD-1892). Direction lives on
     // extendData (default 'right'), so the second click the
     // legacy `totalStep: 3` required is no longer needed —
