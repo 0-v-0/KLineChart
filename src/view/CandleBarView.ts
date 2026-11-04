@@ -18,7 +18,7 @@ import type { MouseTouchEvent } from '../common/EventHandler'
 import type Nullable from '../common/Nullable'
 import { type FootprintBarData, type FootprintLayout, formatFootprintVolume, footprintImbalances, footprintLayout, footprintValueArea } from '../common/Footprint'
 import RectBatch from '../common/RectBatch'
-import type { CandleBarColor, CandleBarColorCallback, CandleFootprintStyle, CandleType } from '../common/Styles'
+import type { CandleBarColor, CandleBarColorCallback, CandleFootprintStyle, CandleLineSeriesType, CandleType } from '../common/Styles'
 import { createFont } from '../common/utils/canvas'
 import { isFunction, isValid } from '../common/utils/typeChecks'
 
@@ -31,7 +31,8 @@ import ChildrenView from './ChildrenView'
 
 export interface CandleBarOptions {
   yAxisId: string
-  type: Exclude<CandleType, 'area'>
+  /** Neither the area series nor a line series ever reaches this view. */
+  type: Exclude<CandleType, 'area' | CandleLineSeriesType>
   styles: CandleBarColor | CandleBarColorCallback
 }
 
@@ -246,7 +247,7 @@ export default class CandleBarView extends ChildrenView {
     const candleStyles = pane.getChart().getStyles().candle
     return {
       yAxisId,
-      type: candleStyles.type as Exclude<CandleType, 'area'>,
+      type: candleStyles.type as Exclude<CandleType, 'area' | CandleLineSeriesType>,
       styles: candleStyles.bar
     }
   }

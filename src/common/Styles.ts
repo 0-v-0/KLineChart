@@ -215,6 +215,40 @@ export interface CandleAreaStyle {
   point: CandleAreaPointStyle
 }
 
+export interface CandleLineStyle {
+  color: string
+  size: number
+  /** Radius of the close dot drawn by `line_markers`. */
+  markerRadius: number
+}
+
+/**
+ * `baseline` fills the area under the close, in one colour above a base level
+ * and another below it. The level is a percentage of the visible price range
+ * rather than a price, so it stays put as the axis rescales.
+ */
+export interface CandleBaselineStyle {
+  /** Base level as a percentage (0-100) of the visible price range. */
+  level: number
+  lineSize: number
+  topLineColor: string
+  bottomLineColor: string
+  topFillColor: string
+  bottomFillColor: string
+}
+
+/** `hlc_area`: the high, low and close as three lines, with the band between them filled. */
+export interface CandleHlcAreaStyle {
+  lineSize: number
+  highLineColor: string
+  lowLineColor: string
+  closeLineColor: string
+  /** Fill between high and close. */
+  upFillColor: string
+  /** Fill between close and low. */
+  downFillColor: string
+}
+
 export interface CandleHighLowPriceMarkStyle {
   show: boolean
   color: string
@@ -263,7 +297,14 @@ export interface CandleTooltipStyle extends TooltipStyle {
   rect: CandleTooltipRectStyle
 }
 
-export type CandleType = 'candle_solid' | 'candle_stroke' | 'candle_up_stroke' | 'candle_down_stroke' | 'ohlc' | 'area' | 'heikin_ashi' | 'footprint'
+export type CandleType = 'candle_solid' | 'candle_stroke' | 'candle_up_stroke' | 'candle_down_stroke' | 'ohlc' | 'area' | 'heikin_ashi' | 'footprint' | 'line' | 'line_markers' | 'step_line' | 'hlc_area' | 'baseline'
+
+/** Types drawn as one continuous series by `CandleLineView`, rather than per-bar shapes. */
+export type CandleLineSeriesType = 'line' | 'line_markers' | 'step_line' | 'hlc_area' | 'baseline'
+
+export function isLineSeriesType(type: CandleType): type is CandleLineSeriesType {
+  return type === 'line' || type === 'line_markers' || type === 'step_line' || type === 'hlc_area' || type === 'baseline'
+}
 
 /**
  * How a footprint bar splits its volume into columns. `adaptive` is the chart
@@ -347,6 +388,9 @@ export interface CandleStyle {
   type: CandleType
   bar: CandleBarColor | CandleBarColorCallback
   area: CandleAreaStyle
+  line: CandleLineStyle
+  baseline: CandleBaselineStyle
+  hlcArea: CandleHlcAreaStyle
   footprint: CandleFootprintStyle
   priceMark: CandlePriceMarkStyle
   tooltip: CandleTooltipStyle
@@ -527,6 +571,27 @@ function getDefaultCandleStyle(): CandleStyle {
         animation: true,
         animationDuration: 1000
       }
+    },
+    line: {
+      color: Color.BLUE,
+      size: 2,
+      markerRadius: 3
+    },
+    baseline: {
+      level: 50,
+      lineSize: 2,
+      topLineColor: Color.GREEN,
+      bottomLineColor: Color.RED,
+      topFillColor: hexToRgb(Color.GREEN, 0.2),
+      bottomFillColor: hexToRgb(Color.RED, 0.2)
+    },
+    hlcArea: {
+      lineSize: 1,
+      highLineColor: Color.GREEN,
+      lowLineColor: Color.RED,
+      closeLineColor: Color.BLUE,
+      upFillColor: hexToRgb(Color.GREEN, 0.2),
+      downFillColor: hexToRgb(Color.RED, 0.2)
     },
     footprint: {
       variant: 'adaptive',
