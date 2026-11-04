@@ -17,7 +17,13 @@ import type Coordinate from '../common/Coordinate'
 import Eventful from '../common/Eventful'
 import type { MouseTouchEvent } from '../common/EventHandler'
 
-export const DEVIATION = 2
+/**
+ * Hit-test slop, in pixels, around a figure's stroke. A 1px trend line is
+ * effectively unclickable at its true width, so every `checkEventOn` grows the
+ * shape by this much before testing — the grab band a user actually aims at,
+ * rather than the pixels that got painted.
+ */
+export const DEVIATION = 6
 
 /**
  * Debug aid: paint each figure's grab band (see `DEVIATION`) as a translucent
