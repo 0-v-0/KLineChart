@@ -20,6 +20,7 @@ import type { SymbolInfo } from '../common/SymbolInfo'
 import type StoreImp from '../Store'
 
 import type { ReplayStatus } from './types'
+import { formatErrorMessage } from '../common/utils/format'
 
 // ---------------------------------------------------------------------------
 // StoreAccess — narrow view of Store's fields and methods the engine calls into.
@@ -287,7 +288,7 @@ export class ReplayEngine {
           this._s.resetData(() => {
             this._s._period = savedPeriod
           })
-          this._emitReplayError('resolution_change_failed', { period, error: err instanceof Error ? err.message : String(err) })
+          this._emitReplayError('resolution_change_failed', { period, error: formatErrorMessage(err) })
         }
       })()
     }

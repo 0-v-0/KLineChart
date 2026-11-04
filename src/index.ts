@@ -24,11 +24,8 @@
  * limitations under the License.
  */
 
-import type {
-  Styles,
-  LineType, PolygonType, TooltipShowRule, TooltipShowType, FeatureType, TooltipFeaturePosition,
-  CandleType, CandleTooltipRectPosition
-} from './common/Styles'
+import { getHotkey, getSupportedHotkeys, registerHotkey } from './extension/hotkey/index'
+import type { Styles, LineType, PolygonType, TooltipShowRule, TooltipShowType, FeatureType, TooltipFeaturePosition, CandleType, CandleTooltipRectPosition } from './common/Styles'
 import type Nullable from './common/Nullable'
 import type DeepPartial from './common/DeepPartial'
 import type { KLineData } from './common/Data'
@@ -36,17 +33,8 @@ import type Point from './common/Point'
 
 import { logError, logTag, logWarn } from './common/utils/logger'
 
-import {
-  clone, merge, isString, isNumber, isValid, isObject, isArray, isFunction, isBoolean
-} from './common/utils/typeChecks'
-import {
-  formatValue,
-  formatPrecision,
-  formatBigNumber,
-  formatThousands,
-  formatFoldDecimal,
-  formatTimestampByTemplate
-} from './common/utils/format'
+import { clone, merge, isString, isNumber, isValid, isObject, isArray, isFunction, isBoolean } from './common/utils/typeChecks'
+import { formatValue, formatPrecision, formatBigNumber, formatThousands, formatFoldDecimal, formatTimestampByTemplate } from './common/utils/format'
 import { calcTextWidth } from './common/utils/canvas'
 import type { ActionType } from './common/Action'
 import type { Indicator, IndicatorCreate, IndicatorSeries, IndicatorTemplate } from './component/Indicator'
@@ -54,7 +42,8 @@ import type { Overlay, OverlayCreate, OverlayEvent, OverlayTemplate, OverlayMode
 import type { FigureTemplate } from './component/Figure'
 import type { YAxisOverride } from './component/YAxis'
 
-import type { FormatDateType, Options, BarSpaceLimit, ZoomAnchor } from './Options'
+import type { FormatDateType, Layout, Options, ZoomAnchor } from './Options'
+import type { BarSpaceLimit } from './common/BarSpace'
 import ChartImp, { type Chart, type DomPosition, type YAxisFilter } from './Chart'
 import { isSetVisibleRangeError, type SetVisibleRangeError, type SetVisibleRangeErrorCode } from './common/Errors'
 import type { ReplayStatus, ReplayEngine } from './replay/types'
@@ -67,24 +56,27 @@ import { checkCoordinateOnPolygon } from './extension/figure/polygon'
 import { checkCoordinateOnRect } from './extension/figure/rect'
 import { checkCoordinateOnText } from './extension/figure/text'
 
-import { registerFigure, getSupportedFigures, getFigureClass } from './extension/figure/index'
 import { registerIndicator, getSupportedIndicators } from './extension/indicator/index'
 import { registerLocale, getSupportedLocales } from './extension/i18n/index'
 import {
-  registerOverlay, getOverlayClass, getSupportedOverlays,
-  createPriceLine, createTradeLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
-  FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_CHANNEL_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS
+  registerOverlay,
+  getOverlayClass,
+  getSupportedOverlays,
+  createPriceLine,
+  createTradeLine,
+  isProOverlayTemplate,
+  createPropertiesStore,
+  DEFAULT_OVERLAY_PROPERTIES,
+  FIBONACCI_RETRACEMENT_LEVELS,
+  FIBONACCI_CHANNEL_LEVELS,
+  FIBONACCI_EXTENSION_LEVELS,
+  FIBONACCI_CIRCLE_LEVELS,
+  FIBONACCI_FAN_LEVELS
 } from './extension/overlay/index'
-import type {
-  OverlayProperties, ProOverlayTemplate, OverlayPropertiesStore,
-  FigureLevel,
-  PriceLineProperties, PriceLine, PriceLineEventListener,
-  TradeLineProperties, TradeLine, TradeLineOptions
-} from './extension/overlay/index'
+import type { OverlayProperties, ProOverlayTemplate, OverlayPropertiesStore, FigureLevel, PriceLineProperties, PriceLine, PriceLineEventListener, TradeLineProperties, TradeLine, TradeLineOptions } from './extension/overlay/index'
 import { registerStyles } from './extension/styles/index'
 import { registerXAxis } from './extension/x-axis'
 import { registerYAxis } from './extension/y-axis'
-import type { FormatDateType, Layout, Options, ZoomAnchor } from './Options'
 
 const charts = new Map<string, ChartImp>()
 let chartBaseId = 1
@@ -103,7 +95,7 @@ function version(): string {
  * @param options
  * @returns {Chart}
  */
-function init (ds: HTMLElement | string, options?: Options): Nullable<Chart> {
+function init(ds: HTMLElement | string, options?: Options): Nullable<Chart> {
   if (options?.debug !== false) {
     logTag()
   }
@@ -182,14 +174,68 @@ const utils = {
 }
 
 export {
+  // types
   type ActionType,
+  type BarSpaceLimit,
   type CandleTooltipRectPosition,
   type CandleType,
   type Chart,
+  type DeepPartial,
   type DomPosition,
-  dispose,
   type FeatureType,
+  type FigureLevel,
+  type FigureTemplate,
   type FormatDateType,
+  type Indicator,
+  type IndicatorCreate,
+  type IndicatorSeries,
+  type IndicatorTemplate,
+  type KLineData,
+  type Layout,
+  type LineType,
+  type Nullable,
+  type Options,
+  type Overlay,
+  type OverlayCreate,
+  type OverlayDrawingMode,
+  type OverlayEvent,
+  type OverlayMode,
+  type OverlayProperties,
+  type OverlayPropertiesStore,
+  type OverlayTemplate,
+  type OverlayTextChangeCallback,
+  type OverlayTextChangeEvent,
+  type Point,
+  type PolygonType,
+  type PriceLine,
+  type PriceLineEventListener,
+  type PriceLineProperties,
+  type ProOverlayTemplate,
+  type ReplayEngine,
+  type ReplayStatus,
+  type SetVisibleRangeError,
+  type SetVisibleRangeErrorCode,
+  type Styles,
+  type TooltipFeaturePosition,
+  type TooltipShowRule,
+  type TooltipShowType,
+  type TradeLine,
+  type TradeLineOptions,
+  type TradeLineProperties,
+  type YAxisFilter,
+  type YAxisOverride,
+  type ZoomAnchor,
+  // values
+  createPriceLine,
+  createPropertiesStore,
+  createTradeLine,
+  DEFAULT_OVERLAY_PROPERTIES,
+  dispose,
+  FIBONACCI_CHANNEL_LEVELS,
+  FIBONACCI_CIRCLE_LEVELS,
+  FIBONACCI_EXTENSION_LEVELS,
+  FIBONACCI_FAN_LEVELS,
+  FIBONACCI_RETRACEMENT_LEVELS,
   getFigureClass,
   getHotkey,
   getOverlayClass,
@@ -198,13 +244,9 @@ export {
   getSupportedIndicators,
   getSupportedLocales,
   getSupportedOverlays,
-  type IndicatorSeries,
   init,
-  type Layout,
-  type LineType,
-  type OverlayDrawingMode,
-  type OverlayMode,
-  type PolygonType,
+  isProOverlayTemplate,
+  isSetVisibleRangeError,
   registerFigure,
   registerHotkey,
   registerIndicator,
@@ -213,32 +255,6 @@ export {
   registerStyles,
   registerXAxis,
   registerYAxis,
-  type TooltipFeaturePosition,
-  type TooltipShowRule,
-  type TooltipShowType,
   utils,
-  // Pro overlay utilities
-  createPriceLine, createTradeLine, isProOverlayTemplate, createPropertiesStore, DEFAULT_OVERLAY_PROPERTIES,
-  // Default fibonacci levels
-  FIBONACCI_RETRACEMENT_LEVELS, FIBONACCI_CHANNEL_LEVELS, FIBONACCI_EXTENSION_LEVELS, FIBONACCI_CIRCLE_LEVELS, FIBONACCI_FAN_LEVELS,
-  // Replay engine type — exported for consumer type annotations (sc.replay: ReplayEngine | null)
-  type ReplayEngine,
-  isSetVisibleRangeError, type SetVisibleRangeError, type SetVisibleRangeErrorCode,
-  // Core consumer types
-  type Chart, type Nullable, type DeepPartial, type KLineData, type Point, type Styles, type Options,
-  type Overlay, type OverlayCreate, type OverlayEvent, type OverlayTemplate,
-  type Indicator, type IndicatorCreate, type IndicatorTemplate,
-  type FigureTemplate,
-  // Style / enum types
-  type LineType, type PolygonType, type TooltipShowRule, type TooltipShowType, type FeatureType, type TooltipFeaturePosition, type CandleTooltipRectPosition,
-  type CandleType, type FormatDateType, type BarSpaceLimit, type ZoomAnchor,
-  type DomPosition, type YAxisOverride, type YAxisFilter,
-  type ActionType, type IndicatorSeries, type OverlayMode, type OverlayDrawingMode,
-  type OverlayTextChangeEvent, type OverlayTextChangeCallback,
-  // Pro overlay types
-  type OverlayProperties, type ProOverlayTemplate, type OverlayPropertiesStore, type FigureLevel,
-  type PriceLineProperties, type PriceLine, type PriceLineEventListener,
-  type TradeLineProperties, type TradeLine, type TradeLineOptions,
-  // Replay types
-  type ReplayStatus
+  version
 }

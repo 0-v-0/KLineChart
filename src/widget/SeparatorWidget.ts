@@ -37,21 +37,15 @@ export default class SeparatorWidget extends Widget<SeparatorPane> {
 
   constructor(rootContainer: HTMLElement, pane: SeparatorPane) {
     super(rootContainer, pane)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- ignore
     this.registerEvent('touchStartEvent', this._mouseDownEvent.bind(this))
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- ignore
+      // @ts-ignore
       .registerEvent('touchMoveEvent', this._pressedMouseMoveEvent.bind(this))
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- ignore
       .registerEvent('touchEndEvent', this._mouseUpEvent.bind(this))
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- ignore
       .registerEvent('mouseDownEvent', this._mouseDownEvent.bind(this))
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- ignore
       .registerEvent('mouseUpEvent', this._mouseUpEvent.bind(this))
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- ignore
+      // @ts-ignore
       .registerEvent('pressedMouseMoveEvent', this._pressedMouseMoveEvent.bind(this))
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- ignore
       .registerEvent('mouseEnterEvent', this._mouseEnterEvent.bind(this))
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- ignore
       .registerEvent('mouseLeaveEvent', this._mouseLeaveEvent.bind(this))
   }
 
@@ -115,7 +109,6 @@ export default class SeparatorWidget extends Widget<SeparatorPane> {
     return this._mouseLeaveEvent()
   }
 
-  // eslint-disable-next-line @typescript-eslint/unbound-method -- ignore
   private readonly _pressedMouseMoveEvent = throttle(this._pressedTouchMouseMoveEvent, 20)
 
   private _pressedTouchMouseMoveEvent(event: MouseTouchEvent): boolean {

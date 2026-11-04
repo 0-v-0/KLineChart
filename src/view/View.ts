@@ -45,9 +45,8 @@ export default abstract class View<C extends Axis = Axis> extends Eventful {
       const figure = new FigureClazz(create)
       if (isValid(eventHandler)) {
         for (const key in eventHandler) {
-          // eslint-disable-next-line no-prototype-builtins -- ignore
+          // biome-ignore lint/suspicious/noPrototypeBuiltins: Object.hasOwn is ES2022, the bundle targets ES2018.
           if (Object.prototype.hasOwnProperty.call(eventHandler, key)) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- ignore
             figure.registerEvent(key as EventName, eventHandler[key])
           }
         }

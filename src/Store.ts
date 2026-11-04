@@ -16,6 +16,7 @@ import type Chart from './Chart'
 import type { ActionCallback, ActionType } from './common/Action'
 import Action from './common/Action'
 import type BarSpace from './common/BarSpace'
+import type { BarSpaceLimit } from './common/BarSpace'
 import type Coordinate from './common/Coordinate'
 import type Crosshair from './common/Crosshair'
 import type { KLineData, VisibleRangeData } from './common/Data'
@@ -45,7 +46,7 @@ import { getSupportedLocales } from './extension/i18n/index'
 import { getIndicatorClass } from './extension/indicator/index'
 import { getOverlayInnerClass } from './extension/overlay/index'
 import { getStyles as getExtensionStyles } from './extension/styles/index'
-import type { BarSpaceLimit, DecimalFold, FormatBigNumber, FormatDateParams, FormatDateType, FormatExtendText, FormatExtendTextParams, Formatter, Hotkey, Layout, Options, ThousandsSeparator, ZoomAnchor, ZoomAnchorType } from './Options'
+import type { DecimalFold, FormatBigNumber, FormatDateParams, FormatDateType, FormatExtendText, FormatExtendTextParams, Formatter, Hotkey, Layout, Options, ThousandsSeparator, ZoomAnchor, ZoomAnchorType } from './Options'
 import { PaneIdConstants } from './pane/types'
 import { ReplayEngine as ReplayEngineImp } from './replay/ReplayEngine'
 import type { ReplayEngine, ReplayStatus } from './replay/types'
@@ -447,10 +448,14 @@ export default class StoreImp implements Store {
 
   constructor(chart: Chart, options?: Options) {
     this._chart = chart
-    const { styles, locale, timezone, formatter, thousandsSeparator, decimalFold, barSpaceLimit, zoomAnchor, hotkey, layout } = options ?? {}
+    const { styles, locale, timezone, formatter, thousandsSeparator, decimalFold, zoomAnchor, hotkey, layout, barSpaceLimit } = options ?? {}
     if (isValid(layout)) {
       merge(this._layoutOptions, layout)
     }
+    if (isValid(barSpaceLimit)) {
+      merge(this._layoutOptions.barSpaceLimit, barSpaceLimit)
+    }
+    this.setBarSpaceLimit(this._layoutOptions.barSpaceLimit)
     this._calcOptimalBarSpace()
     this._lastBarRightSideDiffBarCount = this._offsetRightDistance / this._barSpace
     if (isValid(styles)) {
@@ -478,16 +483,6 @@ export default class StoreImp implements Store {
       this.setHotkey(hotkey)
     }
 
-    this._taskScheduler = new TaskScheduler(() => {
-      this._chart.layout({
-        measureWidth: true,
-        update: true,
-        buildYAxisTick: true
-      })
-    })
-    if (isValid(barSpaceLimit)) {
-      this.setBarSpaceLimit(barSpaceLimit)
-    }
     this._taskScheduler = new TaskScheduler(() => {
       this._chart.layout({
         measureWidth: true,
@@ -1692,9 +1687,9 @@ export default class StoreImp implements Store {
     return indicators
   }
 
-  removeIndicator(filter: IndicatorFilter): boolean {
+  removeIndicator(filter?: IndicatorFilter): boolean {
     let removed = false
-    const filterIndicators = this.getIndicatorsByFilter(filter)
+    const filterIndicators = this.getIndicatorsByFilter(filter ?? {})
     filterIndicators.forEach((indicator) => {
       const paneIndicators = this.getIndicatorsByPaneId(indicator.paneId)
       const index = paneIndicators.findIndex((ins) => ins.id === indicator.id)
@@ -1983,9 +1978,9 @@ export default class StoreImp implements Store {
     return false
   }
 
-  removeOverlay(filter: OverlayFilter): boolean {
+  removeOverlay(filter?: OverlayFilter): boolean {
     const updatePaneIds: string[] = []
-    const filterOverlays = this.getOverlaysByFilter(filter)
+    const filterOverlays = this.getOverlaysByFilter(filter ?? {})
     filterOverlays.forEach((overlay) => {
       const paneId = overlay.paneId
       const paneOverlays = this.getOverlaysByPaneId(overlay.paneId)

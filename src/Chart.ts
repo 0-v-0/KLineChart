@@ -14,7 +14,8 @@
 
 import type { ActionCallback, ActionType } from './common/Action'
 import Animation from './common/Animation'
-import type BarSpace, { type BarSpaceLimit } from './common/BarSpace'
+import type BarSpace from './common/BarSpace'
+import type { BarSpaceLimit } from './common/BarSpace'
 import type Bounding from './common/Bounding'
 import { createDefaultBounding } from './common/Bounding'
 import type Coordinate from './common/Coordinate'
@@ -38,12 +39,9 @@ import { createId } from './common/utils/id'
 import { logWarn } from './common/utils/logger'
 import { binarySearchNearest } from './common/utils/number'
 import { createSetVisibleRangeError } from './common/Errors'
-import type { Styles } from './common/Styles'
-import type BarSpace from './common/BarSpace'
-import type PickRequired from './common/PickRequired'
-import type { SymbolInfo } from './common/SymbolInfo'
-import type { Period } from './common/Period'
-import type ExcludePickPartial from './common/ExcludePickPartial'
+import { isArray, isNumber, isString, isValid } from './common/utils/typeChecks'
+import type VisibleRange from './common/VisibleRange'
+import { formatErrorMessage } from './common/utils/format'
 
 import ChartStore, { SCALE_MULTIPLIER, type Store } from './Store'
 import type { ReplayEngine } from './replay/types'
@@ -54,8 +52,6 @@ import XAxisPane from './pane/XAxisPane'
 import type DrawPane from './pane/DrawPane'
 import SeparatorPane from './pane/SeparatorPane'
 
-import { type PaneOptions, PaneIdConstants } from './pane/types'
-
 import type AxisImp from './component/Axis'
 import type { Indicator, IndicatorCreate, IndicatorFilter, IndicatorOverride } from './component/Indicator'
 import type { Overlay, OverlayCreate, OverlayFilter, OverlayOverride } from './component/Overlay'
@@ -64,13 +60,7 @@ import { Y_AXIS_ID_PREFIX, type YAxis, type YAxisOverride } from './component/YA
 import Event from './Event'
 import { getIndicatorClass } from './extension/indicator/index'
 import type { DecimalFold, Formatter, Hotkey, Layout, Options, ThousandsSeparator, ZoomAnchor, ZoomAnchorType } from './Options'
-import CandlePane from './pane/CandlePane'
-import type DrawPane from './pane/DrawPane'
-import IndicatorPane from './pane/IndicatorPane'
-import SeparatorPane from './pane/SeparatorPane'
 import { PaneIdConstants, type PaneOptions } from './pane/types'
-import XAxisPane from './pane/XAxisPane'
-import ChartStore, { SCALE_MULTIPLIER, type Store } from './Store'
 
 export type DomPosition = 'root' | 'main' | 'yAxis'
 
@@ -167,8 +157,6 @@ export default class ChartImp implements Chart {
       })
     }
   }
-
-  private readonly _cacheYAxisWidth = { left: 0, right: 0 }
 
   private _pendingInitAction: Nullable<{
     apply: () => Promise<void>
@@ -778,15 +766,15 @@ export default class ChartImp implements Chart {
     return this._chartStore.getBarSpace()
   }
 
-  setBarSpaceLimit (limit: Partial<BarSpaceLimit>): void {
+  setBarSpaceLimit(limit: Partial<BarSpaceLimit>): void {
     this._chartStore.setBarSpaceLimit(limit)
   }
 
-  getBarSpaceLimit (): BarSpaceLimit {
+  getBarSpaceLimit(): BarSpaceLimit {
     return this._chartStore.getBarSpaceLimit()
   }
 
-  getVisibleRange (): VisibleRange {
+  getVisibleRange(): VisibleRange {
     return this._chartStore.getVisibleRange()
   }
 
@@ -830,13 +818,17 @@ export default class ChartImp implements Chart {
     return changed
   }
 
-  getVisibleRangeTimestamps (): Nullable<{ from: number; to: number }> {
+  getVisibleRangeTimestamps(): Nullable<{ from: number; to: number }> {
     const store = this._chartStore
     const dataList = store.getDataList()
-    if (dataList.length === 0) return null
+    if (dataList.length === 0) {
+      return null
+    }
 
     const size = this.getSize('candle_pane', 'main')
-    if (!isValid(size)) return null
+    if (!isValid(size)) {
+      return null
+    }
 
     // Use coordinateToFloatIndex for sub-bar precision at both edges
     const leftFloat = store.coordinateToFloatIndex(0)
@@ -847,19 +839,21 @@ export default class ChartImp implements Chart {
     const fromTs = store.floatIndexToTimestamp(Math.ceil(leftFloat))
     const toTs = store.floatIndexToTimestamp(Math.round(rightFloat))
 
-    if (!isValid(fromTs) || !isValid(toTs)) return null
+    if (!isValid(fromTs) || !isValid(toTs)) {
+      return null
+    }
     return { from: fromTs, to: toTs }
   }
 
-  resetData (): void {
+  resetData(): void {
     this._chartStore.resetData()
   }
 
-  getReplayEngine (): ReplayEngine {
+  getReplayEngine(): ReplayEngine {
     return this._chartStore.getReplayEngine()
   }
 
-  getDataList (mutateToCandleType = false): KLineData[] {
+  getDataList(mutateToCandleType = false): KLineData[] {
     return this._chartStore.getDataList(mutateToCandleType)
   }
 
@@ -933,7 +927,7 @@ export default class ChartImp implements Chart {
    * Force recalculation of indicators matching the filter.
    * Use this when external indicator data has changed but indicator properties haven't.
    */
-  recalcIndicator (filter?: IndicatorFilter): void {
+  recalcIndicator(filter?: IndicatorFilter): void {
     this._chartStore.recalcIndicator(filter ?? {})
   }
 
@@ -941,11 +935,11 @@ export default class ChartImp implements Chart {
    * Clear indicator results without recalculating.
    * Use this to immediately hide stale data before new data arrives.
    */
-  clearIndicatorResults (filter?: IndicatorFilter): void {
+  clearIndicatorResults(filter?: IndicatorFilter): void {
     this._chartStore.clearIndicatorResults(filter ?? {})
   }
 
-  getIndicators (filter?: IndicatorFilter): Indicator[] {
+  getIndicators(filter?: IndicatorFilter): Indicator[] {
     return this._chartStore.getIndicatorsByFilter(filter ?? {})
   }
 
@@ -1283,13 +1277,17 @@ export default class ChartImp implements Chart {
     this.zoomAtDataIndex(scale, dataIndex, animationDuration)
   }
 
-  async setVisibleRange (range: { from: number; to: number }): Promise<void> {
+  async setVisibleRange(range: { from: number; to: number }): Promise<void> {
     if (this._chartStore.isInitLoadInFlight()) {
-      await this._queueInitAction(async () => { await this.setVisibleRange(range) })
+      await this._queueInitAction(async () => {
+        await this.setVisibleRange(range)
+      })
       return
     }
     const dataList = this.getDataList()
-    if (dataList.length === 0) return
+    if (dataList.length === 0) {
+      return
+    }
     const firstTimestamp = dataList[0].timestamp
     if (range.from >= firstTimestamp) {
       this._applyVisibleRange(range)
@@ -1303,7 +1301,7 @@ export default class ChartImp implements Chart {
         period: this._chartStore.getPeriod()
       })
     }
-    await new Promise<void>(resolve => {
+    await new Promise<void>((resolve) => {
       this._chartStore.loadRangeBackward(range.from, firstTimestamp, () => {
         this._applyVisibleRange(range)
         resolve()
@@ -1311,9 +1309,11 @@ export default class ChartImp implements Chart {
     })
   }
 
-  async resetView (): Promise<void> {
+  async resetView(): Promise<void> {
     if (this._chartStore.isInitLoadInFlight()) {
-      await this._queueInitAction(async () => { await this.resetView() })
+      await this._queueInitAction(async () => {
+        await this.resetView()
+      })
       return
     }
     this._chartStore.setBarSpace(this._chartStore.getDefaultBarSpace())
@@ -1323,28 +1323,32 @@ export default class ChartImp implements Chart {
   // Single-slot queue shared by setVisibleRange and resetView. Latest call
   // wins: enqueueing supersedes any pending action, resolving its promise
   // cleanly without applying. Drained on `onInitLoadComplete`.
-  private async _queueInitAction (apply: () => Promise<void>): Promise<void> {
+  private async _queueInitAction(apply: () => Promise<void>): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       this._pendingInitAction?.resolve()
       this._pendingInitAction = { apply, resolve, reject }
     })
   }
 
-  private async _drainPendingInitAction (): Promise<void> {
+  private async _drainPendingInitAction(): Promise<void> {
     const pending = this._pendingInitAction
-    if (pending === null) return
+    if (pending === null) {
+      return
+    }
     this._pendingInitAction = null
     try {
       await pending.apply()
       pending.resolve()
     } catch (err) {
-      pending.reject(err instanceof Error ? err : new Error(String(err)))
+      pending.reject(err instanceof Error ? err : new Error(formatErrorMessage(err)))
     }
   }
 
-  private _applyVisibleRange (range: { from: number; to: number }): void {
+  private _applyVisibleRange(range: { from: number; to: number }): void {
     const dataList = this.getDataList()
-    if (dataList.length === 0) return
+    if (dataList.length === 0) {
+      return
+    }
     const fromIndex = binarySearchNearest(dataList, 'timestamp', range.from)
     const toIndex = binarySearchNearest(dataList, 'timestamp', range.to)
     const barCount = Math.max(toIndex - fromIndex + 1, 1)
@@ -1354,7 +1358,7 @@ export default class ChartImp implements Chart {
     this.scrollToDataIndex(toIndex)
   }
 
-  convertToPixel (points: Partial<Point> | Array<Partial<Point>>, filter?: ConvertFilter): Partial<Coordinate> | Array<Partial<Coordinate>> {
+  convertToPixel(points: Partial<Point> | Array<Partial<Point>>, filter?: ConvertFilter): Partial<Coordinate> | Array<Partial<Coordinate>> {
     const { paneId = PaneIdConstants.CANDLE, yAxisId, absolute = false } = filter ?? {}
     let coordinates: Array<Partial<Coordinate>> = []
     if (paneId !== PaneIdConstants.X_AXIS) {

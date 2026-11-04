@@ -76,11 +76,13 @@ const extensions = [
   williamsR
 ]
 
+// @ts-ignore
 extensions.forEach((indicator: IndicatorTemplate) => {
   indicators[indicator.name] = IndicatorImp.extend(indicator)
 })
 
 function registerIndicator<D = unknown, C = unknown, E = unknown>(indicator: IndicatorTemplate<D, C, E>): void {
+  // @ts-ignore
   indicators[indicator.name] = IndicatorImp.extend(indicator)
 }
 

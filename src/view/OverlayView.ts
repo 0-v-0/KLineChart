@@ -593,11 +593,14 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
 
       // Resolve merged styles the same way drawFigures + the placeholder
       // path do — defaults → overlay.styles.text → per-figure styles.
-      const mergedStyles: Partial<TextStyle> = {
+      // backgroundColor is declared differently in the default styles and in the
+      // overlay styles (the latter uses an optional addColorStop), so the merged
+      // value has to be narrowed explicitly to TextStyle's CanvasGradient.
+      const mergedStyles = {
         ...defaultTextStyles,
         ...(overlay.styles?.text ?? {}),
         ...(figure.styles as Partial<TextStyle> | undefined)
-      }
+      } as Partial<TextStyle>
 
       // Build a thin figure wrapper carrying just the empty attrs, so
       // `_startTextEdit` mounts the input at the right spot.

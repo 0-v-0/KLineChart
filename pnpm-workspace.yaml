@@ -2,8 +2,18 @@ packages:
   - docs
 
 allowBuilds:
+  # esbuild's postinstall only self-checks its binary, so it has to be allowed
+  # (vite depends on it transitively as well)
+  esbuild: true
   vue-demi: true
 
 minimumReleaseAgeExclude:
   - '@rollup/*'
   - rollup
+
+# dts-bundle-generator relies on the TypeScript JS compiler API, which TypeScript 7
+# no longer exports (it only ships a native binary). Pin its internal typescript to
+# 5.9.3 to decouple it from the root dependency: type checking runs on TS 7 (fast),
+# while the d.ts bundle keeps using TS 5.
+overrides:
+  dts-bundle-generator>typescript: 5.9.3

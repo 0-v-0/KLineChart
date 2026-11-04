@@ -29,6 +29,7 @@ import text from './text'
 const figures: Record<string, FigureInnerConstructor> = {}
 
 const extensions = [circle, line, polygon, rect, text, editableText, arc, path, rotatedText, image]
+// @ts-ignore
 extensions.forEach((figure: FigureTemplate) => {
   figures[figure.name] = FigureImp.extend(figure)
 })
@@ -38,6 +39,7 @@ function getSupportedFigures(): string[] {
 }
 
 function registerFigure<A = unknown, S = unknown>(figure: FigureTemplate<A, S>): void {
+  // @ts-ignore
   figures[figure.name] = FigureImp.extend(figure)
 }
 

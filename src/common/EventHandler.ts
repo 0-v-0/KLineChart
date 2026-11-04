@@ -795,7 +795,7 @@ export default class EventHandlerImp {
     // it treats a touchstart and the following touchmove events as cancelable=false,
     // so we can't prevent them (as soon we subscribe on touchmove inside touchstart's handler).
     // And we'll get scroll of the page along with chart's one instead of only chart's scroll.
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    // biome-ignore lint/suspicious/noEmptyBlockStatements: Safari requires an empty non-passive handler.
     this._target.addEventListener('touchmove', () => {}, { passive: false })
   }
 
@@ -973,7 +973,7 @@ export default class EventHandlerImp {
   }
 
   private _touchWithId(touches: TouchList, id: Nullable<number>): Nullable<Touch> {
-    // eslint-disable-next-line @typescript-eslint/prefer-for-of
+    // biome-ignore lint/style/useForOf: TouchList does not implement the iterable protocol in every target browser.
     for (let i = 0; i < touches.length; ++i) {
       if (touches[i].identifier === id) {
         return touches[i]

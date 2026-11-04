@@ -12,21 +12,19 @@
  * limitations under the License.
  */
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- ignore
+// biome-ignore lint/suspicious/noExplicitAny: This recursive utility accepts arbitrary object shapes.
 export function merge(target: any, source: any): void {
   if (!isObject(target) && !isObject(source)) {
     return
   }
   for (const key in source) {
+    // biome-ignore lint/suspicious/noPrototypeBuiltins: Object.hasOwn is unavailable for the ES5 target.
     if (Object.prototype.hasOwnProperty.call(source, key) as boolean) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access -- ignore
       const targetProp = target[key]
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access -- ignore
       const sourceProp = source[key]
       if (isObject(sourceProp) && isObject(targetProp)) {
         merge(targetProp, sourceProp)
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access -- ignore
         target[key] = clone(sourceProp)
       }
     }
@@ -56,7 +54,7 @@ export function clone<T>(target: T): T {
     return target
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ignore
+  // biome-ignore lint/suspicious/noExplicitAny: The cloned container is populated dynamically.
   let copy: any = null
   if (isArray(target)) {
     copy = []
@@ -64,18 +62,16 @@ export function clone<T>(target: T): T {
     copy = {}
   }
   for (const key in target) {
+    // biome-ignore lint/suspicious/noPrototypeBuiltins: Object.hasOwn is unavailable for the ES5 target.
     if (Object.prototype.hasOwnProperty.call(target, key) as boolean) {
       const v = target[key]
       if (isObject(v)) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- ignore
         copy[key] = clone(v)
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- ignore
         copy[key] = v
       }
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- ignore
   return copy
 }
 
@@ -83,7 +79,6 @@ export function isArray<T = unknown>(value: unknown): value is T[] {
   return Object.prototype.toString.call(value) === '[object Array]'
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- ignore
 export function isFunction<T = (...args: unknown[]) => unknown>(value: unknown): value is T {
   return typeof value === 'function'
 }

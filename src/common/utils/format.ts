@@ -199,3 +199,33 @@ export function formatTemplateString(template: string, params: Record<string, un
     return `{${keys[0]}}`
   })
 }
+
+/**
+ * Turns an unknown thrown value into a readable message.
+ *
+ * A thrown value is not necessarily an `Error` and is not necessarily a
+ * primitive, so a plain `String(err)` can silently degrade to
+ * `"[object Object]"`. Primitive values are stringified directly, objects are
+ * serialized, and anything that cannot be serialized falls back to the
+ * built-in type tag.
+ */
+export function formatErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message
+  }
+  if (err === null) {
+    return 'null'
+  }
+  const type = typeof err
+  if (type === 'string' || type === 'number' || type === 'boolean' || type === 'bigint') {
+    return `${err}`
+  }
+  if (type === 'undefined') {
+    return 'undefined'
+  }
+  try {
+    return JSON.stringify(err) ?? Object.prototype.toString.call(err)
+  } catch {
+    return Object.prototype.toString.call(err)
+  }
+}
