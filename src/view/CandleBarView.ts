@@ -14,14 +14,17 @@
 
 import type BarSpace from '../common/BarSpace'
 import type { VisibleRangeData } from '../common/Data'
-import type { EventHandler } from '../common/EventHandler'
+import type { MouseTouchEvent } from '../common/EventHandler'
 import type Nullable from '../common/Nullable'
-import type { CandleBarColor, CandleBarColorCallback, CandleType, RectStyle } from '../common/Styles'
+import RectBatch from '../common/RectBatch'
+import type { CandleBarColor, CandleBarColorCallback, CandleType } from '../common/Styles'
 import { isFunction, isValid } from '../common/utils/typeChecks'
 
-import type { FigureCreate } from '../component/Figure'
-import type { RectAttrs } from '../extension/figure/rect'
+import { checkCoordinateOnRect, type RectAttrs } from '../extension/figure/rect'
+import type DrawPane from '../pane/DrawPane'
 import { PaneIdConstants } from '../pane/types'
+import type { YAxis } from '../component/YAxis'
+import type DrawWidget from '../widget/DrawWidget'
 import ChildrenView from './ChildrenView'
 
 export interface CandleBarOptions {
@@ -30,13 +33,53 @@ export interface CandleBarOptions {
   styles: CandleBarColor | CandleBarColorCallback
 }
 
+/**
+ * One colour's worth of rectangles within a bar, at one depth: index 0 is the
+ * wick and index 1 the body, which is the order they have to paint in. A
+ * `null` colour means that pass is skipped — a stroke-only body has no fill.
+ */
+interface BarLayer {
+  attrs: RectAttrs[]
+  color: Nullable<string>
+  borderColor: Nullable<string>
+}
+
 export default class CandleBarView extends ChildrenView {
-  private readonly _boundCandleBarClickEvent = (data: VisibleRangeData) => () => {
-    this.getWidget().getPane().getChart().getChartStore().executeAction('onCandleBarClick', data)
+  /**
+   * The main pane's bars as drawn, for `onCandleBarClick`. Bars paint through
+   * one batched path per colour rather than as figures, so the view hit-tests
+   * them itself instead of through a child figure per bar.
+   */
+  private _barHits: Array<{ rects: RectAttrs[]; data: VisibleRangeData }> = []
+
+  private _clickedBar: Nullable<VisibleRangeData> = null
+
+  constructor(widget: DrawWidget<DrawPane<YAxis>>) {
+    super(widget)
+    this.registerEvent('mouseClickEvent', () => {
+      const clicked = this._clickedBar
+      this._clickedBar = null
+      if (clicked !== null) {
+        this.getWidget().getPane().getChart().getChartStore().executeAction('onCandleBarClick', clicked)
+      }
+      return false
+    })
+  }
+
+  override checkEventOn(event: MouseTouchEvent): boolean {
+    this._clickedBar = null
+    // Last drawn first, as children were dispatched.
+    for (let i = this._barHits.length - 1; i > -1; i--) {
+      if (checkCoordinateOnRect(event, this._barHits[i].rects)) {
+        this._clickedBar = this._barHits[i].data
+        return true
+      }
+    }
     return false
   }
 
   override drawImp(ctx: CanvasRenderingContext2D): void {
+    this._barHits = []
     const pane = this.getWidget().getPane()
     const isMain = pane.getId() === PaneIdConstants.CANDLE
     const chartStore = pane.getChart().getChartStore()
@@ -54,6 +97,7 @@ export default class CandleBarView extends ChildrenView {
         halfOhlcSize = Math.floor(ohlcSize / 2)
       }
       const yAxis = pane.getAxisComponent()
+      const batch = new RectBatch()
       this.eachChildren((visibleData, barSpace) => {
         const {
           x,
@@ -89,37 +133,36 @@ export default class CandleBarView extends ChildrenView {
           priceY.sort((a, b) => a - b)
 
           const correction = barSpace.gapBar % 2 === 0 ? 1 : 0
-          let rects: Array<FigureCreate<RectAttrs | RectAttrs[], Partial<RectStyle>>> = []
+          let layers: BarLayer[] = []
           switch (type) {
             case 'candle_solid':
             case 'heikin_ashi': {
-              rects = this._createSolidBar(x, priceY, barSpace, colors, correction)
+              layers = this._createSolidBar(x, priceY, barSpace, colors, correction)
               break
             }
             case 'candle_stroke': {
-              rects = this._createStrokeBar(x, priceY, barSpace, colors, correction)
+              layers = this._createStrokeBar(x, priceY, barSpace, colors, correction)
               break
             }
             case 'candle_up_stroke': {
               if (close > open) {
-                rects = this._createStrokeBar(x, priceY, barSpace, colors, correction)
+                layers = this._createStrokeBar(x, priceY, barSpace, colors, correction)
               } else {
-                rects = this._createSolidBar(x, priceY, barSpace, colors, correction)
+                layers = this._createSolidBar(x, priceY, barSpace, colors, correction)
               }
               break
             }
             case 'candle_down_stroke': {
               if (open > close) {
-                rects = this._createStrokeBar(x, priceY, barSpace, colors, correction)
+                layers = this._createStrokeBar(x, priceY, barSpace, colors, correction)
               } else {
-                rects = this._createSolidBar(x, priceY, barSpace, colors, correction)
+                layers = this._createSolidBar(x, priceY, barSpace, colors, correction)
               }
               break
             }
             case 'ohlc': {
-              rects = [
+              layers = [
                 {
-                  name: 'rect',
                   attrs: [
                     {
                       x: x - halfOhlcSize,
@@ -140,23 +183,32 @@ export default class CandleBarView extends ChildrenView {
                       height: ohlcSize
                     }
                   ],
-                  styles: { color: colors[0] }
+                  color: colors[0],
+                  borderColor: null
                 }
               ]
               break
             }
           }
-          rects.forEach((rect) => {
-            let handler: Nullable<EventHandler> = null
-            if (isMain) {
-              handler = {
-                mouseClickEvent: this._boundCandleBarClickEvent(visibleData)
+          const hitRects: RectAttrs[] = []
+          for (let layer = 0; layer < layers.length; layer++) {
+            const { attrs, color, borderColor } = layers[layer]
+            for (const r of attrs) {
+              const filled = color !== null && batch.fill(layer, color, r)
+              if (borderColor !== null) {
+                batch.stroke(layer, borderColor, r, filled ? color : null)
+              }
+              if (isMain) {
+                hitRects.push(r)
               }
             }
-            this.createFigure(rect, handler ?? undefined)?.draw(ctx)
-          })
+          }
+          if (isMain) {
+            this._barHits.push({ rects: hitRects, data: visibleData })
+          }
         }
       }, true)
+      batch.draw(ctx)
     }
   }
 
@@ -174,67 +226,35 @@ export default class CandleBarView extends ChildrenView {
     }
   }
 
-  private _createSolidBar(x: number, priceY: number[], barSpace: BarSpace, colors: string[], correction: number): Array<FigureCreate<RectAttrs | RectAttrs[], Partial<RectStyle>>> {
+  private _createSolidBar(x: number, priceY: number[], barSpace: BarSpace, colors: string[], correction: number): BarLayer[] {
     return [
       {
-        name: 'rect',
-        attrs: {
-          x,
-          y: priceY[0],
-          width: 1,
-          height: priceY[3] - priceY[0]
-        },
-        styles: { color: colors[2] }
+        attrs: [{ x, y: priceY[0], width: 1, height: priceY[3] - priceY[0] }],
+        color: colors[2],
+        borderColor: null
       },
       {
-        name: 'rect',
-        attrs: {
-          x: x - barSpace.halfGapBar,
-          y: priceY[1],
-          width: barSpace.gapBar + correction,
-          height: Math.max(1, priceY[2] - priceY[1])
-        },
-        styles: {
-          style: 'stroke_fill',
-          color: colors[0],
-          borderColor: colors[1]
-        }
+        attrs: [{ x: x - barSpace.halfGapBar, y: priceY[1], width: barSpace.gapBar + correction, height: Math.max(1, priceY[2] - priceY[1]) }],
+        color: colors[0],
+        borderColor: colors[1]
       }
     ]
   }
 
-  private _createStrokeBar(x: number, priceY: number[], barSpace: BarSpace, colors: string[], correction: number): Array<FigureCreate<RectAttrs | RectAttrs[], Partial<RectStyle>>> {
+  private _createStrokeBar(x: number, priceY: number[], barSpace: BarSpace, colors: string[], correction: number): BarLayer[] {
     return [
       {
-        name: 'rect',
         attrs: [
-          {
-            x,
-            y: priceY[0],
-            width: 1,
-            height: priceY[1] - priceY[0]
-          },
-          {
-            x,
-            y: priceY[2],
-            width: 1,
-            height: priceY[3] - priceY[2]
-          }
+          { x, y: priceY[0], width: 1, height: priceY[1] - priceY[0] },
+          { x, y: priceY[2], width: 1, height: priceY[3] - priceY[2] }
         ],
-        styles: { color: colors[2] }
+        color: colors[2],
+        borderColor: null
       },
       {
-        name: 'rect',
-        attrs: {
-          x: x - barSpace.halfGapBar,
-          y: priceY[1],
-          width: barSpace.gapBar + correction,
-          height: Math.max(1, priceY[2] - priceY[1])
-        },
-        styles: {
-          style: 'stroke',
-          borderColor: colors[1]
-        }
+        attrs: [{ x: x - barSpace.halfGapBar, y: priceY[1], width: barSpace.gapBar + correction, height: Math.max(1, priceY[2] - priceY[1]) }],
+        color: null,
+        borderColor: colors[1]
       }
     ]
   }
