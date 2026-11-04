@@ -21,6 +21,7 @@ import { createDefaultBounding } from './common/Bounding'
 import type Coordinate from './common/Coordinate'
 import type Crosshair from './common/Crosshair'
 import type { KLineData } from './common/Data'
+import type { FootprintBarData } from './common/Footprint'
 import type { DataLoader } from './common/DataLoader'
 import type DeepPartial from './common/DeepPartial'
 import type DeepRequired from './common/DeepRequired'
@@ -855,6 +856,14 @@ export default class ChartImp implements Chart {
 
   getDataList(mutateToCandleType = false): KLineData[] {
     return this._chartStore.getDataList(mutateToCandleType)
+  }
+
+  setFootprintResolver(resolver: Nullable<(data: KLineData) => Nullable<FootprintBarData>>): void {
+    this._chartStore.setFootprintResolver(resolver)
+  }
+
+  getFootprint(data: KLineData): Nullable<FootprintBarData> {
+    return this._chartStore.getFootprint(data)
   }
 
   setDataLoader(dataLoader: DataLoader): void {

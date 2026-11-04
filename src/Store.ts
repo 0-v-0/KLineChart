@@ -24,6 +24,7 @@ import type { DataLoader, DataLoaderGetBarsParams, DataLoadMore, DataLoadType } 
 import type DeepPartial from './common/DeepPartial'
 import type DeepRequired from './common/DeepRequired'
 import type ExcludePickPartial from './common/ExcludePickPartial'
+import type { FootprintBarData } from './common/Footprint'
 import type Nullable from './common/Nullable'
 import type { Period } from './common/Period'
 import type PickPartial from './common/PickPartial'
@@ -111,6 +112,12 @@ export interface Store {
   setPeriod: (period: Period) => void
   getPeriod: () => Nullable<Period>
   getDataList: (mutateToCandleType?: boolean) => KLineData[]
+  /**
+   * Per-bar footprint data for `candle.type: 'footprint'`; a bar the resolver
+   * answers `null` for is drawn as a solid candle.
+   */
+  setFootprintResolver: (resolver: Nullable<(data: KLineData) => Nullable<FootprintBarData>>) => void
+  getFootprint: (data: KLineData) => Nullable<FootprintBarData>
   setOffsetRightDistance: (distance: number) => void
   getOffsetRightDistance: () => number
   setMaxOffsetLeftDistance: (distance: number) => void
@@ -230,6 +237,13 @@ export default class StoreImp implements Store {
    * Load more data callback
    */
   private _dataLoader: Nullable<DataLoader> = null
+
+  /**
+   * Per-bar footprint data for the footprint chart type. The ticks belong to
+   * the host, so the engine asks rather than computes, and caches nothing: a
+   * resolver is expected to answer the same way for the same bar.
+   */
+  private _footprintResolver: Nullable<(data: KLineData) => Nullable<FootprintBarData>> = null
 
   /**
    * Is loading data flag
@@ -691,6 +705,14 @@ export default class StoreImp implements Store {
       prevHaBar = data
       return data
     })
+  }
+
+  setFootprintResolver(resolver: Nullable<(data: KLineData) => Nullable<FootprintBarData>>): void {
+    this._footprintResolver = resolver
+  }
+
+  getFootprint(data: KLineData): Nullable<FootprintBarData> {
+    return this._footprintResolver?.(data) ?? null
   }
 
   getVisibleRangeDataList(mutateToCandleType = false): VisibleRangeData[] {

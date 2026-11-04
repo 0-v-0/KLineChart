@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { formatFootprintVolume, footprintImbalances, footprintLayout, footprintPoc, footprintValueArea, type FootprintRow } from '../common/Footprint'
+import { getDefaultStyles } from '../common/Styles'
+import { merge } from '../common/utils/typeChecks'
 
 describe('footprintLayout', () => {
   it('gives a wide adaptive bar two columns and a narrow one a single delta column', () => {
@@ -201,5 +203,20 @@ describe('formatFootprintVolume', () => {
 
   it('keeps the sign of a delta', () => {
     expect(formatFootprintVolume(-7000)).toBe('-7K')
+  })
+})
+
+describe('footprint style', () => {
+  it('ships the numbers the drawing code reads', () => {
+    const style = getDefaultStyles().candle.footprint
+    expect({ variant: style.variant, minBarWidth: style.minBarWidth, imbalanceRatio: style.imbalanceRatio, showNumbers: style.showNumbers, textSize: style.textSize }).toEqual({ variant: 'adaptive', minBarWidth: 4, imbalanceRatio: 3, showNumbers: true, textSize: 10 })
+  })
+
+  it('keeps the rest of the block when a host sets one field', () => {
+    const styles = getDefaultStyles()
+    merge(styles, { candle: { footprint: { variant: 'delta' } } })
+    expect(styles.candle.footprint.variant).toBe('delta')
+    expect(styles.candle.footprint.bidColor).toBe(getDefaultStyles().candle.footprint.bidColor)
+    expect(styles.candle.footprint.minBarWidth).toBe(4)
   })
 })
