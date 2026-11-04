@@ -265,6 +265,13 @@ export interface CandleTooltipStyle extends TooltipStyle {
 
 export type CandleType = 'candle_solid' | 'candle_stroke' | 'candle_up_stroke' | 'candle_down_stroke' | 'ohlc' | 'area' | 'heikin_ashi'
 
+/**
+ * How a footprint bar splits its volume into columns. `adaptive` is the chart
+ * type as a user leaves it: two columns at a wide zoom, one delta column when
+ * bars get narrow.
+ */
+export type CandleFootprintVariant = 'adaptive' | 'delta' | 'profile' | 'histogram'
+
 export type CandleColorCompareRule = 'current_open' | 'previous_close'
 
 export interface CandleBarColor extends ChangeColor {
