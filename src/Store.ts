@@ -31,11 +31,11 @@ import { getDefaultStyles, type Styles, type TooltipLegend } from './common/Styl
 import { SymbolDefaultPrecisionConstants, type SymbolInfo } from './common/SymbolInfo'
 import TaskScheduler from './common/TaskScheduler'
 import { UpdateLevel } from './common/Updater'
-import { formatBigNumber, formatFoldDecimal, formatThousands, formatTimestampByTemplate, formatValue } from './common/utils/format'
+import { formatBigNumber, formatFoldDecimal, formatFoldDecimals, formatFoldDecimalsAt, formatThousands, formatTimestampByTemplate, formatValue } from './common/utils/format'
 import { createId } from './common/utils/id'
 import { logWarn } from './common/utils/logger'
 import { binarySearchNearest } from './common/utils/number'
-import { isArray, isBoolean, isNumber, isString, isValid, merge } from './common/utils/typeChecks'
+import { isArray, isBoolean, isFunction, isNumber, isString, isValid, merge } from './common/utils/typeChecks'
 import type VisibleRange from './common/VisibleRange'
 import { getDefaultVisibleRange } from './common/VisibleRange'
 import type IndicatorImp from './component/Indicator'
@@ -189,8 +189,14 @@ export default class StoreImp implements Store {
    */
   private readonly _decimalFold = {
     threshold: 3,
-    format: (value: string | number) => formatFoldDecimal(value, this._decimalFold.threshold)
+    format: (value: string | number) => formatFoldDecimal(value, this._decimalFold.threshold),
+    formatAll: (values: Array<string | number>) => formatFoldDecimals(values, this._decimalFold.threshold),
+    formatPrice: (value: string | number) => formatFoldDecimalsAt([value], this._priceFoldZeroCount, this._decimalFold.threshold)[0],
+    formatPrices: (values: Array<string | number>) => formatFoldDecimalsAt(values, this._priceFoldZeroCount, this._decimalFold.threshold)
   }
+
+  /** The zero count the candle pane's price axis folded its ticks to; null when they did not fold. */
+  private _priceFoldZeroCount: number | null = null
 
   /**
    * Hotkey
@@ -602,7 +608,19 @@ export default class StoreImp implements Store {
   }
 
   setDecimalFold(decimalFold: Partial<DecimalFold>): void {
+    // A custom `format` must reach the axis too, not just the single labels.
+    const format = decimalFold.format
+    if (typeof format === 'function' && !isFunction(decimalFold.formatAll)) {
+      decimalFold = { ...decimalFold, formatAll: (values) => values.map(format) }
+    }
+    if (typeof format === 'function' && !isFunction(decimalFold.formatPrice)) {
+      decimalFold = { ...decimalFold, formatPrice: format, formatPrices: (values) => values.map(format) }
+    }
     merge(this._decimalFold, decimalFold)
+  }
+
+  setPriceFoldZeroCount(zeroCount: number | null): void {
+    this._priceFoldZeroCount = zeroCount
   }
 
   getDecimalFold(): DecimalFold {

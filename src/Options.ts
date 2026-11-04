@@ -71,6 +71,17 @@ export interface Locales {
 export interface DecimalFold {
   threshold: number
   format: (value: string | number) => string
+  /** `format` for a set of values that share one length (the price axis ticks). */
+  formatAll: (values: Array<string | number>) => string[]
+  /**
+   * A price label beside the candle pane's price axis (the current price, the
+   * crosshair, a line's axis tag, the legend), folded to the zero count the
+   * axis ticks share, so it reads in the axis's terms. Falls back to `format`
+   * when the axis does not fold.
+   */
+  formatPrice: (value: string | number) => string
+  /** `formatPrice` for a set that also shares one length (O/H/L/C). */
+  formatPrices: (values: Array<string | number>) => string[]
 }
 
 export interface ThousandsSeparator {
