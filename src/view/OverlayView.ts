@@ -23,7 +23,7 @@ import { isFunction, isNumber, isValid } from '../common/utils/typeChecks'
 
 import type { Axis } from '../component/Axis'
 import type OverlayImp from '../component/Overlay'
-import type { Overlay, OverlayFigure } from '../component/Overlay'
+import type { Overlay, OverlayExtraHandle, OverlayFigure } from '../component/Overlay'
 import { checkOverlayFigureEvent, OVERLAY_FIGURE_KEY_PREFIX } from '../component/Overlay'
 import type { YAxis } from '../component/YAxis'
 import type { TextAttrs } from '../extension/figure/text'
@@ -229,7 +229,18 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
               // below owns the drag (typically updating extendData
               // for in-shape resize handles like Table's borders).
               const noTranslate = (figure as { noTranslate?: boolean } | null)?.noTranslate === true
-              if (!noTranslate) {
+              // A handle past the last point is one the tool draws itself: it
+              // has no point to translate, so the tool moves it.
+              const extraHandle = figureType === 'point' && figureIndex >= overlay.points.length
+              if (extraHandle) {
+                overlay.moveExtraHandle?.({
+                  overlay,
+                  index: figureIndex - overlay.points.length,
+                  coordinate: { x: event.x, y: event.y },
+                  coordinates: this._overlayCoordinates(overlay),
+                  toPoint: (coordinate) => this._coordinateToPoint(overlay, { ...event, ...coordinate })
+                })
+              } else if (!noTranslate) {
                 if (figureType === 'point') {
                   overlay.eventPressedPointMove(point, figureIndex)
                 } else {
@@ -250,7 +261,9 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
               if (prevented) {
                 this.getWidget().setForceCursor(null)
               } else {
-                this.getWidget().setForceCursor('pointer')
+                // A handle keeps its own cursor (a resize arrow) through the
+                // drag; the pointer is the fallback for a plain body.
+                this.getWidget().setForceCursor((figure as { cursor?: string } | null)?.cursor ?? 'pointer')
               }
               return true
             }
@@ -551,30 +564,10 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
 
     const pane = this.getWidget().getPane()
     const chart = pane.getChart()
-    const chartStore = chart.getChartStore()
     const yAxis = pane.getAxisComponent() as unknown as Nullable<YAxis>
     const xAxis = chart.getXAxisPane().getAxisComponent()
     const bounding = this.getWidget().getBounding()
-    const isContinuous = overlay.isContinuousDrawing()
-
-    const coordinates = points.map((point) => {
-      let dataIndex: Nullable<number> = null
-      if (isContinuous && isNumber(point.timestamp)) {
-        dataIndex = chartStore.timestampToFloatIndex(point.timestamp)
-      } else if (isNumber(point.timestamp)) {
-        dataIndex = chartStore.timestampToDataIndex(point.timestamp)
-      } else if (isNumber(point.dataIndex)) {
-        dataIndex = point.dataIndex
-      }
-      const coordinate = { x: 0, y: 0 }
-      if (isNumber(dataIndex)) {
-        coordinate.x = chartStore.dataIndexToCoordinate(dataIndex)
-      }
-      if (isNumber(point.value)) {
-        coordinate.y = yAxis?.convertToPixel(point.value) ?? 0
-      }
-      return coordinate
-    })
+    const coordinates = this._overlayCoordinates(overlay)
 
     const figuresRaw = overlay.createPointFigures({ chart, overlay, coordinates, bounding, xAxis, yAxis })
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- ignore
@@ -890,15 +883,19 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     }
   }
 
-  private _drawOverlay(ctx: CanvasRenderingContext2D, overlay: OverlayImp): void {
-    const { points } = overlay
+  /**
+   * Each point's position on the canvas. A continuous drawing keeps the
+   * sub-bar index so a stroke follows the cursor between two candles;
+   * everything else snaps to a bar. Used for the figures and, again, for the
+   * handle drag, so both agree on where a point is.
+   */
+  private _overlayCoordinates(overlay: OverlayImp): Coordinate[] {
     const pane = this.getWidget().getPane()
-    const chart = pane.getChart()
-    const chartStore = chart.getChartStore()
+    const chartStore = pane.getChart().getChartStore()
     const yAxis = pane.getAxisComponent() as unknown as Nullable<YAxis>
     // For continuous drawing overlays, use float indices for smooth rendering
     const isContinuous = overlay.isContinuousDrawing()
-    const coordinates = points.map((point) => {
+    return overlay.points.map((point) => {
       let dataIndex: Nullable<number> = null
       if (isContinuous && isNumber(point.timestamp)) {
         // Use timestampToFloatIndex for sub-bar precision
@@ -919,6 +916,10 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       }
       return coordinate
     })
+  }
+
+  private _drawOverlay(ctx: CanvasRenderingContext2D, overlay: OverlayImp): void {
+    const coordinates = this._overlayCoordinates(overlay)
     if (coordinates.length > 0) {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- ignore
       // @ts-expect-error
@@ -1197,10 +1198,16 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
             bgColor = computed
           }
         }
-        coordinates.forEach(({ x, y }, index) => {
+        // Extra handles are numbered on after the points, so the figure key,
+        // the hover highlight and the drag path treat them exactly like a
+        // point handle without knowing which is which.
+        const extra = overlay.createExtraHandles?.({ overlay, coordinates }) ?? []
+        const handles: OverlayExtraHandle[] = coordinates.map(({ x, y }) => ({ x, y })).concat(extra)
+        handles.forEach(({ x, y, square }, index) => {
           // Skip points not in the allow-list (when `needDefaultPointFigure`
-          // is a number[] whitelist).
-          if (allowedIndices !== null && !allowedIndices.has(index)) {
+          // is a number[] whitelist). The extra handles are never listed, so
+          // the allow-list only ever applies to the points.
+          if (index < coordinates.length && allowedIndices !== null && !allowedIndices.has(index)) {
             return
           }
           let radius = pointStyles.radius
@@ -1213,8 +1220,30 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
             borderColor = pointStyles.activeBorderColor
             borderSize = pointStyles.activeBorderSize
           }
+          // A tool may want a resize arrow on one handle and a move cursor on
+          // another; the figure's own `cursor` is what the hover path reads.
+          const cursor = overlay.handleCursor?.({ overlay, coordinates, index })
 
-          if (isTvMode) {
+          if (isTvMode && square === true) {
+            // TV's edge handle: a rounded square the size of the ring.
+            const half = Math.round(radius * 1.2)
+            const attrs = { x: x - half, y: y - half, width: half * 2, height: half * 2 }
+            this.createFigure({ name: 'rect', attrs, styles: { style: 'fill', color: bgColor, borderRadius: 2 } })?.draw(ctx)
+            this.createFigure(
+              {
+                name: 'rect',
+                attrs,
+                styles: { style: 'stroke', color: 'transparent', borderColor, borderSize, borderRadius: 2, borderStyle: 'solid' }
+              },
+              this._createFigureEvents(overlay, 'point', index, {
+                key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
+                type: 'rect',
+                attrs,
+                styles: { borderColor },
+                cursor
+              }) ?? undefined
+            )?.draw(ctx)
+          } else if (isTvMode) {
             // TV-style: stroke circle with chart bg fill, 40% wider diameter (20% larger radius)
             const tvRadius = Math.round(radius * 1.2)
             // Draw filled background circle first, then stroke on top
@@ -1239,7 +1268,8 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
                 key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
                 type: 'circle',
                 attrs: { x, y, r: tvRadius },
-                styles: { borderColor }
+                styles: { borderColor },
+                cursor
               }) ?? undefined
             )?.draw(ctx)
           } else {
@@ -1254,7 +1284,8 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
                 key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
                 type: 'circle',
                 attrs: { x, y, r: radius + borderSize },
-                styles: { color: borderColor }
+                styles: { color: borderColor },
+                cursor
               }) ?? undefined
             )?.draw(ctx)
             this.createFigure({
