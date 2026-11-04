@@ -174,7 +174,25 @@ export interface EnrichedFibLevel {
   y: number
   price: string
   color: string
+  lineStyle?: 'solid' | 'dashed'
+  lineWidth?: number
+  lineDashedValue?: number[]
 }
+
+/** TV's "Use one color": the colour every level draws in, when the box is
+ *  ticked (`useOneColor`); undefined otherwise. */
+export const fibOneColor = (extendData: unknown): string | undefined => {
+  const ext = (extendData ?? {}) as { useOneColor?: boolean; oneColor?: string }
+  return ext.useOneColor === true ? (ext.oneColor ?? FIB_ANCHOR_GREY) : undefined
+}
+
+/** Base line style with a level's own style / width / dash laid over it. */
+export const levelLineStyle = (base: Partial<LineStyle>, l: Pick<EnrichedFibLevel, 'color' | 'lineStyle' | 'lineWidth' | 'lineDashedValue'>): Partial<LineStyle> => ({
+  ...base,
+  color: l.color,
+  ...(l.lineStyle !== undefined ? { style: l.lineStyle, dashedValue: l.lineDashedValue ?? base.dashedValue ?? DEFAULT_OVERLAY_PROPERTIES.lineDashedValue } : {}),
+  ...(l.lineWidth !== undefined ? { size: l.lineWidth } : {})
+})
 
 /** Compute each enabled level's rendered y, formatted price,
  *  and effective colour (per-level override → props.lineColor
@@ -213,7 +231,17 @@ export const buildEnrichedLevels = (opts: {
       const rawPrice = (farVal + valueDif * percent).toFixed(precision)
       const price = decimalFold.format(thousandsSeparator.format(rawPrice))
       const color = level.color ?? lineColour
-      return { percent, y, price, color }
+      const enriched: EnrichedFibLevel = { percent, y, price, color }
+      if (level.lineStyle !== undefined) {
+        enriched.lineStyle = level.lineStyle
+      }
+      if (level.lineWidth !== undefined) {
+        enriched.lineWidth = level.lineWidth
+      }
+      if (level.lineDashedValue !== undefined) {
+        enriched.lineDashedValue = level.lineDashedValue
+      }
+      return enriched
     })
     .sort((a, b) => a.y - b.y)
 }
