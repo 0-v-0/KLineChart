@@ -31,7 +31,7 @@ import type DrawPane from './pane/DrawPane'
 import type Pane from './pane/Pane'
 import { PaneIdConstants } from './pane/types'
 import type XAxisPane from './pane/XAxisPane'
-import { REAL_SEPARATOR_HEIGHT, WidgetNameConstants } from './widget/types'
+import { REAL_SEPARATOR_HEIGHT, TOUCH_SEPARATOR_HEIGHT, WidgetNameConstants } from './widget/types'
 import type Widget from './widget/Widget'
 import type YAxisWidget from './widget/YAxisWidget'
 
@@ -83,6 +83,9 @@ export default class Event implements EventHandler {
   private _startScrollCoordinate: Nullable<Coordinate> = null
   // 开始触摸时坐标
   private _touchCoordinate: Nullable<Coordinate> = null
+  // The pane separator a touch started on: the drag resizes the panes until
+  // the finger lifts, wherever it has moved to.
+  private _touchSeparatorWidget: Nullable<Widget> = null
   // 是否是取消了十字光标
   private _touchCancelCrosshair = false
   // 是否缩放过
@@ -780,11 +783,18 @@ export default class Event implements EventHandler {
 
   touchStartEvent(e: MouseTouchEvent): boolean {
     const { pane, widget } = this._findWidgetByEvent(e)
+    const startName = widget?.getName()
+    // The separator a touch lands on takes the whole drag: it sits between
+    // panes, so the finger leaves its band almost at once.
+    this._touchSeparatorWidget = startName === WidgetNameConstants.SEPARATOR ? widget : null
     if (widget !== null) {
       const event = this._makeWidgetEvent(e, widget)
       event.preventDefault?.()
       const name = widget.getName()
       switch (name) {
+        case WidgetNameConstants.SEPARATOR: {
+          return widget.dispatchEvent('touchStartEvent', event)
+        }
         case WidgetNameConstants.MAIN: {
           const chartStore = this._chart.getChartStore()
           if (this._isTouchDrawing()) {
@@ -852,6 +862,11 @@ export default class Event implements EventHandler {
   }
 
   touchMoveEvent(e: MouseTouchEvent): boolean {
+    const separator = this._touchSeparatorWidget
+    if (separator !== null) {
+      e.preventDefault?.()
+      return separator.dispatchEvent('touchMoveEvent', this._makeWidgetEvent(e, separator))
+    }
     const touchDraw = this._touchDraw
     if (touchDraw !== null) {
       e.preventDefault?.()
@@ -902,6 +917,11 @@ export default class Event implements EventHandler {
   }
 
   touchEndEvent(e: MouseTouchEvent): boolean {
+    const separator = this._touchSeparatorWidget
+    if (separator !== null) {
+      this._touchSeparatorWidget = null
+      return separator.dispatchEvent('touchEndEvent', this._makeWidgetEvent(e, separator))
+    }
     if (this._touchDraw !== null) {
       // Lifting only ends the move; the tap that follows a still touch places the point.
       this._touchDraw = null
@@ -1247,8 +1267,9 @@ export default class Event implements EventHandler {
     for (const items of separatorPanes) {
       const pane = items[1]
       const bounding = pane.getBounding()
-      const top = bounding.top - Math.round((REAL_SEPARATOR_HEIGHT - separatorSize) / 2)
-      if (x >= bounding.left && x <= bounding.left + bounding.width && y >= top && y <= top + REAL_SEPARATOR_HEIGHT) {
+      const band = event.isTouch === true ? TOUCH_SEPARATOR_HEIGHT : REAL_SEPARATOR_HEIGHT
+      const top = bounding.top - Math.round((band - separatorSize) / 2)
+      if (x >= bounding.left && x <= bounding.left + bounding.width && y >= top && y <= top + band) {
         return { pane, widget: pane.getWidget() }
       }
     }
