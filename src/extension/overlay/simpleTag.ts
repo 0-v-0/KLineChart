@@ -12,8 +12,7 @@
  * limitations under the License.
  */
 
-import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
-import { formatPrecision } from '../../common/utils/format'
+import { formatAxisPrice } from '../../common/utils/axisPrice'
 import { isFunction, isNumber, isValid } from '../../common/utils/typeChecks'
 
 import type { OverlayTemplate } from '../../component/Overlay'
@@ -54,7 +53,7 @@ const simpleTag: OverlayTemplate = {
       }
     }
     if (!isValid(text) && isNumber(overlay.points[0].value)) {
-      text = formatPrecision(overlay.points[0].value, chart.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE)
+      text = formatAxisPrice(chart, yAxis, overlay.points[0].value)
     }
     return { type: 'text', attrs: { x, y: coordinates[0].y, text, align: textAlign, baseline: 'middle' } }
   }

@@ -17,6 +17,7 @@ import type { LineStyle, TextStyle } from '../../common/Styles'
 import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
 import { clone, merge } from '../../common/utils/typeChecks'
 import type { PriceLineProperties } from './priceLineApi'
+import { formatAxisPrice } from '../../common/utils/axisPrice'
 import type { ProOverlayTemplate } from './types'
 
 // ---------------------------------------------------------------------------
@@ -229,7 +230,7 @@ const priceLine = (): ProOverlayTemplate => {
       }
 
       const { value = 0 } = overlay.points[0]
-      const priceText = chart.getDecimalFold().format(chart.getThousandsSeparator().format(value.toFixed(precision)))
+      const priceText = formatAxisPrice(chart, yAxis, value, precision)
 
       // Align to the correct side of the Y-axis
       const yAxisTyped = yAxis as unknown as { isFromZero?: () => boolean } | undefined

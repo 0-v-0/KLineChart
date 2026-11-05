@@ -15,7 +15,7 @@
 import type DeepPartial from '../../common/DeepPartial'
 import type { LineStyle, TextStyle } from '../../common/Styles'
 import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
-import { formatPrecision } from '../../common/utils/format'
+import { formatAxisPrice } from '../../common/utils/axisPrice'
 import { clone, isNumber, merge } from '../../common/utils/typeChecks'
 import { computeTextPosition } from './textUtils'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
@@ -116,10 +116,9 @@ const horizontalRayLine = (): ProOverlayTemplate => {
       return figures
     },
     // Persistent Y-axis price label at the anchor's price, per
-    // spec Style-tab checkbox. Mirrors segment.ts's
-    // `createYAxisFigures` — same format chain (`decimalFold`
-    // ∘ `thousandsSeparator` ∘ `formatPrecision`) so every
-    // Y-axis label source in the chart reads identically.
+    // spec Style-tab checkbox. Printed by `formatAxisPrice`, the chain the
+    // price scale and the last-price tag use, so a tag beside the scale reads
+    // like the scale.
     createYAxisFigures: ({ chart, overlay, coordinates, bounding, yAxis }) => {
       const ext = overlay.extendData as { showPriceLabels?: boolean } | undefined
       if (ext?.showPriceLabels !== true) {
@@ -134,13 +133,11 @@ const horizontalRayLine = (): ProOverlayTemplate => {
       const x = isFromZero ? 0 : bounding.width
 
       const precision = chart.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE
-      const decimalFold = chart.getDecimalFold()
-      const thousandsSeparator = chart.getThousandsSeparator()
       const value = overlay.points[0]?.value
       if (!isNumber(value)) {
         return []
       }
-      const labelText = decimalFold.format(thousandsSeparator.format(formatPrecision(value, precision)))
+      const labelText = formatAxisPrice(chart, yAxis, value, precision)
 
       return [
         {
