@@ -20,6 +20,7 @@ import abcd from './abcd'
 import anyWaves from './anyWaves'
 // Basic shape overlays (Pro overlays with factory pattern)
 import arrow from './arrow'
+import { arrowMark } from './arrowMark'
 import box from './box'
 import brush from './brush'
 import callout from './callout'
@@ -128,6 +129,10 @@ const proExtensions = [
   timeLine,
   priceLevelLine,
   crossLine,
+  arrowMark('up'),
+  arrowMark('down'),
+  arrowMark('left'),
+  arrowMark('right'),
   styledSegment,
   box,
   emojiMarker,
