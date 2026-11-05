@@ -1,0 +1,3 @@
+```typescript
+(ids: string[]) => void
+```
