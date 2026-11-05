@@ -416,7 +416,11 @@ export default class Event implements EventHandler {
     return false
   }
 
-  mouseWheelHortEvent(_: MouseTouchEvent, distance = 0): boolean {
+  mouseWheelHortEvent(e: MouseTouchEvent, distance = 0): boolean {
+    // Sideways/Shift+wheel over the price axis must not scroll time; TradingView does nothing there.
+    if (this._findWidgetByEvent(e).widget?.getName() === WidgetNameConstants.Y_AXIS) {
+      return true
+    }
     const store = this._chart.getChartStore()
     store.startScroll()
     store.scroll(distance)
