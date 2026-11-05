@@ -186,3 +186,27 @@ describe('a manual range across pane option changes', () => {
     expect(fixture.axis.getAutoCalcTickFlag()).toBe(true)
   })
 })
+
+describe('the tick step floor', () => {
+  it('never steps below one price unit on a candle price axis', () => {
+    const fixture = makeAxis()
+    fixture.axis.setRange(range(0, 0.03))
+    fixture.axis.buildTicks(true)
+    const values = fixture.axis.getTicks().map((tick) => Number(tick.value))
+    // 0.03 over eight ticks would step 0.005 and print three decimals twice
+    // over; the symbol's two-decimal precision floors it at 0.01.
+    expect(values.length).toBeLessThanOrEqual(4)
+    values.slice(1).forEach((value, i) => {
+      expect(value - values[i]).toBeGreaterThanOrEqual(0.0099)
+    })
+  })
+
+  it('leaves an indicator pane free to step finer', () => {
+    const fixture = makeAxis({ paneId: 'indicator_pane_1' })
+    fixture.axis.setRange(range(0, 0.03))
+    fixture.axis.buildTicks(true)
+    // No price precision to respect on an indicator pane, so the step stays
+    // finer than a unit and the axis carries more ticks than the floored one.
+    expect(fixture.axis.getTicks().length).toBeGreaterThan(4)
+  })
+})
