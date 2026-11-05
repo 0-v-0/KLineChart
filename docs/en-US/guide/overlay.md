@@ -3,29 +3,37 @@ This document introduces the built-in overlays in the chart and how to customize
 
 ## Built-in overlay types
 
-### Basic Lines
-`horizontalRayLine`, `horizontalSegment`, `horizontalStraightLine`, `verticalRayLine`, `verticalSegment`, `verticalStraightLine`, `rayLine`, `segment`, `straightLine`, `priceLine`, `priceChannelLine`, `parallelStraightLine`
+107 of them; [getSupportedOverlays](/en-US/api/chart/getSupportedOverlays) returns the full list.
 
-### Fibonacci Overlays
-`fibonacciLine`, `fibonacciCircle`, `fibonacciSegment`, `fibonacciSpiral`, `fibonacciSpeedResistanceFan`, `fibonacciExtension`
+### Basic Lines
+`horizontalRayLine`, `horizontalSegment`, `horizontalStraightLine`, `verticalRayLine`, `verticalSegment`, `verticalStraightLine`, `rayLine`, `segment`, `styledSegment`, `straightLine`, `priceLine`, `priceLevelLine`, `crossLine`, `parallelStraightLine`, `priceChannelLine`, `parallelChannel`
 
 ### Basic Shapes
-`arrow`, `circle`, `rect`, `triangle`, `parallelogram`, `brush`
+`arrow`, `circle`, `rect`, `triangle`, `parallelogram`, `rotatedRectangle`, `ellipse`, `arc`, `doubleCurve`, `curve`, `polyline`, `path`, `brush`, `box`
 
-### Wave Patterns
-`threeWaves`, `fiveWaves`, `eightWaves`, `anyWaves`
+### Arrow Marks
+`arrowMarker`, `arrowMarkUp`, `arrowMarkDown`, `arrowMarkLeft`, `arrowMarkRight`
 
-### Harmonic Patterns
-`abcd`, `xabcd`
+### Fibonacci Overlays
+`fibonacciLine`, `fibonacciCircle`, `fibonacciSegment`, `fibonacciSpiral`, `fibonacciSpeedResistanceFan`, `fibonacciExtension`, `fibSpeedResistanceArcs`, `fibTimeZone`, `fibWedge`
 
-### Gann Tools
-`gannBox`
+### Gann and Pitchfork
+`gannBox`, `tvGannBox`, `gannFan`, `gannSquare`, `gannSquareFixed`, `pitchfork`, `insidePitchfork`, `modifiedSchiffPitchfork`, `schiffPitchfork`, `pitchfan`
+
+### Wave and Chart Patterns
+`threeWaves`, `fiveWaves`, `eightWaves`, `anyWaves`, `abcd`, `xabcd`, `cypherPattern`, `headAndShoulders`, `trianglePattern`, `threeDrives`, `elliottDoubleCombo`, `elliottTriangleWave`, `elliottTripleCombo`
+
+### Measurement and Forecast
+`measure`, `priceRange`, `dateRange`, `dateAndPriceRange`, `projection`, `forecast`, `barsPattern`, `regressionTrend`, `trendBasedFibTime`, `sineLine`, `timeCycles`, `cyclicLines`, `fixedRangeVolumeProfile`, `anchoredVwap`, `ghostFeed`
+
+### Positions and Trades
+`longPosition`, `shortPosition`, `tradeLine`, `timeLine`
+
+### Angles and Shape Lines
+`trendAngle`, `disjointAngle`, `flatBottom`
 
 ### Annotations
-`simpleAnnotation`, `simpleTag`, `freePath`
-
-### Trading Tools
-`orderLine`
+`simpleAnnotation`, `simpleTag`, `freePath`, `text`, `note`, `callout`, `comment`, `priceLabel`, `priceNote`, `signpost`, `flagMark`, `pin`, `table`, `image`, `emojiMarker`, `balloon`, `anchoredText`, `anchoredNote`
 
 ## Styling overlays with `figureStyles`
 

@@ -3,29 +3,37 @@
 
 ## 内置覆盖物类型
 
-### 基础线条
-`horizontalRayLine`, `horizontalSegment`, `horizontalStraightLine`, `verticalRayLine`, `verticalSegment`, `verticalStraightLine`, `rayLine`, `segment`, `straightLine`, `priceLine`, `priceChannelLine`, `parallelStraightLine`
+共 107 种，可以通过 [getSupportedOverlays](/api/chart/getSupportedOverlays) 拿到完整列表。
 
-### 斐波那契工具
-`fibonacciLine`, `fibonacciCircle`, `fibonacciSegment`, `fibonacciSpiral`, `fibonacciSpeedResistanceFan`, `fibonacciExtension`
+### 基础线条
+`horizontalRayLine`, `horizontalSegment`, `horizontalStraightLine`, `verticalRayLine`, `verticalSegment`, `verticalStraightLine`, `rayLine`, `segment`, `styledSegment`, `straightLine`, `priceLine`, `priceLevelLine`, `crossLine`, `parallelStraightLine`, `priceChannelLine`, `parallelChannel`
 
 ### 基础形状
-`arrow`, `circle`, `rect`, `triangle`, `parallelogram`, `brush`
+`arrow`, `circle`, `rect`, `triangle`, `parallelogram`, `rotatedRectangle`, `ellipse`, `arc`, `doubleCurve`, `curve`, `polyline`, `path`, `brush`, `box`
 
-### 波浪形态
-`threeWaves`, `fiveWaves`, `eightWaves`, `anyWaves`
+### 箭头标记
+`arrowMarker`, `arrowMarkUp`, `arrowMarkDown`, `arrowMarkLeft`, `arrowMarkRight`
 
-### 谐波形态
-`abcd`, `xabcd`
+### 斐波那契工具
+`fibonacciLine`, `fibonacciCircle`, `fibonacciSegment`, `fibonacciSpiral`, `fibonacciSpeedResistanceFan`, `fibonacciExtension`, `fibSpeedResistanceArcs`, `fibTimeZone`, `fibWedge`
 
-### 江恩工具
-`gannBox`
+### 江恩与叉线
+`gannBox`, `tvGannBox`, `gannFan`, `gannSquare`, `gannSquareFixed`, `pitchfork`, `insidePitchfork`, `modifiedSchiffPitchfork`, `schiffPitchfork`, `pitchfan`
+
+### 波浪与形态
+`threeWaves`, `fiveWaves`, `eightWaves`, `anyWaves`, `abcd`, `xabcd`, `cypherPattern`, `headAndShoulders`, `trianglePattern`, `threeDrives`, `elliottDoubleCombo`, `elliottTriangleWave`, `elliottTripleCombo`
+
+### 测量与预测
+`measure`, `priceRange`, `dateRange`, `dateAndPriceRange`, `projection`, `forecast`, `barsPattern`, `regressionTrend`, `trendBasedFibTime`, `sineLine`, `timeCycles`, `cyclicLines`, `fixedRangeVolumeProfile`, `anchoredVwap`, `ghostFeed`
+
+### 仓位与交易
+`longPosition`, `shortPosition`, `tradeLine`, `timeLine`
+
+### 角度与形态线
+`trendAngle`, `disjointAngle`, `flatBottom`
 
 ### 注释工具
-`simpleAnnotation`, `simpleTag`, `freePath`
-
-### 交易工具
-`orderLine`
+`simpleAnnotation`, `simpleTag`, `freePath`, `text`, `note`, `callout`, `comment`, `priceLabel`, `priceNote`, `signpost`, `flagMark`, `pin`, `table`, `image`, `emojiMarker`, `balloon`, `anchoredText`, `anchoredNote`
 
 ## 使用 `figureStyles` 样式化覆盖物
 
