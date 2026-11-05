@@ -1082,7 +1082,58 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     if (isDrawing) {
       return this.onEvent(name, event)
     }
+    if (name === 'mouseClickEvent' && this._cycleSelection(event)) {
+      return true
+    }
     return super.dispatchEvent(name, event)
+  }
+
+  /**
+   * Overlapping drawings: a plain click where the selected drawing and others
+   * are hit selects the next one below the selected one in paint order
+   * (wrapping to the top), so repeated clicks walk the stack. Without it a
+   * drawing under another can never be selected, since the topmost always
+   * takes the click. A click that misses the selected drawing, lands on a
+   * handle, or adds to the selection is left to the normal path.
+   */
+  private _cycleSelection(event: MouseTouchEvent): boolean {
+    if (event.metaKey === true || event.ctrlKey === true || event.shiftKey === true) {
+      return false
+    }
+    const chartStore = this.getWidget().getPane().getChart().getChartStore()
+    const selected = chartStore.getClickOverlayInfo().overlay
+    if (!isValid(selected)) {
+      return false
+    }
+    const hits = new Map<string, { overlay: OverlayImp; figure: Eventful }>()
+    const children = this.getChildren()
+    let first = true
+    for (let i = children.length - 1; i > -1; i--) {
+      const child = children[i]
+      const owner = this._figureOwners.get(child)
+      if (owner === undefined || !child.checkEventOn(event)) {
+        continue
+      }
+      if (first && owner.handle) {
+        return false
+      }
+      first = false
+      if (owner.handle || hits.has(owner.overlay.id)) {
+        continue
+      }
+      hits.set(owner.overlay.id, { overlay: owner.overlay, figure: child })
+    }
+    if (hits.size < 2 || !hits.has(selected.id)) {
+      return false
+    }
+    // Topmost first, by paint order: handles are raised (see `_drawPass`), so
+    // dispatch order does not say which drawing is on top.
+    const order = this.getCompleteOverlays()
+    const stack = [...hits.values()].sort((a, b) => order.indexOf(b.overlay) - order.indexOf(a.overlay))
+    const at = stack.findIndex((hit) => hit.overlay.id === selected.id)
+    const next = stack[(at + 1) % stack.length]
+    next.figure.dispatchEvent('mouseClickEvent', event)
+    return true
   }
 
   override drawImp(ctx: CanvasRenderingContext2D): void {
