@@ -42,6 +42,8 @@ export default class XAxisWidget extends DrawWidget<DrawPane<XAxis>> {
 
   override updateOverlay(ctx: CanvasRenderingContext2D): void {
     this._overlayXAxisView.draw(ctx)
+    // The axis part of a drawing that asked to sit above the crosshair.
+    this._overlayXAxisView.drawAboveCrosshair(ctx)
     this._crosshairVerticalLabelView.draw(ctx)
   }
 }

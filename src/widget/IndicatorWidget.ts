@@ -60,6 +60,9 @@ export default class IndicatorWidget extends DrawWidget<DrawPane<YAxis>> {
   override updateOverlay(ctx: CanvasRenderingContext2D): void {
     this._overlayView.draw(ctx)
     this._crosshairLineView.draw(ctx)
+    // Drawings that asked to sit above the crosshair, painted once the
+    // crosshair is down so its line runs behind them.
+    this._overlayView.drawAboveCrosshair(ctx)
     this.updateOverlayContent(ctx)
     this._tooltipView.draw(ctx)
   }

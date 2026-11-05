@@ -37,6 +37,13 @@ import type DrawWidget from '../widget/DrawWidget'
 
 import View from './View'
 
+/**
+ * The `zLevel` from which a drawing is painted after the crosshair rather than
+ * before it, so the crosshair line runs behind it. Everything below stays in
+ * the first pass, which is where every drawing used to be.
+ */
+export const OVERLAY_Z_LEVEL_ABOVE_CROSSHAIR = 1000
+
 export default class OverlayView<C extends Axis = YAxis> extends View<C> {
   private _activeTextEditor: Nullable<{
     input: HTMLInputElement | HTMLTextAreaElement
@@ -1003,6 +1010,20 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
   }
 
   override drawImp(ctx: CanvasRenderingContext2D): void {
+    this._drawPass(ctx, false)
+  }
+
+  /**
+   * Second pass, run by the widget after the crosshair: the overlays at
+   * `OVERLAY_Z_LEVEL_ABOVE_CROSSHAIR` or higher, so the crosshair line runs
+   * behind them instead of through them. Does not clear, so the figures the
+   * first pass drew stay where they are.
+   */
+  drawAboveCrosshair(ctx: CanvasRenderingContext2D): void {
+    this._drawPass(ctx, true)
+  }
+
+  private _drawPass(ctx: CanvasRenderingContext2D, aboveCrosshair: boolean): void {
     // Scopes the hit-area debug halo to the overlays: with `setHitAreaDebug`
     // on, a candle or an indicator does not get one, so what the halo shows
     // is the tolerance of the figures that are actually draggable.
@@ -1010,12 +1031,16 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     try {
       const overlays = this.getCompleteOverlays()
       overlays.forEach((overlay) => {
-        if (overlay.visible) {
+        // `zLevel` is opt-in: a drawing that does not ask to sit above the
+        // crosshair stays in the first pass, which is where they all were.
+        if (overlay.visible && overlay.zLevel >= OVERLAY_Z_LEVEL_ABOVE_CROSSHAIR === aboveCrosshair) {
           this._drawOverlay(ctx, overlay)
         }
       })
+      // The drawing in progress belongs under the crosshair: the user is
+      // placing its points with the crosshair, so it must not cover them.
       const progressOverlay = this.getProgressOverlay()
-      if (isValid(progressOverlay) && progressOverlay.visible) {
+      if (!aboveCrosshair && isValid(progressOverlay) && progressOverlay.visible) {
         this._drawOverlay(ctx, progressOverlay)
       }
     } finally {

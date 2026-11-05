@@ -46,6 +46,7 @@ import type { YAxisOverride } from './component/YAxis'
 import type { FormatDateType, Layout, Options, ZoomAnchor } from './Options'
 import type { BarSpaceLimit } from './common/BarSpace'
 import ChartImp, { type Chart, type DomPosition, type YAxisFilter } from './Chart'
+import { OVERLAY_Z_LEVEL_ABOVE_CROSSHAIR } from './view/OverlayView'
 import { isSetVisibleRangeError, type SetVisibleRangeError, type SetVisibleRangeErrorCode } from './common/Errors'
 import type { ReplayStatus, ReplayEngine } from './replay/types'
 
@@ -257,6 +258,8 @@ export {
   registerStyles,
   registerXAxis,
   registerYAxis,
+  // Drawings at this `zLevel` or above are painted after the crosshair.
+  OVERLAY_Z_LEVEL_ABOVE_CROSSHAIR,
   // Development aid: paint every figure's click tolerance.
   setHitAreaDebug,
   utils,

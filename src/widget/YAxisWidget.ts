@@ -58,6 +58,8 @@ export default class YAxisWidget extends DrawWidget<DrawPane<YAxis>> {
   override updateOverlay(ctx: CanvasRenderingContext2D): void {
     if (this.getPane().isDefaultYAxis(this._yAxis.id)) {
       this._overlayYAxisView.draw(ctx)
+      // The axis part of a drawing that asked to sit above the crosshair.
+      this._overlayYAxisView.drawAboveCrosshair(ctx)
     }
     this._crosshairHorizontalLabelView.draw(ctx)
   }
