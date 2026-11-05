@@ -60,6 +60,11 @@ export default class YAxisWidget extends DrawWidget<DrawPane<YAxis>> {
       this._overlayYAxisView.draw(ctx)
       // The axis part of a drawing that asked to sit above the crosshair.
       this._overlayYAxisView.drawAboveCrosshair(ctx)
+      // The overlay canvas sits over the main one, so the last-price tag drawn
+      // there would be hidden by any overlay tag near it. Paint it again on top.
+      if (this.getPane().getAxisComponent().isInCandle()) {
+        this._candleLastPriceLabelView.draw(ctx)
+      }
     }
     this._crosshairHorizontalLabelView.draw(ctx)
   }
