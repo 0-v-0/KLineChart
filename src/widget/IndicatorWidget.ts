@@ -18,6 +18,7 @@ import CrosshairLineView from '../view/CrosshairLineView'
 import GridView from '../view/GridView'
 import IndicatorTooltipView from '../view/IndicatorTooltipView'
 import IndicatorView from '../view/IndicatorView'
+import NameLabelView from '../view/NameLabelView'
 import OverlayView from '../view/OverlayView'
 import DrawWidget from './DrawWidget'
 import { WidgetNameConstants } from './types'
@@ -27,6 +28,7 @@ export default class IndicatorWidget extends DrawWidget<DrawPane<YAxis>> {
   private readonly _indicatorView = new IndicatorView(this)
   private readonly _crosshairLineView = new CrosshairLineView(this)
   private readonly _tooltipView = this.createTooltipView()
+  private readonly _nameLabelView = new NameLabelView(this)
   private readonly _overlayView = new OverlayView(this)
 
   constructor(rootContainer: HTMLElement, pane: DrawPane<YAxis>) {
@@ -43,6 +45,7 @@ export default class IndicatorWidget extends DrawWidget<DrawPane<YAxis>> {
     this.updateMainContent(ctx)
     this._indicatorView.draw(ctx)
     this._gridView.draw(ctx)
+    this._nameLabelView.draw(ctx)
   }
 
   protected createTooltipView(): IndicatorTooltipView {

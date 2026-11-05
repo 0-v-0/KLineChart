@@ -25,7 +25,7 @@
  */
 
 import { getHotkey, getSupportedHotkeys, registerHotkey } from './extension/hotkey/index'
-import type { Styles, LineType, PolygonType, TooltipShowRule, TooltipShowType, FeatureType, TooltipFeaturePosition, CandleType, CandleTooltipRectPosition, CandleLineStyle, CandleBaselineStyle, CandleHlcAreaStyle, CandleFootprintStyle, CandleHighLowAxisStyle } from './common/Styles'
+import type { Styles, LineType, PolygonType, TooltipShowRule, TooltipShowType, FeatureType, TooltipFeaturePosition, CandleType, CandleTooltipRectPosition, CandleLineStyle, CandleBaselineStyle, CandleHlcAreaStyle, CandleFootprintStyle, CandleHighLowAxisStyle, NameLabelStyle } from './common/Styles'
 import { footprintImbalances, footprintPoc, formatFootprintVolume, type FootprintBarData, type FootprintImbalances, type FootprintRow } from './common/Footprint'
 import type Nullable from './common/Nullable'
 import type DeepPartial from './common/DeepPartial'
@@ -186,6 +186,7 @@ export {
   type CandleFootprintStyle,
   type CandleHlcAreaStyle,
   type CandleHighLowAxisStyle,
+  type NameLabelStyle,
   type CandleLineStyle,
   type CandleTooltipRectPosition,
   type CandleType,

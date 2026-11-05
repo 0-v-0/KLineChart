@@ -270,6 +270,9 @@ export interface CandleHighLowAxisStyle {
   color: string
 }
 
+/** A tag drawn on the main widget flush against the axis edge, level with its value label. */
+export type NameLabelStyle = LastValueMarkTextStyle
+
 export type CandleLastPriceMarkLineStyle = Omit<StateLineStyle, 'color'> & { color: Nullable<string | CompareColorCallback> }
 
 export type CandleLastPriceMarkExtendTextPosition = 'above_price' | 'below_price'
@@ -285,6 +288,8 @@ export interface CandleLastPriceMarkStyle extends ChangeColor {
   compareRule: CandleColorCompareRule
   line: CandleLastPriceMarkLineStyle
   text: LastValueMarkTextStyle & { backgroundColor: Nullable<string | CompareColorCallback> }
+  /** Symbol ticker at the last close. */
+  nameLabel: NameLabelStyle
   extendTexts: CandleLastPriceMarkExtendTextStyle[]
 }
 
@@ -424,6 +429,8 @@ export type IndicatorPolygonStyle = Omit<PolygonStyle, 'color' | 'borderColor'> 
 export interface IndicatorLastValueMarkStyle {
   show: boolean
   text: LastValueMarkTextStyle
+  /** Indicator short name at its first figure's last value. */
+  nameLabel: NameLabelStyle
 }
 
 export interface IndicatorTooltipStyle extends TooltipStyle {
@@ -697,6 +704,7 @@ function getDefaultCandleStyle(): CandleStyle {
           borderRadius: 2,
           backgroundColor: null
         },
+        nameLabel: { ...labelText, show: false, borderDashedValue: [2, 2] },
         extendTexts: []
       }
     },
@@ -822,6 +830,23 @@ function getDefaultIndicatorStyle(): IndicatorStyle {
     lastValueMark: {
       show: false,
       text: {
+        show: false,
+        style: 'fill',
+        color: Color.WHITE,
+        size: 12,
+        family: 'Helvetica Neue',
+        weight: 'normal',
+        borderStyle: 'solid',
+        borderColor: 'transparent',
+        borderSize: 0,
+        borderDashedValue: [2, 2],
+        paddingLeft: 4,
+        paddingTop: 4,
+        paddingRight: 4,
+        paddingBottom: 4,
+        borderRadius: 2
+      },
+      nameLabel: {
         show: false,
         style: 'fill',
         color: Color.WHITE,
