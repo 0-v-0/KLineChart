@@ -17,7 +17,7 @@ import type Nullable from '../common/Nullable'
 import { SymbolDefaultPrecisionConstants } from '../common/SymbolInfo'
 import { candleTypeUsesHighLow } from '../common/Styles'
 import { calcTextWidth } from '../common/utils/canvas'
-import { formatPrecision } from '../common/utils/format'
+import { foldZeroCount, formatPrecision } from '../common/utils/format'
 import { getPrecision, index10, log10, nice, round } from '../common/utils/number'
 import { isFunction, isNumber, isString, isValid, merge } from '../common/utils/typeChecks'
 import type DrawPane from '../pane/DrawPane'
@@ -362,13 +362,24 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
       if (shouldFormatBigNumber) {
         v = formatter.formatBigNumber(value)
       }
-      v = decimalFold.format(thousandsSeparator.format(v))
+      v = thousandsSeparator.format(v)
       const validYNumber = isNumber(validY)
       if (y > textHeight && y < height - textHeight && ((validYNumber && Math.abs(validY - y) > textHeight * 2) || !validYNumber)) {
         optimalTicks.push({ text: v, coord: y, value })
         validY = y
       }
     })
+    // Fold the labels as a set so they share one zero count: folding each on
+    // its own switched from `₉` to `₈` partway up the axis.
+    const texts = optimalTicks.map((tick) => tick.text)
+    const folded = isFunction(decimalFold.formatAll) ? decimalFold.formatAll(texts) : texts.map((text) => decimalFold.format(text))
+    optimalTicks.forEach((tick, i) => {
+      tick.text = folded[i]
+    })
+    // Price labels beside this axis fold to the count its ticks share.
+    if (this.isInCandle()) {
+      chartStore.setPriceFoldZeroCount(foldZeroCount(texts, decimalFold.threshold))
+    }
     if (isFunction(this.createTicks)) {
       return this.createTicks({
         range: this.getRange(),
@@ -458,7 +469,7 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
         if (shouldFormatBigNumber) {
           valueText = chartStore.getInnerFormatter().formatBigNumber(valueText)
         }
-        valueText = chartStore.getDecimalFold().format(valueText)
+        valueText = this.isInCandle() ? chartStore.getDecimalFold().formatPrice(valueText) : chartStore.getDecimalFold().format(valueText)
         valueText = stableWidthText(valueText, this.getRange().displayFrom < 0 || this.getRange().displayTo < 0)
         crosshairHorizontalTextWidth +=
           crosshairStyles.horizontal.text.paddingLeft + crosshairStyles.horizontal.text.paddingRight + crosshairStyles.horizontal.text.borderSize * 2 + calcTextWidth(valueText, crosshairStyles.horizontal.text.size, crosshairStyles.horizontal.text.weight, crosshairStyles.horizontal.text.family)

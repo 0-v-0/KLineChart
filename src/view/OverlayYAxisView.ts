@@ -57,12 +57,15 @@ export default class OverlayYAxisView<C extends Axis = YAxis> extends OverlayVie
       }
       const decimalFold = chartStore.getDecimalFold()
       const thousandsSeparator = chartStore.getThousandsSeparator()
+      // A tag beside the candle pane's price scale folds to the scale's own
+      // zero count; a tag on an indicator pane has no such count to share.
+      const foldPrice = (value: string): string => (yAxis.isInCandle() ? decimalFold.formatPrice(value) : decimalFold.format(value))
       coordinates.forEach((coordinate, index) => {
         const point = overlay.points[index]
         if (isNumber(point.value)) {
           topY = Math.min(topY, coordinate.y)
           bottomY = Math.max(bottomY, coordinate.y)
-          const text = decimalFold.format(thousandsSeparator.format(formatPrecision(point.value, chartStore.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE)))
+          const text = foldPrice(thousandsSeparator.format(formatPrecision(point.value, chartStore.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE)))
           figures.push({ type: 'text', attrs: { x, y: coordinate.y, text, align: textAlign, baseline: 'middle' }, ignoreEvent: true })
         }
       })

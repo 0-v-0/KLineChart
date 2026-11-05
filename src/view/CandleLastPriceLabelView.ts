@@ -55,7 +55,7 @@ export default class CandleLastPriceLabelView extends View<YAxis> {
         const textFigures: Array<FigureCreate<TextAttrs, TextStyle>> = []
         const yAxisRange = yAxis.getRange()
         let priceText = yAxis.displayValueToText(yAxis.realValueToDisplayValue(yAxis.valueToRealValue(close, { range: yAxisRange }), { range: yAxisRange }), precision)
-        priceText = chartStore.getDecimalFold().format(chartStore.getThousandsSeparator().format(priceText))
+        priceText = chartStore.getDecimalFold().formatPrice(chartStore.getThousandsSeparator().format(priceText))
         const { paddingLeft, paddingRight, paddingTop, paddingBottom, size, family, weight } = lastPriceMarkTextStyles
         let textWidth = paddingLeft + calcTextWidth(priceText, size, weight, family) + paddingRight
         const priceTextHeight = paddingTop + size + paddingBottom

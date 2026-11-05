@@ -41,10 +41,10 @@ export default class CandleHighLowPriceView extends View<YAxis> {
       const decimalFold = chartStore.getDecimalFold()
       const thousandsSeparator = chartStore.getThousandsSeparator()
       if (highPriceMarkStyles.show && high !== null) {
-        this._drawMark(ctx, decimalFold.format(thousandsSeparator.format(formatPrecision(high, precision))), { x: highX, y: highY }, highY < lowY ? [-2, -5] : [2, 5], highPriceMarkStyles)
+        this._drawMark(ctx, decimalFold.formatPrice(thousandsSeparator.format(formatPrecision(high, precision))), { x: highX, y: highY }, highY < lowY ? [-2, -5] : [2, 5], highPriceMarkStyles)
       }
       if (lowPriceMarkStyles.show && low !== null) {
-        this._drawMark(ctx, decimalFold.format(thousandsSeparator.format(formatPrecision(low, precision))), { x: lowX, y: lowY }, highY < lowY ? [2, 5] : [-2, -5], lowPriceMarkStyles)
+        this._drawMark(ctx, decimalFold.formatPrice(thousandsSeparator.format(formatPrecision(low, precision))), { x: lowX, y: lowY }, highY < lowY ? [2, 5] : [-2, -5], lowPriceMarkStyles)
       }
     }
   }
