@@ -31,6 +31,8 @@ export type ActionType =
   | 'onPaneDrag'
   | 'onInitLoadComplete'
   | 'onSelectedOverlaysChange'
+  | 'onYAxisRightClick'
+  | 'onYAxisAutoScaleRelease'
 export default class Action {
   private _callbacks: ActionCallback[] = []
 
