@@ -29,7 +29,7 @@ import { setDrawingOverlay } from '../component/Figure'
 import type { YAxis } from '../component/YAxis'
 import type { TextAttrs } from '../extension/figure/text'
 import { getTextRect } from '../extension/figure/text'
-import { constrainToAxis, isDragBeyond, snapAcrossAxis, snapToAngles, snapToSquare } from '../extension/overlay/utils'
+import { constrainToAxis, isDragBeyond, snapShapePoint } from '../extension/overlay/utils'
 import type DrawPane from '../pane/DrawPane'
 import { PaneIdConstants } from '../pane/types'
 import type { EventOverlayInfoFigureType } from '../Store'
@@ -72,7 +72,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     const chartStore = chart.getChartStore()
     /** Put the drawing's current point at `event` and step to the next; finish it if that was the last. */
     const placePoint = (overlay: OverlayImp, event: MouseTouchEvent): void => {
-      overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
+      overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, this._drawingCoordinate(overlay, event)))
       overlay.onDrawing?.({ chart, overlay, ...event })
       overlay.nextStep()
       if (!overlay.isDrawing()) {
@@ -100,7 +100,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         }
         const index = overlay.points.length - 1
         if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
-          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
+          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, this._drawingCoordinate(overlay, event)))
           overlay.onDrawing?.({ chart, overlay, ...event })
         }
         return this._figureMouseMoveEvent(overlay, 'point', index, { key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`, type: 'circle', attrs: {} })(event)
@@ -280,7 +280,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
           if (isDragBeyond(dragDraw, event)) {
             dragDraw.moved = true
           }
-          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
+          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, this._drawingCoordinate(overlay, event)))
           overlay.onDrawing?.({ chart, overlay, ...event })
           return true
         }
@@ -884,29 +884,22 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
   }
 
   /**
-   * Shift on a point handle — the shape decides what "straight" means. A circle
-   * has no sides to keep, a box keeps them equal, an ellipse keeps the axis it
-   * was handed (its third point describes the short radius), and everything
-   * else follows a 45° ray from the point before it.
+   * Where the moving point of a drawing should land. Shift pulls it onto a ray
+   * from the point committed before it — the same gesture a handle gets, on the
+   * point that tracks the cursor. The first click has nothing behind it to
+   * snap around, so it is left where the pointer is.
    */
+  private _drawingCoordinate(overlay: OverlayImp, event: MouseTouchEvent): Coordinate {
+    if (event.shiftKey !== true || !overlay.isDrawing() || overlay.currentStep <= 1) {
+      return event
+    }
+    return this._shiftSnapPoint(overlay, event, overlay.currentStep - 1)
+  }
+
+  /** Shift on a point handle: the tool's name picks what "straight" means. */
   private _shiftSnapPoint(overlay: OverlayImp, event: MouseTouchEvent, figureIndex: number): Coordinate {
-    const cursor = { x: event.x, y: event.y }
-    if (overlay.name === 'circle') {
-      return cursor
-    }
-    if (overlay.name === 'rect' || overlay.name === 'box') {
-      // A corner is pulled from the one across the box, so the cursor decides
-      // the side and the longer of the two distances decides its length.
-      const anchor = this._pointToCoordinate(overlay.points[figureIndex === 0 ? 1 : 0])
-      return anchor === null ? cursor : snapToSquare(anchor, cursor)
-    }
-    if ((overlay.name === 'ellipse' || overlay.name === 'rotatedRectangle') && figureIndex === 2) {
-      const start = this._pointToCoordinate(overlay.points[0])
-      const end = this._pointToCoordinate(overlay.points[1])
-      return start === null || end === null ? cursor : snapAcrossAxis(start, end, cursor)
-    }
-    const anchor = this._pointToCoordinate(overlay.points[figureIndex - 1])
-    return anchor === null ? cursor : snapToAngles(anchor, cursor)
+    const points = overlay.points.map((point) => this._pointToCoordinate(point))
+    return snapShapePoint(overlay.name, points, figureIndex, { x: event.x, y: event.y })
   }
 
   private _coordinateToPoint(o: Overlay, coordinate: Coordinate): Partial<Point> {

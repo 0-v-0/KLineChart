@@ -14,6 +14,7 @@
 
 import type Bounding from '../../common/Bounding'
 import type Coordinate from '../../common/Coordinate'
+import type Nullable from '../../common/Nullable'
 
 import { getLinearYFromCoordinates, type LineAttrs } from '../figure/line'
 
@@ -153,4 +154,32 @@ export function snapAcrossAxis(axisStart: Coordinate, axisEnd: Coordinate, coord
     x: mid.x + (ax / length) * reach + nx * side * (length / 2),
     y: mid.y + (ay / length) * reach + ny * side * (length / 2)
   }
+}
+
+/**
+ * Call the right snap for what Shift means to this tool. A circle has no sides
+ * to keep, a box keeps them equal, an ellipse's third point keeps the axis it
+ * was handed, and everything else follows a 45° ray from the point before it.
+ *
+ * `inside` is the index being dragged, so the point to snap around is always
+ * read from `points` rather than passed in — a tool at step `n` snaps around
+ * the point at `n - 1`, which is the one already committed.
+ */
+export function snapShapePoint(name: string, points: ReadonlyArray<Nullable<Coordinate>>, inside: number, cursor: Coordinate): Coordinate {
+  if (name === 'circle') {
+    return cursor
+  }
+  if (name === 'rect' || name === 'box') {
+    // A corner is pulled from the one across the box, so the cursor decides
+    // the side and the longer of the two distances decides its length.
+    const anchor = points[inside === 0 ? 1 : 0]
+    return anchor == null ? cursor : snapToSquare(anchor, cursor)
+  }
+  if ((name === 'ellipse' || name === 'rotatedRectangle') && inside === 2) {
+    const start = points[0]
+    const end = points[1]
+    return start == null || end == null ? cursor : snapAcrossAxis(start, end, cursor)
+  }
+  const anchor = points[inside - 1]
+  return anchor == null ? cursor : snapToAngles(anchor, cursor)
 }

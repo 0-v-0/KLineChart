@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { constrainToAxis, DRAG_DRAW_MIN_PX, isDragBeyond, snapAcrossAxis, snapToAngles, snapToSquare } from '../extension/overlay/utils'
+import { constrainToAxis, DRAG_DRAW_MIN_PX, isDragBeyond, snapAcrossAxis, snapShapePoint, snapToAngles, snapToSquare } from '../extension/overlay/utils'
 
 describe('isDragBeyond', () => {
   it('treats a press that never moved as a click', () => {
@@ -129,5 +129,68 @@ describe('snapAcrossAxis', () => {
 
   it('leaves the cursor alone when the axis has no length', () => {
     expect(snapAcrossAxis({ x: 5, y: 5 }, { x: 5, y: 5 }, { x: 9, y: 9 })).toEqual({ x: 9, y: 9 })
+  })
+})
+
+describe('snapShapePoint', () => {
+  const ray = [
+    { x: 0, y: 0 },
+    { x: 100, y: 2 }
+  ]
+
+  it('lets a circle go where the cursor is, since it has no sides to keep', () => {
+    expect(snapShapePoint('circle', ray, 1, { x: 40, y: 37 })).toEqual({ x: 40, y: 37 })
+  })
+
+  it('squares a box from the corner across it', () => {
+    const box = [
+      { x: 0, y: 0 },
+      { x: 100, y: 50 }
+    ]
+    expect(snapShapePoint('rect', box, 1, { x: 60, y: 45 })).toEqual({ x: 60, y: 60 })
+    expect(snapShapePoint('box', box, 1, { x: 60, y: 45 })).toEqual({ x: 60, y: 60 })
+  })
+
+  it('squares from the other corner when the first one is the handle', () => {
+    const box = [
+      { x: 100, y: 50 },
+      { x: 0, y: 0 }
+    ]
+    expect(snapShapePoint('rect', box, 0, { x: 120, y: 45 })).toEqual({ x: 120, y: 120 })
+  })
+
+  it('sends a line down a ray from the point before it', () => {
+    expect(snapShapePoint('segment', ray, 1, { x: 40, y: 3 })).toEqual({ x: 40, y: 0 })
+  })
+
+  it('reads the point before it, not the one being dragged', () => {
+    const angle = [
+      { x: 0, y: 0 },
+      { x: 50, y: 0 },
+      { x: 50, y: 50 }
+    ]
+    const snapped = snapShapePoint('triangle', angle, 2, { x: 52, y: 90 })
+    expect(snapped.x).toBeCloseTo(50, 10)
+    expect(snapped.y).toBeCloseTo(90, 10)
+  })
+
+  it('keeps an ellipse to its axis by its third point', () => {
+    const ellipse = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 }
+    ]
+    expect(snapShapePoint('ellipse', ellipse, 2, { x: 70, y: 20 })).toEqual({ x: 70, y: 50 })
+    expect(snapShapePoint('rotatedRectangle', ellipse, 2, { x: 70, y: 20 })).toEqual({ x: 70, y: 50 })
+  })
+
+  it('treats an ellipse axis point like any other point', () => {
+    expect(snapShapePoint('ellipse', ray, 1, { x: 40, y: 3 })).toEqual({ x: 40, y: 0 })
+  })
+
+  it('leaves the cursor alone when the point to snap around is not there yet', () => {
+    expect(snapShapePoint('segment', [], 1, { x: 40, y: 37 })).toEqual({ x: 40, y: 37 })
+    expect(snapShapePoint('segment', [null], 1, { x: 40, y: 37 })).toEqual({ x: 40, y: 37 })
+    // The first point of a box has nothing across it while it is being drawn.
+    expect(snapShapePoint('rect', [{ x: 0, y: 0 }], 0, { x: 40, y: 37 })).toEqual({ x: 40, y: 37 })
   })
 })
