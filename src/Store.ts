@@ -42,7 +42,7 @@ import { getDefaultVisibleRange } from './common/VisibleRange'
 import type IndicatorImp from './component/Indicator'
 import type { IndicatorCreate, IndicatorFilter, IndicatorOverride } from './component/Indicator'
 import type OverlayImp from './component/Overlay'
-import { OVERLAY_ID_PREFIX, type OverlayCreate, type OverlayFigure, type OverlayFilter, type OverlayOverride } from './component/Overlay'
+import { OVERLAY_ID_PREFIX, type OverlayCreate, type OverlayFigure, type OverlayFilter, type OverlayMode, type OverlayOverride } from './component/Overlay'
 import { getSupportedLocales } from './extension/i18n/index'
 import { getIndicatorClass } from './extension/indicator/index'
 import { getOverlayInnerClass } from './extension/overlay/index'
@@ -370,6 +370,13 @@ export default class StoreImp implements Store {
    * Crosshair info
    */
   private _crosshair: Crosshair = {}
+
+  /**
+   * The magnet strength a host last asked for. Meta/Ctrl inverts the magnet
+   * while it is held, which needs to know what to turn back on when the
+   * drawing's own mode is `normal` — so the last non-normal mode is kept.
+   */
+  private _preferredMagnetMode: Exclude<OverlayMode, 'normal'> = 'weak_magnet'
 
   /**
    * Actions
@@ -1987,7 +1994,16 @@ export default class StoreImp implements Store {
     }
   }
 
+  getPreferredMagnetMode(): Exclude<OverlayMode, 'normal'> {
+    return this._preferredMagnetMode
+  }
+
   overrideOverlay(override: OverlayOverride): boolean {
+    // Remember the magnet strength the host last chose, so the Meta/Ctrl invert
+    // knows which magnet to turn on when the drawing's own mode is `normal`.
+    if (isValid(override.mode) && override.mode !== 'normal') {
+      this._preferredMagnetMode = override.mode
+    }
     let sortFlag = false
     const updatePaneIds: string[] = []
     const filterOverlays = this.getOverlaysByFilter(override)

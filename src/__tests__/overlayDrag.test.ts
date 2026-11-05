@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { constrainToAxis, DRAG_DRAW_MIN_PX, isDragBeyond, snapAcrossAxis, snapShapePoint, snapToAngles, snapToSquare } from '../extension/overlay/utils'
+import { constrainToAxis, DRAG_DRAW_MIN_PX, invertMagnetMode, isDragBeyond, snapAcrossAxis, snapShapePoint, snapToAngles, snapToSquare } from '../extension/overlay/utils'
 
 describe('isDragBeyond', () => {
   it('treats a press that never moved as a click', () => {
@@ -192,5 +192,23 @@ describe('snapShapePoint', () => {
     expect(snapShapePoint('segment', [null], 1, { x: 40, y: 37 })).toEqual({ x: 40, y: 37 })
     // The first point of a box has nothing across it while it is being drawn.
     expect(snapShapePoint('rect', [{ x: 0, y: 0 }], 0, { x: 40, y: 37 })).toEqual({ x: 40, y: 37 })
+  })
+})
+
+describe('invertMagnetMode', () => {
+  it('leaves the mode alone while neither key is held', () => {
+    expect(invertMagnetMode('normal', {}, 'weak_magnet')).toBe('normal')
+    expect(invertMagnetMode('weak_magnet', {}, 'weak_magnet')).toBe('weak_magnet')
+    expect(invertMagnetMode('strong_magnet', { shiftKey: true }, 'weak_magnet')).toBe('strong_magnet')
+  })
+
+  it('frees a magnetised tool while Meta or Ctrl is held', () => {
+    expect(invertMagnetMode('weak_magnet', { metaKey: true }, 'weak_magnet')).toBe('normal')
+    expect(invertMagnetMode('strong_magnet', { ctrlKey: true }, 'strong_magnet')).toBe('normal')
+  })
+
+  it('magnetises a free tool at the strength last picked', () => {
+    expect(invertMagnetMode('normal', { metaKey: true }, 'weak_magnet')).toBe('weak_magnet')
+    expect(invertMagnetMode('normal', { ctrlKey: true }, 'strong_magnet')).toBe('strong_magnet')
   })
 })

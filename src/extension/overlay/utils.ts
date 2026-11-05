@@ -15,6 +15,7 @@
 import type Bounding from '../../common/Bounding'
 import type Coordinate from '../../common/Coordinate'
 import type Nullable from '../../common/Nullable'
+import type { OverlayMode } from '../../component/Overlay'
 
 import { getLinearYFromCoordinates, type LineAttrs } from '../figure/line'
 
@@ -154,6 +155,25 @@ export function snapAcrossAxis(axisStart: Coordinate, axisEnd: Coordinate, coord
     x: mid.x + (ax / length) * reach + nx * side * (length / 2),
     y: mid.y + (ay / length) * reach + ny * side * (length / 2)
   }
+}
+
+/** The modifier keys a magnet and a drag read live, rather than tracking. */
+export interface ModifierKeys {
+  shiftKey?: boolean
+  metaKey?: boolean
+  ctrlKey?: boolean
+}
+
+/**
+ * The magnet a point is placed with. Meta (Cmd) or Ctrl inverts it while it is
+ * held: a tool drawn with the magnet on goes free, and one drawn with it off
+ * snaps at the strength the host last picked.
+ */
+export function invertMagnetMode(mode: OverlayMode, modifiers: ModifierKeys, preferred: Exclude<OverlayMode, 'normal'>): OverlayMode {
+  if (modifiers.metaKey !== true && modifiers.ctrlKey !== true) {
+    return mode
+  }
+  return mode === 'normal' ? preferred : 'normal'
 }
 
 /**

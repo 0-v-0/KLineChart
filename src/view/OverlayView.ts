@@ -23,13 +23,13 @@ import { isFunction, isNumber, isValid } from '../common/utils/typeChecks'
 
 import type { Axis } from '../component/Axis'
 import type OverlayImp from '../component/Overlay'
-import type { Overlay, OverlayExtraHandle, OverlayFigure } from '../component/Overlay'
+import type { Overlay, OverlayExtraHandle, OverlayFigure, OverlayMode } from '../component/Overlay'
 import { checkOverlayFigureEvent, OVERLAY_FIGURE_KEY_PREFIX } from '../component/Overlay'
 import { setDrawingOverlay } from '../component/Figure'
 import type { YAxis } from '../component/YAxis'
 import type { TextAttrs } from '../extension/figure/text'
 import { getTextRect } from '../extension/figure/text'
-import { constrainToAxis, isDragBeyond, snapShapePoint } from '../extension/overlay/utils'
+import { constrainToAxis, invertMagnetMode, isDragBeyond, snapShapePoint } from '../extension/overlay/utils'
 import type DrawPane from '../pane/DrawPane'
 import { PaneIdConstants } from '../pane/types'
 import type { EventOverlayInfoFigureType } from '../Store'
@@ -72,7 +72,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     const chartStore = chart.getChartStore()
     /** Put the drawing's current point at `event` and step to the next; finish it if that was the last. */
     const placePoint = (overlay: OverlayImp, event: MouseTouchEvent): void => {
-      overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, this._drawingCoordinate(overlay, event)))
+      overlay.eventMoveForDrawing(this._drawingPoint(overlay, event, chartStore.getPreferredMagnetMode()))
       overlay.onDrawing?.({ chart, overlay, ...event })
       overlay.nextStep()
       if (!overlay.isDrawing()) {
@@ -100,7 +100,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         }
         const index = overlay.points.length - 1
         if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
-          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, this._drawingCoordinate(overlay, event)))
+          overlay.eventMoveForDrawing(this._drawingPoint(overlay, event, chartStore.getPreferredMagnetMode()))
           overlay.onDrawing?.({ chart, overlay, ...event })
         }
         return this._figureMouseMoveEvent(overlay, 'point', index, { key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`, type: 'circle', attrs: {} })(event)
@@ -205,7 +205,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
           const overlay = progressOverlayInfo.overlay
           if (overlay.isContinuousDrawing() && overlay.isStart()) {
             chartStore.updateProgressOverlayInfo(paneId, true)
-            const point = this._coordinateToPoint(overlay, event)
+            const point = this._coordinateToPoint(overlay, event, invertMagnetMode(overlay.mode, event, chartStore.getPreferredMagnetMode()))
             overlay.startContinuousDrawing(point)
             overlay.onDrawStart?.({ chart, overlay, ...event })
             return true
@@ -280,7 +280,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
           if (isDragBeyond(dragDraw, event)) {
             dragDraw.moved = true
           }
-          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, this._drawingCoordinate(overlay, event)))
+          overlay.eventMoveForDrawing(this._drawingPoint(overlay, event, chartStore.getPreferredMagnetMode()))
           overlay.onDrawing?.({ chart, overlay, ...event })
           return true
         }
@@ -289,7 +289,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         if (progressOverlayInfo !== null) {
           const overlay = progressOverlayInfo.overlay
           if (overlay.isContinuousDrawing() && overlay.isDrawing() && !overlay.isStart()) {
-            const point = this._coordinateToPoint(overlay, event)
+            const point = this._coordinateToPoint(overlay, event, invertMagnetMode(overlay.mode, event, chartStore.getPreferredMagnetMode()))
             overlay.addPointForContinuousDrawing(point)
             overlay.onDrawing?.({ chart, overlay, ...event })
             return true
@@ -302,11 +302,17 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
               // Shift locks a body drag to one axis, and snaps a point handle
               // to a ray from the point before it (to a square, for a box).
               const extraHandle = figureType === 'point' && figureIndex >= overlay.points.length
+              const shiftSnapped = event.shiftKey === true && !extraHandle && figureType === 'point'
               let moveEvent = event
               if (event.shiftKey === true && !extraHandle) {
                 moveEvent = figureType === 'point' ? { ...event, ...this._shiftSnapPoint(overlay, event, figureIndex) } : this._constrainToDragAxis(event)
               }
-              const point = this._coordinateToPoint(overlay, moveEvent)
+              // A magnet pull would fight the snapped geometry, so Shift drops
+              // it for a snapped handle — but not for a body drag, where the
+              // grab point was magnetised and losing it would make the drawing
+              // jump under the hand.
+              const mode = shiftSnapped ? 'normal' : invertMagnetMode(overlay.mode, event, chartStore.getPreferredMagnetMode())
+              const point = this._coordinateToPoint(overlay, moveEvent, mode)
               // When the pressed figure declares `noTranslate`, the
               // engine skips the default point-translation step
               // entirely — the overlay's `onPressedMoving` handler
@@ -884,16 +890,17 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
   }
 
   /**
-   * Where the moving point of a drawing should land. Shift pulls it onto a ray
-   * from the point committed before it — the same gesture a handle gets, on the
-   * point that tracks the cursor. The first click has nothing behind it to
-   * snap around, so it is left where the pointer is.
+   * Where the moving point of a drawing goes, and the magnet it goes with.
+   * Shift pulls it onto a ray from the point committed before it — the same
+   * gesture a handle gets, on the point that tracks the cursor — and switches
+   * the magnet off underneath it, since a pull would fight the snapped
+   * geometry. The first click has no point behind it, so it stays put.
    */
-  private _drawingCoordinate(overlay: OverlayImp, event: MouseTouchEvent): Coordinate {
-    if (event.shiftKey !== true || !overlay.isDrawing() || overlay.currentStep <= 1) {
-      return event
-    }
-    return this._shiftSnapPoint(overlay, event, overlay.currentStep - 1)
+  private _drawingPoint(overlay: OverlayImp, event: MouseTouchEvent, preferred: Exclude<OverlayMode, 'normal'>): Partial<Point> {
+    const snapped = event.shiftKey === true && overlay.isDrawing() && overlay.currentStep > 1
+    const coordinate = snapped ? this._shiftSnapPoint(overlay, event, overlay.currentStep - 1) : event
+    const mode = snapped ? 'normal' : invertMagnetMode(overlay.mode, event, preferred)
+    return this._coordinateToPoint(overlay, coordinate, mode)
   }
 
   /** Shift on a point handle: the tool's name picks what "straight" means. */
@@ -902,7 +909,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     return snapShapePoint(overlay.name, points, figureIndex, { x: event.x, y: event.y })
   }
 
-  private _coordinateToPoint(o: Overlay, coordinate: Coordinate): Partial<Point> {
+  private _coordinateToPoint(o: Overlay, coordinate: Coordinate, mode: OverlayMode = o.mode): Partial<Point> {
     const point: Partial<Point> = {}
     const pane = this.getWidget().getPane()
     const chart = pane.getChart()
@@ -926,7 +933,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     if (this.coordinateToPointValueFlag()) {
       const yAxis = pane.getYAxisComponentById()
       let value = yAxis.convertFromPixel(coordinate.y)
-      if (o.mode !== 'normal' && paneId === PaneIdConstants.CANDLE && isNumber(point.dataIndex)) {
+      if (mode !== 'normal' && paneId === PaneIdConstants.CANDLE && isNumber(point.dataIndex)) {
         const kLineData = chartStore.getDataByDataIndex(point.dataIndex)
         if (kLineData !== null) {
           // ALTD-1898 — both magnet modes now share one code
@@ -959,7 +966,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
               nearestDist = dist
             }
           }
-          if (o.mode === 'strong_magnet' || nearestDist <= o.modeSensitivity) {
+          if (mode === 'strong_magnet' || nearestDist <= o.modeSensitivity) {
             value = nearest.value
           }
         }
