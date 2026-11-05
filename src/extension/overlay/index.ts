@@ -56,6 +56,7 @@ import priceChannelLine from './priceChannelLine'
 import priceLabel from './priceLabel'
 import priceLevelLine from './priceLevelLine'
 import priceLine from './priceLine'
+import { multiPoint } from './polyline'
 import priceNote from './priceNote'
 import rayLine from './rayLine'
 import rect from './rect'
@@ -135,6 +136,8 @@ const proExtensions = [
   arrowMark('left'),
   arrowMark('right'),
   arrowMarker,
+  multiPoint('polyline'),
+  multiPoint('path'),
   styledSegment,
   box,
   emojiMarker,
