@@ -137,6 +137,9 @@ export interface Store {
   /** Show seconds on the crosshair's time label for minute/hour periods. */
   setShowSeconds: (show: boolean) => void
   getShowSeconds: () => boolean
+  /** Crosshair magnet: `weak` snaps X to the bar centre, `strong` also snaps Y to the nearest OHLC. */
+  setMagnetMode: (mode: 'normal' | 'weak' | 'strong') => void
+  getMagnetMode: () => 'normal' | 'weak' | 'strong'
   /** Show the selected drawing's axis labels (price / time / name tags). */
   setShowSelectedOverlayLabel: (show: boolean) => void
   getShowSelectedOverlayLabel: () => boolean
@@ -426,6 +429,9 @@ export default class StoreImp implements Store {
    * drawing's own mode is `normal` — so the last non-normal mode is kept.
    */
   private _preferredMagnetMode: Exclude<OverlayMode, 'normal'> = 'weak_magnet'
+
+  /** Crosshair magnet strength; `normal` disables snapping. */
+  private _magnetMode: 'normal' | 'weak' | 'strong' = 'normal'
 
   /** Whether the crosshair's time label carries seconds. */
   private _showSeconds = false
@@ -1688,6 +1694,18 @@ export default class StoreImp implements Store {
     return this._scrollEnabled
   }
 
+  /**
+   * The pane's default y-axis. The Store only holds the `Chart` interface, so
+   * the concrete pane lookup needs a narrow structural cast; a missing pane is
+   * a normal runtime case while a chart is being torn down.
+   */
+  private _yAxisOf(paneId: string): Nullable<{ convertToPixel: (value: number) => number }> {
+    const chart = this._chart as unknown as {
+      getDrawPaneById: (id: string) => Nullable<{ getYAxisComponentById: (id?: string) => Nullable<{ convertToPixel: (value: number) => number }> }>
+    }
+    return chart.getDrawPaneById(paneId)?.getYAxisComponentById() ?? null
+  }
+
   setCrosshair(crosshair?: Nullable<Crosshair>, options?: { notInvalidate?: boolean; notExecuteAction?: boolean; forceInvalidate?: boolean }): void {
     const { notInvalidate, notExecuteAction, forceInvalidate } = options ?? {}
     const cr = crosshair ?? {}
@@ -1708,8 +1726,49 @@ export default class StoreImp implements Store {
     }
     const kLineData: Nullable<KLineData> = this._dataList[dataIndex]
     const realX = this.dataIndexToCoordinate(realDataIndex)
+
+    // `weak` pulls X to the bar centre; `strong` additionally drags Y to the
+    // nearest OHLC on the candle pane. Applied before the snapshot so every
+    // downstream view (crosshair line, tooltip, labels) sees snapped coords.
+    let magnetX: Nullable<number> = null
+    let magnetY: Nullable<number> = null
+    if (this._magnetMode !== 'normal' && isNumber(cr.x)) {
+      magnetX = realX
+      if (this._magnetMode === 'strong' && isNumber(cr.y) && isValid(kLineData) && cr.paneId === PaneIdConstants.CANDLE) {
+        const axis = this._yAxisOf(cr.paneId)
+        if (isValid(axis)) {
+          const prices = [kLineData.open, kLineData.high, kLineData.low, kLineData.close]
+          let nearest = cr.y
+          let minDist = Infinity
+          for (const price of prices) {
+            if (!isNumber(price)) {
+              continue
+            }
+            const py = axis.convertToPixel(price)
+            if (isNumber(py)) {
+              const distance = Math.abs(py - cr.y)
+              if (distance < minDist) {
+                minDist = distance
+                nearest = py
+              }
+            }
+          }
+          magnetY = nearest
+        }
+      }
+    }
+
     const prevCrosshair = { x: this._crosshair.x, y: this._crosshair.y, paneId: this._crosshair.paneId }
-    this._crosshair = { ...cr, realX, kLineData, realDataIndex, dataIndex, timestamp: this.dataIndexToTimestamp(realDataIndex) ?? undefined }
+    this._crosshair = {
+      ...cr,
+      ...(isValid(magnetX) ? { x: magnetX } : {}),
+      ...(isValid(magnetY) ? { y: magnetY } : {}),
+      realX,
+      kLineData,
+      realDataIndex,
+      dataIndex,
+      timestamp: this.dataIndexToTimestamp(realDataIndex) ?? undefined
+    }
     if (prevCrosshair.x !== cr.x || prevCrosshair.y !== cr.y || prevCrosshair.paneId !== cr.paneId || (forceInvalidate ?? false)) {
       if (isValid(kLineData) && !(notExecuteAction ?? false) && this.hasAction('onCrosshairChange') && isString(this._crosshair.paneId)) {
         this.executeAction('onCrosshairChange', crosshair)
@@ -2111,6 +2170,23 @@ export default class StoreImp implements Store {
 
   getPreferredMagnetMode(): Exclude<OverlayMode, 'normal'> {
     return this._preferredMagnetMode
+  }
+
+  /**
+   * `weak` snaps the crosshair X to the nearest bar centre; `strong` also snaps
+   * Y to the nearest OHLC on the candle pane. Re-runs `setCrosshair` so the
+   * current cursor picks up the new snap without waiting for another mouse move.
+   */
+  setMagnetMode(mode: 'normal' | 'weak' | 'strong'): void {
+    if (this._magnetMode === mode) {
+      return
+    }
+    this._magnetMode = mode
+    this.setCrosshair(this._crosshair, { forceInvalidate: true })
+  }
+
+  getMagnetMode(): 'normal' | 'weak' | 'strong' {
+    return this._magnetMode
   }
 
   /**

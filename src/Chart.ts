@@ -115,6 +115,8 @@ export interface Chart extends Store {
   getVisibleRangeTimestamps: () => Nullable<{ from: number; to: number }>
   setShowSeconds: (show: boolean) => void
   getShowSeconds: () => boolean
+  setMagnetMode: (mode: 'normal' | 'weak' | 'strong') => void
+  getMagnetMode: () => 'normal' | 'weak' | 'strong'
   setShowSelectedOverlayLabel: (show: boolean) => void
   getShowSelectedOverlayLabel: () => boolean
   convertToPixel: (points: Partial<Point> | Array<Partial<Point>>, filter?: ConvertFilter) => Partial<Coordinate> | Array<Partial<Coordinate>>
@@ -714,6 +716,14 @@ export default class ChartImp implements Chart {
 
   getShowSeconds(): boolean {
     return this._chartStore.getShowSeconds()
+  }
+
+  setMagnetMode(mode: 'normal' | 'weak' | 'strong'): void {
+    this._chartStore.setMagnetMode(mode)
+  }
+
+  getMagnetMode(): 'normal' | 'weak' | 'strong' {
+    return this._chartStore.getMagnetMode()
   }
 
   setShowSelectedOverlayLabel(show: boolean): void {
