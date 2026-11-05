@@ -43,6 +43,7 @@ import type { FigureTemplate } from './component/Figure'
 import { setHitAreaDebug } from './component/Figure'
 import type { YAxisOverride } from './component/YAxis'
 
+import type { OverlayNudgeDirection } from './Store'
 import type { FormatDateType, Layout, Options, ZoomAnchor } from './Options'
 import type { BarSpaceLimit } from './common/BarSpace'
 import ChartImp, { type Chart, type DomPosition, type YAxisFilter } from './Chart'
@@ -203,6 +204,7 @@ export {
   type OverlayDrawingMode,
   type OverlayEvent,
   type OverlayMode,
+  type OverlayNudgeDirection,
   type OverlayProperties,
   type OverlayPropertiesStore,
   type OverlayTemplate,

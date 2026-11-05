@@ -51,6 +51,7 @@ import { getStyles as getExtensionStyles } from './extension/styles/index'
 import type { DecimalFold, FormatBigNumber, FormatDateParams, FormatDateType, FormatExtendText, FormatExtendTextParams, Formatter, Hotkey, Layout, Options, ThousandsSeparator, ZoomAnchor, ZoomAnchorType } from './Options'
 import { PaneIdConstants } from './pane/types'
 import { ReplayEngine as ReplayEngineImp } from './replay/ReplayEngine'
+import type Point from './common/Point'
 import type { ReplayEngine, ReplayStatus } from './replay/types'
 
 const DEFAULT_BAR_SPACE_LIMIT = {
@@ -89,6 +90,12 @@ export interface OverlaySelectionRect {
   x2: number
   y2: number
 }
+
+/** Which way the arrow keys take a selection. */
+export type OverlayNudgeDirection = 'left' | 'right' | 'up' | 'down'
+
+/** How far an up/down nudge moves a drawing, in pixels. */
+const NUDGE_PIXELS = 4
 
 const DEFAULT_BAR_SPACE = 10
 
@@ -2282,6 +2289,71 @@ export default class StoreImp implements Store {
       }
     })
     return ids
+  }
+
+  /**
+   * Arrow-key nudge. Left/right moves every point exactly one bar; up/down moves
+   * it a fixed on-screen distance, converted per point, so it holds on log and
+   * percentage axes too. Locked drawings stay put, and each one that moved then
+   * gets `onPressedMoveEnd` — the hook hosts already persist drags from.
+   * Returns false when nothing moved.
+   */
+  nudgeOverlays(ids: string[], direction: OverlayNudgeDirection): boolean {
+    interface AxisLike {
+      convertToPixel: (value: number) => number
+      convertFromPixel: (pixel: number) => number
+    }
+    interface ChartLike {
+      getDrawPaneById: (id: string) => Nullable<{ getAxisComponent: () => AxisLike }>
+    }
+    const horizontal = direction === 'left' || direction === 'right'
+    const moved: OverlayImp[] = []
+    ids.forEach((id) => {
+      const overlay = this.getOverlaysByFilter({ id })[0] as OverlayImp | undefined
+      if (overlay === undefined || overlay.lock || overlay.isDrawing() || overlay.points.length === 0) {
+        return
+      }
+      const ext = overlay.extendData as { lockPrice?: boolean; lockTime?: boolean } | null | undefined
+      if ((horizontal ? ext?.lockTime : ext?.lockPrice) === true) {
+        return
+      }
+      const yAxis = (this._chart as unknown as ChartLike).getDrawPaneById(overlay.paneId)?.getAxisComponent()
+      if (!horizontal && yAxis === undefined) {
+        return
+      }
+      const float = overlay.isContinuousDrawing()
+      const next: Array<Partial<Point>> = []
+      for (const p of overlay.points) {
+        const point = { ...p }
+        if (horizontal) {
+          let dataIndex = p.dataIndex
+          if (isNumber(p.timestamp)) {
+            dataIndex = float ? this.timestampToFloatIndex(p.timestamp) : this.timestampToDataIndex(p.timestamp)
+          }
+          if (!isNumber(dataIndex)) {
+            continue
+          }
+          point.dataIndex = dataIndex + (direction === 'left' ? -1 : 1)
+          point.timestamp = this.floatIndexToTimestamp(point.dataIndex) ?? p.timestamp
+        } else if (isNumber(p.value) && yAxis !== undefined) {
+          point.value = yAxis.convertFromPixel(yAxis.convertToPixel(p.value) + (direction === 'up' ? -NUDGE_PIXELS : NUDGE_PIXELS))
+        }
+        next.push(point)
+      }
+      if (next.length !== overlay.points.length) {
+        return
+      }
+      overlay.points = next
+      moved.push(overlay)
+    })
+    if (moved.length === 0) {
+      return false
+    }
+    this._chart.updatePane(UpdateLevel.Overlay)
+    moved.forEach((overlay) => {
+      overlay.onPressedMoveEnd?.({ chart: this._chart, overlay })
+    })
+    return true
   }
 
   isOverlayEmpty(): boolean {

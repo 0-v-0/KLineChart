@@ -44,7 +44,7 @@ import { isArray, isNumber, isString, isValid } from './common/utils/typeChecks'
 import type VisibleRange from './common/VisibleRange'
 import { formatErrorMessage } from './common/utils/format'
 
-import ChartStore, { SCALE_MULTIPLIER, type Store } from './Store'
+import ChartStore, { SCALE_MULTIPLIER, type OverlayNudgeDirection, type Store } from './Store'
 import type { ReplayEngine } from './replay/types'
 
 import CandlePane from './pane/CandlePane'
@@ -95,6 +95,7 @@ export interface Chart extends Store {
   getSelectedOverlayIds: () => string[]
   setSelectedOverlayIds: (ids: string[]) => void
   clearOverlaySelection: () => void
+  nudgeOverlays: (ids: string[], direction: OverlayNudgeDirection) => boolean
   setPaneOptions: (options: Partial<PaneOptions>) => void
   createYAxis: (yAxis: YAxisOverride) => Nullable<string>
   removeYAxis: (filter: YAxisFilter) => boolean
@@ -1062,6 +1063,10 @@ export default class ChartImp implements Chart {
       }
     )
     this._chartStore.setSelectedOverlayIds([])
+  }
+
+  nudgeOverlays(ids: string[], direction: OverlayNudgeDirection): boolean {
+    return this._chartStore.nudgeOverlays(ids, direction)
   }
 
   overrideOverlay(override: OverlayOverride): boolean {
