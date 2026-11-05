@@ -92,6 +92,9 @@ export interface Chart extends Store {
   getIndicators: (filter?: IndicatorFilter) => Indicator[]
   createOverlay: (value: string | OverlayCreate | Array<string | OverlayCreate>) => Nullable<string> | Array<Nullable<string>>
   getOverlays: (filter?: OverlayFilter) => Overlay[]
+  getSelectedOverlayIds: () => string[]
+  setSelectedOverlayIds: (ids: string[]) => void
+  clearOverlaySelection: () => void
   setPaneOptions: (options: Partial<PaneOptions>) => void
   createYAxis: (yAxis: YAxisOverride) => Nullable<string>
   removeYAxis: (filter: YAxisFilter) => boolean
@@ -1030,6 +1033,35 @@ export default class ChartImp implements Chart {
 
   getOverlays(filter?: OverlayFilter): Overlay[] {
     return this._chartStore.getOverlaysByFilter(filter ?? {})
+  }
+
+  getSelectedOverlayIds(): string[] {
+    return this._chartStore.getSelectedOverlayIds()
+  }
+
+  setSelectedOverlayIds(ids: string[]): void {
+    this._chartStore.setSelectedOverlayIds(ids)
+  }
+
+  /**
+   * Deselect everything, as a click on empty space does: the clicked drawing
+   * (the one whose handles are drawn, and whose `onDeselected` fires) as well
+   * as the selection set. `setSelectedOverlayIds([])` alone leaves the clicked
+   * one, which is why this exists.
+   */
+  clearOverlaySelection(): void {
+    const { paneId } = this._chartStore.getClickOverlayInfo()
+    this._chartStore.setClickOverlayInfo(
+      { paneId, overlay: null, figureType: 'none', figureIndex: -1, figure: null },
+      () => false,
+      (overlay) => {
+        // There is no pointer event behind a programmatic deselect, so handlers
+        // get the chart and the drawing and nothing else.
+        overlay.onDeselected?.({ chart: this, overlay } as unknown as Parameters<NonNullable<typeof overlay.onDeselected>>[0])
+        return true
+      }
+    )
+    this._chartStore.setSelectedOverlayIds([])
   }
 
   overrideOverlay(override: OverlayOverride): boolean {

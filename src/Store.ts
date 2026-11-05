@@ -458,6 +458,13 @@ export default class StoreImp implements Store {
   }
 
   /**
+   * The drawings a multi-selection covers. Separate from the clicked overlay,
+   * which is the one being edited: a click selects one, Cmd-click and a marquee
+   * add to the set, and the clicked one stays the one whose handles are drawn.
+   */
+  private _selectedOverlayIds = new Set<string>()
+
+  /**
    * Default layout params
    */
   private readonly _layoutOptions: DeepRequired<Layout> = {
@@ -2058,11 +2065,14 @@ export default class StoreImp implements Store {
 
   removeOverlay(filter?: OverlayFilter): boolean {
     const updatePaneIds: string[] = []
+    const selectionSizeBefore = this._selectedOverlayIds.size
     const filterOverlays = this.getOverlaysByFilter(filter ?? {})
     filterOverlays.forEach((overlay) => {
       const paneId = overlay.paneId
       const paneOverlays = this.getOverlaysByPaneId(overlay.paneId)
       overlay.onRemoved?.({ overlay, chart: this._chart })
+      // A drawing that is gone cannot stay in the selection.
+      this._selectedOverlayIds.delete(overlay.id)
       if (!updatePaneIds.includes(paneId)) {
         updatePaneIds.push(paneId)
       }
@@ -2078,6 +2088,9 @@ export default class StoreImp implements Store {
         this._overlays.delete(paneId)
       }
     })
+    if (this._selectedOverlayIds.size !== selectionSizeBefore) {
+      this.executeAction('onSelectedOverlaysChange', this.getSelectedOverlayIds())
+    }
     if (updatePaneIds.length > 0) {
       updatePaneIds.forEach((paneId) => {
         this._chart.updatePane(UpdateLevel.Overlay, paneId)
@@ -2161,6 +2174,43 @@ export default class StoreImp implements Store {
 
   getClickOverlayInfo(): EventOverlayInfo {
     return this._clickOverlayInfo
+  }
+
+  getSelectedOverlayIds(): string[] {
+    return [...this._selectedOverlayIds]
+  }
+
+  isOverlaySelected(id: string): boolean {
+    return this._selectedOverlayIds.has(id)
+  }
+
+  /** Replace the selection wholesale. Pass `[]` to clear. */
+  setSelectedOverlayIds(ids: string[]): void {
+    const next = new Set(ids)
+    if (next.size === this._selectedOverlayIds.size && ids.every((id) => this._selectedOverlayIds.has(id))) {
+      return
+    }
+    this._selectedOverlayIds = next
+    this._notifySelectionChanged()
+  }
+
+  /** Add or remove one drawing — the Cmd/Ctrl-click gesture. */
+  toggleSelectedOverlayId(id: string): void {
+    if (this._selectedOverlayIds.has(id)) {
+      this._selectedOverlayIds.delete(id)
+    } else {
+      this._selectedOverlayIds.add(id)
+    }
+    this._notifySelectionChanged()
+  }
+
+  /**
+   * Repaint the handles and tell subscribers (a host's multi-select toolbar)
+   * what is selected now.
+   */
+  private _notifySelectionChanged(): void {
+    this._chart.updatePane(UpdateLevel.Overlay)
+    this.executeAction('onSelectedOverlaysChange', this.getSelectedOverlayIds())
   }
 
   isOverlayEmpty(): boolean {
