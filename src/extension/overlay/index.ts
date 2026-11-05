@@ -27,6 +27,7 @@ import brush from './brush'
 import callout from './callout'
 import circle from './circle'
 import crossLine from './crossLine'
+import curve from './curve'
 import comment from './comment'
 import eightWaves from './eightWaves'
 import emojiMarker from './emojiMarker'
@@ -138,6 +139,7 @@ const proExtensions = [
   arrowMarker,
   multiPoint('polyline'),
   multiPoint('path'),
+  curve,
   styledSegment,
   box,
   emojiMarker,
