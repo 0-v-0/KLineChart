@@ -32,6 +32,14 @@ export default class CandleTooltipView extends IndicatorTooltipView {
       const styles = chartStore.getStyles()
       const candleStyles = styles.candle
       const indicatorStyles = styles.indicator
+      // `candle.tooltip.showRule: 'none'` turns off this pane's whole tooltip
+      // block, its overlaid indicators included — a host that replaces the
+      // candle pane's legend with its own DOM one wants both gone, and
+      // `indicator.tooltip.showRule` can't say it because every sub-pane
+      // shares that setting.
+      if (candleStyles.tooltip.showRule === 'none') {
+        return
+      }
       if (candleStyles.tooltip.showType === 'rect' && indicatorStyles.tooltip.showType === 'rect') {
         const isDrawCandleTooltip = this.isDrawTooltip(crosshair, candleStyles.tooltip)
         const isDrawIndicatorTooltip = this.isDrawTooltip(crosshair, indicatorStyles.tooltip)
@@ -331,13 +339,16 @@ export default class CandleTooltipView extends IndicatorTooltipView {
 
     const prevClose = prev?.close ?? current.close
     const changeValue = current.close - prevClose
+    // O/H/L/C as a set at the price axis's zero count, so the four values
+    // line up and read in the axis's terms instead of folding independently.
+    const [open, high, low, close] = decimalFold.formatPrices([current.open, current.high, current.low, current.close].map((v) => thousandsSeparator.format(formatPrecision(v, pricePrecision))))
     const mapping = {
       ...current,
       time: formatter.formatDate(current.timestamp, PeriodTypeCrosshairTooltipFormat[period?.type ?? 'day'], 'tooltip'),
-      open: decimalFold.format(thousandsSeparator.format(formatPrecision(current.open, pricePrecision))),
-      high: decimalFold.format(thousandsSeparator.format(formatPrecision(current.high, pricePrecision))),
-      low: decimalFold.format(thousandsSeparator.format(formatPrecision(current.low, pricePrecision))),
-      close: decimalFold.format(thousandsSeparator.format(formatPrecision(current.close, pricePrecision))),
+      open,
+      high,
+      low,
+      close,
       volume: decimalFold.format(thousandsSeparator.format(formatter.formatBigNumber(formatPrecision(current.volume ?? defaultValue, volumePrecision)))),
       turnover: decimalFold.format(thousandsSeparator.format(formatPrecision(current.turnover ?? defaultValue, pricePrecision))),
       change: prevClose === 0 ? defaultValue : `${thousandsSeparator.format(formatPrecision((changeValue / prevClose) * 100))}%`
