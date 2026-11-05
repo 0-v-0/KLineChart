@@ -42,7 +42,7 @@ import { getDefaultVisibleRange } from './common/VisibleRange'
 import type IndicatorImp from './component/Indicator'
 import type { IndicatorCreate, IndicatorFilter, IndicatorOverride } from './component/Indicator'
 import type OverlayImp from './component/Overlay'
-import { OVERLAY_ID_PREFIX, type OverlayCreate, type OverlayFigure, type OverlayFilter, type OverlayMode, type OverlayOverride } from './component/Overlay'
+import { OVERLAY_ID_PREFIX, type Overlay, type OverlayCreate, type OverlayFigure, type OverlayFilter, type OverlayMode, type OverlayOverride } from './component/Overlay'
 import { getSupportedLocales } from './extension/i18n/index'
 import { getIndicatorClass } from './extension/indicator/index'
 import { getOverlayInnerClass } from './extension/overlay/index'
@@ -138,6 +138,12 @@ export interface Store {
   removeIndicator: (filter?: IndicatorFilter) => boolean
   overrideOverlay: (override: Partial<OverlayCreate>) => boolean
   removeOverlay: (filter?: OverlayFilter) => boolean
+  /**
+   * A second opinion on whether a drawing is on screen, alongside its own
+   * `visible`. Lets a host hide a drawing (a layer toggle, a filter) without
+   * writing to the drawing, so the state survives and comes back on its own.
+   */
+  setOverlayVisibilityResolver: (resolver: Nullable<(overlay: Overlay) => boolean>) => void
   setZoomEnabled: (enabled: boolean) => void
   isZoomEnabled: () => boolean
   setZoomAnchor: (behavior: ZoomAnchor) => void
@@ -244,6 +250,12 @@ export default class StoreImp implements Store {
    * resolver is expected to answer the same way for the same bar.
    */
   private _footprintResolver: Nullable<(data: KLineData) => Nullable<FootprintBarData>> = null
+
+  /**
+   * A host's second opinion on whether a drawing is on screen; see
+   * `setOverlayVisibilityResolver`.
+   */
+  private _overlayVisibilityResolver: Nullable<(overlay: Overlay) => boolean> = null
 
   /**
    * Is loading data flag
@@ -720,6 +732,16 @@ export default class StoreImp implements Store {
 
   getFootprint(data: KLineData): Nullable<FootprintBarData> {
     return this._footprintResolver?.(data) ?? null
+  }
+
+  setOverlayVisibilityResolver(resolver: Nullable<(overlay: Overlay) => boolean>): void {
+    this._overlayVisibilityResolver = resolver
+    this._chart.updatePane(UpdateLevel.Overlay)
+  }
+
+  /** The drawing's own `visible`, and the host's resolver if it set one. */
+  isOverlayShown(overlay: Overlay): boolean {
+    return overlay.visible && (this._overlayVisibilityResolver?.(overlay) ?? true)
   }
 
   getVisibleRangeDataList(mutateToCandleType = false): VisibleRangeData[] {

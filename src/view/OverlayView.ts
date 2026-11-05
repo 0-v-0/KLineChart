@@ -1029,18 +1029,19 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     // is the tolerance of the figures that are actually draggable.
     setDrawingOverlay(true)
     try {
+      const chartStore = this.getWidget().getPane().getChart().getChartStore()
       const overlays = this.getCompleteOverlays()
       overlays.forEach((overlay) => {
         // `zLevel` is opt-in: a drawing that does not ask to sit above the
         // crosshair stays in the first pass, which is where they all were.
-        if (overlay.visible && overlay.zLevel >= OVERLAY_Z_LEVEL_ABOVE_CROSSHAIR === aboveCrosshair) {
+        if (chartStore.isOverlayShown(overlay) && overlay.zLevel >= OVERLAY_Z_LEVEL_ABOVE_CROSSHAIR === aboveCrosshair) {
           this._drawOverlay(ctx, overlay)
         }
       })
       // The drawing in progress belongs under the crosshair: the user is
       // placing its points with the crosshair, so it must not cover them.
       const progressOverlay = this.getProgressOverlay()
-      if (!aboveCrosshair && isValid(progressOverlay) && progressOverlay.visible) {
+      if (!aboveCrosshair && isValid(progressOverlay) && chartStore.isOverlayShown(progressOverlay)) {
         this._drawOverlay(ctx, progressOverlay)
       }
     } finally {

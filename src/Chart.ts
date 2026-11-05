@@ -866,6 +866,10 @@ export default class ChartImp implements Chart {
     return this._chartStore.getFootprint(data)
   }
 
+  setOverlayVisibilityResolver(resolver: Nullable<(overlay: Overlay) => boolean>): void {
+    this._chartStore.setOverlayVisibilityResolver(resolver)
+  }
+
   setDataLoader(dataLoader: DataLoader): void {
     this._resetYAxisAutoCalcTickFlag()
     this._chartStore.setDataLoader(dataLoader)
