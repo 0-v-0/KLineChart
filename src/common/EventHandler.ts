@@ -56,6 +56,7 @@ export interface EventHandler {
 
   mouseClickEvent?: MouseTouchEventCallback
   mouseRightClickEvent?: MouseTouchEventCallback
+  mouseMiddleClickEvent?: MouseTouchEventCallback
   tapEvent?: MouseTouchEventCallback
 
   mouseDoubleClickEvent?: MouseTouchEventCallback
@@ -678,6 +679,13 @@ export default class EventHandlerImp {
     if (downEvent.button === MouseEventButton.Right) {
       this._preventDefault(downEvent)
       this._processEvent(this._makeCompatEvent(downEvent), this._handler.mouseRightClickEvent)
+      return
+    }
+
+    if (downEvent.button === MouseEventButton.Middle) {
+      // Stops the browser's middle-button autoscroll over the chart.
+      this._preventDefault(downEvent)
+      this._processEvent(this._makeCompatEvent(downEvent), this._handler.mouseMiddleClickEvent)
       return
     }
 

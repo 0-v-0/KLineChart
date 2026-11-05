@@ -764,6 +764,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       mouseDownEvent: this._figureMouseDownEvent(overlay, figureType, figureIndex, figure),
       mouseClickEvent: this._figureMouseClickEvent(overlay, figureType, figureIndex, figure),
       mouseRightClickEvent: this._figureMouseRightClickEvent(overlay, figureType, figureIndex, figure),
+      mouseMiddleClickEvent: this._figureMouseMiddleClickEvent(overlay, figure),
       mouseDoubleClickEvent: this._figureMouseDoubleClickEvent(overlay, figureType, figureIndex, figure)
     }
   }
@@ -978,6 +979,18 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         }
       }
       return !overlay.isDrawing()
+    }
+  }
+
+  // No default removal, unlike right-click: the host owns persistence and undo,
+  // so a bare engine delete would leave its records behind.
+  private _figureMouseMiddleClickEvent(overlay: OverlayImp, figure: OverlayFigure): MouseTouchEventCallback {
+    return (event: MouseTouchEvent) => {
+      if (isFunction(overlay.onMiddleClick) && checkOverlayFigureEvent('onMiddleClick', figure)) {
+        overlay.onMiddleClick({ chart: this.getWidget().getPane().getChart(), overlay, figure, ...event })
+        return !overlay.isDrawing()
+      }
+      return false
     }
   }
 

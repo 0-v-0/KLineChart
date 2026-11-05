@@ -72,6 +72,7 @@ const hotKeyModifierOrder = ['ctrl', 'alt', 'shift', 'meta']
 
 export default class Event implements EventHandler {
   private readonly _chart: Chart
+  private readonly _container: HTMLElement
   private readonly _event: EventHandlerImp
 
   // 惯性滚动开始时间
@@ -106,6 +107,9 @@ export default class Event implements EventHandler {
 
   // Defer single-click action so a following double-click can cancel it.
   private _pendingClickTimer: ReturnType<typeof setTimeout> | null = null
+
+  // Dismisses the transient Shift+click measure, if one is on the chart.
+  private _measureDismiss: Nullable<() => void> = null
 
   private readonly _boundKeyBoardDownEvent: (event: KeyboardEvent) => void = (event: KeyboardEvent) => {
     const target = event.target as Nullable<HTMLElement>
@@ -214,6 +218,7 @@ export default class Event implements EventHandler {
 
   constructor(container: HTMLElement, chart: Chart) {
     this._chart = chart
+    this._container = container
     this._event = new EventHandlerImp(container, this, {
       treatVertDragAsPageScroll: () => false,
       treatHorzDragAsPageScroll: () => false
@@ -644,6 +649,10 @@ export default class Event implements EventHandler {
       const consumed = widget.dispatchEvent('mouseClickEvent', event)
       // Fire onChartClick only when no overlay consumed the click
       const widgetName = widget.getName()
+      if (!consumed && event.shiftKey === true && pane?.getId() === PaneIdConstants.CANDLE && widgetName === WidgetNameConstants.MAIN && !this._chart.getChartStore().isOverlayDrawing()) {
+        this._startQuickMeasure(widget, event)
+        return true
+      }
       if (!consumed && pane !== null && widgetName === WidgetNameConstants.MAIN) {
         const chartStore = this._chart.getChartStore()
         if (chartStore.hasAction('onChartClick')) {
@@ -695,6 +704,18 @@ export default class Event implements EventHandler {
       if (consumed) {
         this._chart.updatePane(UpdateLevel.Overlay)
       }
+    }
+    return false
+  }
+
+  mouseMiddleClickEvent(e: MouseTouchEvent): boolean {
+    const { widget } = this._findWidgetByEvent(e)
+    if (widget?.getName() === WidgetNameConstants.MAIN) {
+      const consumed = widget.dispatchEvent('mouseMiddleClickEvent', this._makeWidgetEvent(e, widget))
+      if (consumed) {
+        this._chart.updatePane(UpdateLevel.Overlay)
+      }
+      return consumed
     }
     return false
   }
@@ -1183,6 +1204,36 @@ export default class Event implements EventHandler {
       update: true,
       buildYAxisTick: true
     })
+  }
+
+  // TradingView's Shift+click measure: the click places the first point, the
+  // next click finishes it, the click after that dismisses it. Engine-owned and
+  // never persisted, so the host needs no wiring.
+  private _startQuickMeasure(widget: Widget, event: MouseTouchEvent): void {
+    this._measureDismiss?.()
+    const id = this._chart.createOverlay({
+      name: 'measure',
+      paneId: PaneIdConstants.CANDLE,
+      onDrawEnd: ({ overlay }) => {
+        // Deferred so the click that finished the measure doesn't dismiss it.
+        setTimeout(() => {
+          const dismiss = (): void => {
+            this._measureDismiss?.()
+            this._chart.removeOverlay({ id: overlay.id })
+          }
+          this._measureDismiss = () => {
+            this._container.removeEventListener('mousedown', dismiss, true)
+            this._measureDismiss = null
+          }
+          this._container.addEventListener('mousedown', dismiss, true)
+        }, 0)
+      }
+    })
+    if (id === null) {
+      return
+    }
+    widget.dispatchEvent('mouseClickEvent', event)
+    this._chart.updatePane(UpdateLevel.Overlay)
   }
 
   private _findWidgetByEvent(event: MouseTouchEvent): EventTriggerWidgetInfo {
