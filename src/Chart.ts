@@ -297,8 +297,10 @@ export default class ChartImp implements Chart {
             this._layoutPending = false
           }
         })
-        .catch((_: unknown) => {
-          // todo
+        .catch((err: unknown) => {
+          // Reported, not swallowed: a silent failure leaves the chart frozen
+          // on its last frame while the crosshair and legend keep moving.
+          console.error('[klinecharts] layout failed:', err)
         })
     }
   }
