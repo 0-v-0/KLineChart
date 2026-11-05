@@ -44,6 +44,10 @@ import View from './View'
  */
 export const OVERLAY_Z_LEVEL_ABOVE_CROSSHAIR = 1000
 
+/** Marquee paint. Neutral blue, readable over both chart themes. */
+const SELECTION_RECT_FILL = 'rgba(41, 98, 255, 0.12)'
+const SELECTION_RECT_STROKE = 'rgba(41, 98, 255, 0.9)'
+
 export default class OverlayView<C extends Axis = YAxis> extends View<C> {
   private _activeTextEditor: Nullable<{
     input: HTMLInputElement | HTMLTextAreaElement
@@ -1011,6 +1015,35 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
 
   override drawImp(ctx: CanvasRenderingContext2D): void {
     this._drawPass(ctx, false)
+    this._drawSelectionRect(ctx)
+  }
+
+  /**
+   * The marquee being dragged, if it belongs to this pane. Nothing is drawn
+   * until the press has moved a pixel, so a Cmd-click does not flash a box.
+   */
+  private _drawSelectionRect(ctx: CanvasRenderingContext2D): void {
+    const pane = this.getWidget().getPane()
+    const rect = pane.getChart().getChartStore().getOverlaySelectionRect()
+    if (rect === null || rect.paneId !== pane.getId()) {
+      return
+    }
+    const x = Math.min(rect.x1, rect.x2)
+    const y = Math.min(rect.y1, rect.y2)
+    const width = Math.abs(rect.x2 - rect.x1)
+    const height = Math.abs(rect.y2 - rect.y1)
+    if (width < 1 && height < 1) {
+      return
+    }
+    ctx.save()
+    ctx.fillStyle = SELECTION_RECT_FILL
+    ctx.strokeStyle = SELECTION_RECT_STROKE
+    ctx.lineWidth = 1
+    ctx.fillRect(x, y, width, height)
+    // The half-pixel offset keeps the 1px border crisp instead of letting it
+    // straddle two device pixels.
+    ctx.strokeRect(x + 0.5, y + 0.5, width - 1, height - 1)
+    ctx.restore()
   }
 
   /**

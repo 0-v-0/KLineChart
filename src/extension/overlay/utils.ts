@@ -103,6 +103,63 @@ export function constrainToAxis(from: Coordinate, to: Coordinate): Coordinate {
   return Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? { x: to.x, y: from.y } : { x: from.x, y: to.y }
 }
 
+const REGION_LEFT = 1
+const REGION_RIGHT = 2
+const REGION_TOP = 4
+const REGION_BOTTOM = 8
+
+/**
+ * Does the segment `a` → `b` meet the axis-aligned rect? Cohen–Sutherland region
+ * codes: accept when either end is inside, reject when both ends sit outside the
+ * same side, and otherwise clip the segment against that side and look again.
+ * A drawing counts as swept when a segment crosses the marquee, not only when a
+ * handle lands inside it — a trend line through the box has both ends outside.
+ */
+export function segmentIntersectsRect(a: Coordinate, b: Coordinate, left: number, top: number, right: number, bottom: number): boolean {
+  const regionOf = (p: Coordinate): number => (p.x < left ? REGION_LEFT : 0) | (p.x > right ? REGION_RIGHT : 0) | (p.y < top ? REGION_TOP : 0) | (p.y > bottom ? REGION_BOTTOM : 0)
+  let x1 = a.x
+  let y1 = a.y
+  let x2 = b.x
+  let y2 = b.y
+  let r1 = regionOf(a)
+  let r2 = regionOf(b)
+  for (;;) {
+    if ((r1 | r2) === 0) {
+      return true
+    }
+    if ((r1 & r2) !== 0) {
+      return false
+    }
+    // Clip against the first side the offending end is outside of. The other
+    // end is inside that side, so the divisor below cannot be zero.
+    const outside = r1 !== 0 ? r1 : r2
+    let x = 0
+    let y = 0
+    if ((outside & REGION_BOTTOM) !== 0) {
+      x = x1 + ((x2 - x1) * (bottom - y1)) / (y2 - y1)
+      y = bottom
+    } else if ((outside & REGION_TOP) !== 0) {
+      x = x1 + ((x2 - x1) * (top - y1)) / (y2 - y1)
+      y = top
+    } else if ((outside & REGION_RIGHT) !== 0) {
+      y = y1 + ((y2 - y1) * (right - x1)) / (x2 - x1)
+      x = right
+    } else {
+      y = y1 + ((y2 - y1) * (left - x1)) / (x2 - x1)
+      x = left
+    }
+    if (outside === r1) {
+      x1 = x
+      y1 = y
+      r1 = regionOf({ x: x1, y: y1 })
+    } else {
+      x2 = x
+      y2 = y
+      r2 = regionOf({ x: x2, y: y2 })
+    }
+  }
+}
+
 /**
  * Snap `coordinate` to the nearest 45° ray from `anchor` — the Shift gesture on
  * a point handle or an in-progress line. The cursor is projected onto the ray

@@ -46,6 +46,7 @@ import { OVERLAY_ID_PREFIX, type Overlay, type OverlayCreate, type OverlayFigure
 import { getSupportedLocales } from './extension/i18n/index'
 import { getIndicatorClass } from './extension/indicator/index'
 import { getOverlayInnerClass } from './extension/overlay/index'
+import { segmentIntersectsRect } from './extension/overlay/utils'
 import { getStyles as getExtensionStyles } from './extension/styles/index'
 import type { DecimalFold, FormatBigNumber, FormatDateParams, FormatDateType, FormatExtendText, FormatExtendTextParams, Formatter, Hotkey, Layout, Options, ThousandsSeparator, ZoomAnchor, ZoomAnchorType } from './Options'
 import { PaneIdConstants } from './pane/types'
@@ -76,6 +77,18 @@ export interface EventOverlayInfo {
 }
 
 type ProcessOverlayEventCallback = (overlay: OverlayImp, figure: Nullable<OverlayFigure>) => boolean
+
+/**
+ * A marquee drag in progress. `x1/y1` is where the press landed and `x2/y2`
+ * follows the pointer, so either may be the smaller — consumers normalise.
+ */
+export interface OverlaySelectionRect {
+  paneId: string
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+}
 
 const DEFAULT_BAR_SPACE = 10
 
@@ -463,6 +476,9 @@ export default class StoreImp implements Store {
    * add to the set, and the clicked one stays the one whose handles are drawn.
    */
   private _selectedOverlayIds = new Set<string>()
+
+  /** The marquee being dragged, while one is; see `OverlaySelectionRect`. */
+  private _overlaySelectionRect: Nullable<OverlaySelectionRect> = null
 
   /**
    * Default layout params
@@ -2211,6 +2227,61 @@ export default class StoreImp implements Store {
   private _notifySelectionChanged(): void {
     this._chart.updatePane(UpdateLevel.Overlay)
     this.executeAction('onSelectedOverlaysChange', this.getSelectedOverlayIds())
+  }
+
+  getOverlaySelectionRect(): Nullable<OverlaySelectionRect> {
+    return this._overlaySelectionRect
+  }
+
+  setOverlaySelectionRect(rect: Nullable<OverlaySelectionRect>): void {
+    this._overlaySelectionRect = rect
+    this._chart.updatePane(UpdateLevel.Overlay)
+  }
+
+  /**
+   * Every drawing on the pane whose shape meets the marquee. Points are tested
+   * one by one and the segment between consecutive points too, so a trend line
+   * crossing the box counts even with both of its handles outside it.
+   */
+  selectOverlaysByRect(rect: OverlaySelectionRect): string[] {
+    // The Store holds the `Chart` interface, which does not carry the pane
+    // lookups the axis needs; the concrete ChartImp does.
+    interface DrawPaneLike {
+      getAxisComponent: () => { convertToPixel: (value: number) => number }
+    }
+    interface ChartLike {
+      getDrawPaneById: (id: string) => Nullable<DrawPaneLike>
+    }
+    const yAxis = (this._chart as unknown as ChartLike).getDrawPaneById(rect.paneId)?.getAxisComponent()
+    if (yAxis === undefined) {
+      return []
+    }
+    const left = Math.min(rect.x1, rect.x2)
+    const right = Math.max(rect.x1, rect.x2)
+    const top = Math.min(rect.y1, rect.y2)
+    const bottom = Math.max(rect.y1, rect.y2)
+    const ids: string[] = []
+    this.getOverlaysByPaneId(rect.paneId).forEach((overlay) => {
+      if (!this.isOverlayShown(overlay) || overlay.isDrawing()) {
+        return
+      }
+      const coordinates = overlay.points.map((point) => {
+        const dataIndex = isNumber(point.timestamp) ? this.timestampToFloatIndex(point.timestamp) : point.dataIndex
+        return {
+          x: isNumber(dataIndex) ? this.dataIndexToCoordinate(dataIndex) : 0,
+          y: isNumber(point.value) ? yAxis.convertToPixel(point.value) : 0
+        }
+      })
+      if (coordinates.length === 0) {
+        return
+      }
+      const inside = (c: Coordinate) => c.x >= left && c.x <= right && c.y >= top && c.y <= bottom
+      const hit = coordinates.some(inside) || coordinates.some((c, i) => i > 0 && segmentIntersectsRect(coordinates[i - 1], c, left, top, right, bottom))
+      if (hit) {
+        ids.push(overlay.id)
+      }
+    })
+    return ids
   }
 
   isOverlayEmpty(): boolean {
