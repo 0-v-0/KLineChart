@@ -25,7 +25,8 @@
  */
 
 import { getHotkey, getSupportedHotkeys, registerHotkey } from './extension/hotkey/index'
-import type { Styles, LineType, PolygonType, TooltipShowRule, TooltipShowType, FeatureType, TooltipFeaturePosition, CandleType, CandleTooltipRectPosition } from './common/Styles'
+import type { Styles, LineType, PolygonType, TooltipShowRule, TooltipShowType, FeatureType, TooltipFeaturePosition, CandleType, CandleTooltipRectPosition, CandleLineStyle, CandleBaselineStyle, CandleHlcAreaStyle, CandleFootprintStyle } from './common/Styles'
+import { footprintImbalances, footprintPoc, formatFootprintVolume, type FootprintBarData, type FootprintImbalances, type FootprintRow } from './common/Footprint'
 import type Nullable from './common/Nullable'
 import type DeepPartial from './common/DeepPartial'
 import type { KLineData } from './common/Data'
@@ -181,6 +182,10 @@ export {
   // types
   type ActionType,
   type BarSpaceLimit,
+  type CandleBaselineStyle,
+  type CandleFootprintStyle,
+  type CandleHlcAreaStyle,
+  type CandleLineStyle,
   type CandleTooltipRectPosition,
   type CandleType,
   type Chart,
@@ -189,6 +194,9 @@ export {
   type FeatureType,
   type FigureLevel,
   type FigureTemplate,
+  type FootprintBarData,
+  type FootprintImbalances,
+  type FootprintRow,
   type FormatDateType,
   type Indicator,
   type IndicatorCreate,
@@ -231,6 +239,7 @@ export {
   type YAxisOverride,
   type ZoomAnchor,
   // values
+  checkCoordinateOnText,
   createPriceLine,
   createPropertiesStore,
   createTradeLine,
@@ -241,6 +250,9 @@ export {
   FIBONACCI_EXTENSION_LEVELS,
   FIBONACCI_FAN_LEVELS,
   FIBONACCI_RETRACEMENT_LEVELS,
+  footprintImbalances,
+  footprintPoc,
+  formatFootprintVolume,
   getFigureClass,
   getHotkey,
   getOverlayClass,
