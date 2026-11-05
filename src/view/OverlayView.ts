@@ -337,6 +337,13 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
                 }
               }
               let prevented = false
+              // A handle drag lands where the handle landed, not under the
+              // pointer: the candle snap, the magnet and the Shift snap all
+              // move it. Puts the crosshair on the line the user is shaping.
+              if (figureType === 'point') {
+                const at = extraHandle ? this._extraHandleCoordinate(overlay, figureIndex) : this._pointToCoordinate(overlay.points[figureIndex])
+                this.getWidget().setPinnedCrosshair(at === null ? null : { x: at.x, y: at.y })
+              }
               overlay.onPressedMoving?.({
                 chart,
                 overlay,
@@ -344,6 +351,9 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
                 ...event,
                 preventDefault: () => {
                   prevented = true
+                },
+                pinCrosshair: (coordinate) => {
+                  this.getWidget().setPinnedCrosshair(coordinate)
                 }
               })
               // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
@@ -1028,6 +1038,13 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
   /** Where one point of a drawing (or of its tool-drawn handles) sits on screen. */
   private _pointToCoordinate(point: Partial<Point> | undefined): Nullable<Coordinate> {
     return point === undefined ? null : this._positionOf(point, false)
+  }
+
+  /** Where a handle the tool draws for itself sits right now. */
+  private _extraHandleCoordinate(overlay: OverlayImp, figureIndex: number): Nullable<Coordinate> {
+    const handles = overlay.createExtraHandles?.({ overlay, coordinates: this._overlayCoordinates(overlay) })
+    const handle = handles?.[figureIndex - overlay.points.length]
+    return handle === undefined ? null : { x: handle.x, y: handle.y }
   }
 
   private _positionOf(point: Partial<Point>, isContinuous: boolean): Coordinate {

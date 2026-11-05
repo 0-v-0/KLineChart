@@ -123,6 +123,12 @@ export interface OverlayEvent<E> extends Partial<MouseTouchEvent> {
   figure?: OverlayFigure
   overlay: Overlay<E>
   chart: Chart
+  /**
+   * `onPressedMoving` only: put the crosshair here (pane px) instead of under
+   * the pointer, so it sits on the line being dragged once that line snaps or
+   * lags the pointer. A missing axis stays with the pointer.
+   */
+  pinCrosshair?: (coordinate: Partial<Coordinate>) => void
 }
 
 export interface OverlayTextChangeEvent<E> {
