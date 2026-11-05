@@ -1971,11 +1971,21 @@ export default class StoreImp implements Store {
   }
 
   private _sortOverlays(paneId?: string): void {
+    // Hover is a sort key, not a zLevel override: the hovered drawing is
+    // painted last without its chosen zLevel being touched. Overwriting zLevel
+    // made a drawing at or above OVERLAY_Z_LEVEL_ABOVE_CROSSHAIR jump into the
+    // second pass for the duration of a hover, and left a host that only draws
+    // the first pass with the hovered drawing missing altogether.
+    // `fixedZLevel` opts a drawing out of that raise, so a control overlay can
+    // keep the position its own zLevel describes.
+    const hoverId = this._hoverOverlayInfo.overlay?.id
+    const raised = (overlay: OverlayImp): number => (overlay.fixedZLevel ? 0 : Number(overlay.id === hoverId))
+    const compare = (o1: OverlayImp, o2: OverlayImp): number => raised(o1) - raised(o2) || o1.zLevel - o2.zLevel
     if (isString(paneId)) {
-      this._overlays.get(paneId)?.sort((o1, o2) => o1.zLevel - o2.zLevel)
+      this._overlays.get(paneId)?.sort(compare)
     } else {
       this._overlays.forEach((paneOverlays) => {
-        paneOverlays.sort((o1, o2) => o1.zLevel - o2.zLevel)
+        paneOverlays.sort(compare)
       })
     }
   }
@@ -2158,21 +2168,13 @@ export default class StoreImp implements Store {
         let ignoreUpdateFlag = false
         let sortFlag = false
         if (overlay !== null) {
-          if (!overlay.fixedZLevel) {
-            overlay.override({ zLevel: overlay.getPrevZLevel() })
-            sortFlag = true
-          }
+          sortFlag = true
           if (processOnMouseLeaveEvent(overlay, figure)) {
             ignoreUpdateFlag = true
           }
         }
-
         if (infoOverlay !== null) {
-          if (!infoOverlay.fixedZLevel) {
-            infoOverlay.setPrevZLevel(infoOverlay.zLevel)
-            infoOverlay.override({ zLevel: Number.MAX_SAFE_INTEGER })
-            sortFlag = true
-          }
+          sortFlag = true
           if (processOnMouseEnterEvent(infoOverlay, info.figure)) {
             ignoreUpdateFlag = true
           }

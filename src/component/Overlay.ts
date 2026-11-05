@@ -201,12 +201,13 @@ export interface Overlay<E = unknown> extends OverlayEventCollection<E> {
   zLevel: number
 
   /**
-   * Whether `zLevel` should stay fixed while the overlay is hovered.
+   * Whether the overlay should keep its position while it is hovered.
    *
-   * By default the hovered overlay is temporarily raised above every other
-   * overlay, which makes it impossible to keep a control overlay reliably on
-   * top. Set this to `true` to opt the overlay out of that raise and always
-   * honour its declared `zLevel`.
+   * By default the hovered overlay is sorted to the front so its handles stay
+   * reachable, which makes it impossible to keep a control overlay reliably in
+   * one place. Set this to `true` to opt out of that raise and always honour
+   * the order its declared `zLevel` gives it. The `zLevel` itself is never
+   * changed by a hover, either way.
    */
   fixedZLevel: boolean
 
@@ -410,8 +411,6 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
   onDeselected: Nullable<OverlayEventCallback<E>> = null
   onTextChange: Nullable<OverlayTextChangeCallback<E>> = null
 
-  private _prevZLevel = 0
-
   private _prevOverlay: Overlay<E>
 
   private _prevPressedPoint: Nullable<Partial<Point>> = null
@@ -463,14 +462,6 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
         })
       }
     }
-  }
-
-  getPrevZLevel(): number {
-    return this._prevZLevel
-  }
-
-  setPrevZLevel(zLevel: number): void {
-    this._prevZLevel = zLevel
   }
 
   shouldUpdate(): { draw: boolean; sort: boolean } {
