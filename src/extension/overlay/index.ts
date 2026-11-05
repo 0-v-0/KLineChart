@@ -51,6 +51,7 @@ import image from './image'
 import measure from './measure'
 import note from './note'
 import parallelogram from './parallelogram'
+import parallelChannel from './parallelChannel'
 import parallelStraightLine from './parallelStraightLine'
 import pin from './pin'
 import priceChannelLine from './priceChannelLine'
@@ -111,6 +112,7 @@ const proExtensions = [
   parallelogram,
   brush,
   parallelStraightLine,
+  parallelChannel,
   priceChannelLine,
   verticalRayLine,
   verticalSegment,
