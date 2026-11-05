@@ -21,6 +21,7 @@ import type Nullable from './common/Nullable'
 import { UpdateLevel } from './common/Updater'
 import { isAppleOS } from './common/utils/platform'
 import { isArray, isFunction, isValid } from './common/utils/typeChecks'
+import { yAxisWheelRangeFactor } from './common/utils/yAxisWheelZoom'
 
 import type { AxisRange } from './component/Axis'
 import type XAxis from './component/XAxis'
@@ -313,7 +314,7 @@ export default class Event implements EventHandler {
       const yAxisWidget = widget as Widget<DrawPane<YAxisImp>>
       const yAxis = this._getYAxisByWidget(yAxisWidget)
       if (yAxis.scrollZoomEnabled) {
-        const scaleFactor = 1 + scale * 0.05
+        const scaleFactor = yAxisWheelRangeFactor(scale)
         const targetYAxis = this._getYAxisScaleTargetByWidget(yAxisWidget)
         this._zoomYAxis(targetYAxis, scaleFactor)
         this._syncManualYAxesValueRange(yAxisWidget, targetYAxis)
