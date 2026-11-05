@@ -70,6 +70,12 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
   /** The click that ends a press `_dragDraw` already handled. */
   private _swallowClick = false
 
+  /**
+   * The rest of the selection, armed by a press on one of the group's bodies so
+   * they travel with it; empty unless a group drag is in progress.
+   */
+  private _coDraggedOverlays: OverlayImp[] = []
+
   constructor(widget: DrawWidget<DrawPane<C>>) {
     super(widget)
     this._initEvent()
@@ -269,6 +275,15 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
             return true
           }
         }
+        // Each drawing that came along gets its own `onPressedMoveEnd` (with no
+        // figure — it was never itself pressed), so a host's per-drawing save
+        // hook fires for all of them and not only for the one that was grabbed.
+        if (this._coDraggedOverlays.length > 0) {
+          for (const other of this._coDraggedOverlays) {
+            other.onPressedMoveEnd?.({ chart, overlay: other, figure: undefined, ...event })
+          }
+          this._coDraggedOverlays = []
+        }
         this._pressStart = null
         const { overlay, figure } = chartStore.getPressedOverlayInfo()
         if (overlay !== null) {
@@ -350,6 +365,11 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
                   overlay.eventPressedPointMove(point, figureIndex)
                 } else {
                   overlay.eventPressedOtherMove(point, this.getWidget().getPane().getChart().getChartStore())
+                  // The rest of the group travels by the same delta, each from
+                  // its own snapshot, so the shapes keep their spacing.
+                  for (const other of this._coDraggedOverlays) {
+                    other.eventPressedOtherMove(this._coordinateToPoint(other, moveEvent), this.getWidget().getPane().getChart().getChartStore())
+                  }
                 }
               }
               let prevented = false
@@ -815,11 +835,35 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       }
       const pane = this.getWidget().getPane()
       const paneId = pane.getId()
+      const chartStore = pane.getChart().getChartStore()
       this._pressStart = { x: event.x, y: event.y }
       overlay.startPressedMove(this._coordinateToPoint(overlay, event))
+
+      // Multi-selection drag: grabbing the *body* (not a single point handle) of
+      // a drawing that is part of a group arms every other selected drawing in
+      // the same pane to travel alongside it. Each takes its own snapshot so it
+      // translates from its own starting point, exactly as a lone drag would.
+      this._coDraggedOverlays = []
+      if (figureType === 'other' && !overlay.lock) {
+        const selectedIds = chartStore.getSelectedOverlayIds()
+        if (selectedIds.includes(overlay.id) && selectedIds.length > 1) {
+          for (const id of selectedIds) {
+            if (id === overlay.id) {
+              continue
+            }
+            const other = chartStore.getOverlaysByFilter({ id, paneId })[0]
+            if (other === undefined || other.lock) {
+              continue
+            }
+            other.startPressedMove(this._coordinateToPoint(other, event))
+            this._coDraggedOverlays.push(other)
+          }
+        }
+      }
+
       if (checkOverlayFigureEvent('onPressedMoveStart', figure)) {
         overlay.onPressedMoveStart?.({ chart: pane.getChart(), overlay, figure, ...event })
-        pane.getChart().getChartStore().setPressedOverlayInfo({ paneId, overlay, figureType, figureIndex, figure })
+        chartStore.setPressedOverlayInfo({ paneId, overlay, figureType, figureIndex, figure })
         return !overlay.isDrawing()
       }
       return false
