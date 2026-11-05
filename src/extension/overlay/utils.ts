@@ -100,3 +100,57 @@ export function isDragBeyond(from: Coordinate, to: Coordinate, minPx = DRAG_DRAW
 export function constrainToAxis(from: Coordinate, to: Coordinate): Coordinate {
   return Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? { x: to.x, y: from.y } : { x: from.x, y: to.y }
 }
+
+/**
+ * Snap `coordinate` to the nearest 45° ray from `anchor` — the Shift gesture on
+ * a point handle or an in-progress line. The cursor is projected onto the ray
+ * rather than kept at its raw distance, so sliding sideways shortens the line
+ * instead of swinging its far end out past the pointer.
+ */
+export function snapToAngles(anchor: Coordinate, coordinate: Coordinate): Coordinate {
+  const dx = coordinate.x - anchor.x
+  const dy = coordinate.y - anchor.y
+  const step = Math.PI / 4
+  const angle = Math.round(Math.atan2(dy, dx) / step) * step
+  const cos = Math.cos(angle)
+  const sin = Math.sin(angle)
+  const reach = dx * cos + dy * sin
+  return { x: anchor.x + reach * cos, y: anchor.y + reach * sin }
+}
+
+/**
+ * Snap a corner to a square: both sides take the longer distance, each on the
+ * side the cursor is. This is what keeps a rectangle from becoming a
+ * near-square by accident.
+ */
+export function snapToSquare(anchor: Coordinate, coordinate: Coordinate): Coordinate {
+  const dx = coordinate.x - anchor.x
+  const dy = coordinate.y - anchor.y
+  const side = Math.max(Math.abs(dx), Math.abs(dy))
+  return { x: anchor.x + (dx < 0 ? -side : side), y: anchor.y + (dy < 0 ? -side : side) }
+}
+
+/**
+ * The third point of an ellipse or a rotated rectangle, snapped so the shape
+ * keeps the axis it was given: the cursor keeps its position along the axis and
+ * its side of it, and only its distance from the axis is fixed — at half the
+ * axis length, which makes the third point sit on the short radius.
+ */
+export function snapAcrossAxis(axisStart: Coordinate, axisEnd: Coordinate, coordinate: Coordinate): Coordinate {
+  const ax = axisEnd.x - axisStart.x
+  const ay = axisEnd.y - axisStart.y
+  const length = Math.hypot(ax, ay)
+  if (length === 0) {
+    return coordinate
+  }
+  const nx = -ay / length
+  const ny = ax / length
+  const side = (coordinate.x - axisStart.x) * nx + (coordinate.y - axisStart.y) * ny < 0 ? -1 : 1
+  const along = ((coordinate.x - axisStart.x) * ax + (coordinate.y - axisStart.y) * ay) / length
+  const mid = { x: axisStart.x + ax / 2, y: axisStart.y + ay / 2 }
+  const reach = along - length / 2
+  return {
+    x: mid.x + (ax / length) * reach + nx * side * (length / 2),
+    y: mid.y + (ay / length) * reach + ny * side * (length / 2)
+  }
+}

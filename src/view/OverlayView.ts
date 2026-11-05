@@ -29,7 +29,7 @@ import { setDrawingOverlay } from '../component/Figure'
 import type { YAxis } from '../component/YAxis'
 import type { TextAttrs } from '../extension/figure/text'
 import { getTextRect } from '../extension/figure/text'
-import { constrainToAxis, isDragBeyond } from '../extension/overlay/utils'
+import { constrainToAxis, isDragBeyond, snapAcrossAxis, snapToAngles, snapToSquare } from '../extension/overlay/utils'
 import type DrawPane from '../pane/DrawPane'
 import { PaneIdConstants } from '../pane/types'
 import type { EventOverlayInfoFigureType } from '../Store'
@@ -299,10 +299,13 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         if (overlay !== null) {
           if (checkOverlayFigureEvent('onPressedMoving', figure)) {
             if (!overlay.lock) {
-              // Shift on a body drag locks it to one axis. Not on a point
-              // handle: that one is where the user put it, and pinning it to a
-              // line through the press would fight the grab.
-              const moveEvent = event.shiftKey === true && figureType !== 'point' ? this._constrainToDragAxis(event) : event
+              // Shift locks a body drag to one axis, and snaps a point handle
+              // to a ray from the point before it (to a square, for a box).
+              const extraHandle = figureType === 'point' && figureIndex >= overlay.points.length
+              let moveEvent = event
+              if (event.shiftKey === true && !extraHandle) {
+                moveEvent = figureType === 'point' ? { ...event, ...this._shiftSnapPoint(overlay, event, figureIndex) } : this._constrainToDragAxis(event)
+              }
               const point = this._coordinateToPoint(overlay, moveEvent)
               // When the pressed figure declares `noTranslate`, the
               // engine skips the default point-translation step
@@ -312,7 +315,6 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
               const noTranslate = (figure as { noTranslate?: boolean } | null)?.noTranslate === true
               // A handle past the last point is one the tool draws itself: it
               // has no point to translate, so the tool moves it.
-              const extraHandle = figureType === 'point' && figureIndex >= overlay.points.length
               if (extraHandle) {
                 overlay.moveExtraHandle?.({
                   overlay,
@@ -881,6 +883,32 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     return { ...event, ...constrainToAxis(start, event) }
   }
 
+  /**
+   * Shift on a point handle — the shape decides what "straight" means. A circle
+   * has no sides to keep, a box keeps them equal, an ellipse keeps the axis it
+   * was handed (its third point describes the short radius), and everything
+   * else follows a 45° ray from the point before it.
+   */
+  private _shiftSnapPoint(overlay: OverlayImp, event: MouseTouchEvent, figureIndex: number): Coordinate {
+    const cursor = { x: event.x, y: event.y }
+    if (overlay.name === 'circle') {
+      return cursor
+    }
+    if (overlay.name === 'rect' || overlay.name === 'box') {
+      // A corner is pulled from the one across the box, so the cursor decides
+      // the side and the longer of the two distances decides its length.
+      const anchor = this._pointToCoordinate(overlay.points[figureIndex === 0 ? 1 : 0])
+      return anchor === null ? cursor : snapToSquare(anchor, cursor)
+    }
+    if ((overlay.name === 'ellipse' || overlay.name === 'rotatedRectangle') && figureIndex === 2) {
+      const start = this._pointToCoordinate(overlay.points[0])
+      const end = this._pointToCoordinate(overlay.points[1])
+      return start === null || end === null ? cursor : snapAcrossAxis(start, end, cursor)
+    }
+    const anchor = this._pointToCoordinate(overlay.points[figureIndex - 1])
+    return anchor === null ? cursor : snapToAngles(anchor, cursor)
+  }
+
   private _coordinateToPoint(o: Overlay, coordinate: Coordinate): Partial<Point> {
     const point: Partial<Point> = {}
     const pane = this.getWidget().getPane()
@@ -992,32 +1020,39 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
    * handle drag, so both agree on where a point is.
    */
   private _overlayCoordinates(overlay: OverlayImp): Coordinate[] {
+    // For continuous drawing overlays, use float indices for smooth rendering
+    const isContinuous = overlay.isContinuousDrawing()
+    return overlay.points.map((point) => this._positionOf(point, isContinuous))
+  }
+
+  /** Where one point of a drawing (or of its tool-drawn handles) sits on screen. */
+  private _pointToCoordinate(point: Partial<Point> | undefined): Nullable<Coordinate> {
+    return point === undefined ? null : this._positionOf(point, false)
+  }
+
+  private _positionOf(point: Partial<Point>, isContinuous: boolean): Coordinate {
     const pane = this.getWidget().getPane()
     const chartStore = pane.getChart().getChartStore()
     const yAxis = pane.getAxisComponent() as unknown as Nullable<YAxis>
-    // For continuous drawing overlays, use float indices for smooth rendering
-    const isContinuous = overlay.isContinuousDrawing()
-    return overlay.points.map((point) => {
-      let dataIndex: Nullable<number> = null
-      if (isContinuous && isNumber(point.timestamp)) {
-        // Use timestampToFloatIndex for sub-bar precision
-        dataIndex = chartStore.timestampToFloatIndex(point.timestamp)
-      } else if (isNumber(point.timestamp)) {
-        // For regular overlays, use integer timestamp lookup
-        dataIndex = chartStore.timestampToDataIndex(point.timestamp)
-      } else if (isNumber(point.dataIndex)) {
-        // Fallback to dataIndex if no timestamp
-        dataIndex = point.dataIndex
-      }
-      const coordinate = { x: 0, y: 0 }
-      if (isNumber(dataIndex)) {
-        coordinate.x = chartStore.dataIndexToCoordinate(dataIndex)
-      }
-      if (isNumber(point.value)) {
-        coordinate.y = yAxis?.convertToPixel(point.value) ?? 0
-      }
-      return coordinate
-    })
+    let dataIndex: Nullable<number> = null
+    if (isContinuous && isNumber(point.timestamp)) {
+      // Use timestampToFloatIndex for sub-bar precision
+      dataIndex = chartStore.timestampToFloatIndex(point.timestamp)
+    } else if (isNumber(point.timestamp)) {
+      // For regular overlays, use integer timestamp lookup
+      dataIndex = chartStore.timestampToDataIndex(point.timestamp)
+    } else if (isNumber(point.dataIndex)) {
+      // Fallback to dataIndex if no timestamp
+      dataIndex = point.dataIndex
+    }
+    const coordinate = { x: 0, y: 0 }
+    if (isNumber(dataIndex)) {
+      coordinate.x = chartStore.dataIndexToCoordinate(dataIndex)
+    }
+    if (isNumber(point.value)) {
+      coordinate.y = yAxis?.convertToPixel(point.value) ?? 0
+    }
+    return coordinate
   }
 
   private _drawOverlay(ctx: CanvasRenderingContext2D, overlay: OverlayImp): void {
