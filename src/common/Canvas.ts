@@ -76,7 +76,12 @@ export default class Canvas {
           this._resizeObserver = new ResizeObserver((entries: ResizeObserverEntry[]) => {
             const entry = entries.find((entry: ResizeObserverEntry) => entry.target === this._element)
             const size = entry?.devicePixelContentBoxSize[0]
-            if (this._sizeInitialized && isValid(size)) {
+            // The first notification must not wait for `update`: it may be the
+            // only one for a canvas whose CSS size was already applied. Gating
+            // on `_sizeInitialized` dropped that resize, left the backing store
+            // at its old size, and `update` then waited forever for a second
+            // notification that never came -- the chart froze on its last frame.
+            if (isValid(size)) {
               this._nextPixelWidth = size.inlineSize
               this._nextPixelHeight = size.blockSize
               if (this._pixelWidth !== this._nextPixelWidth || this._pixelHeight !== this._nextPixelHeight) {
