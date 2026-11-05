@@ -1626,26 +1626,22 @@ export default class StoreImp implements Store {
     return floorIndex
   }
 
-  zoom(scale: number, coordinate: Nullable<Partial<Coordinate>>, position: 'main' | 'xAxis'): void {
+  zoom(scale: number, coordinate: Nullable<Partial<Coordinate>>, position: 'main' | 'xAxis', anchorAtCursor = false): void {
     if (!this._zoomEnabled) {
       return
     }
     const zoomCoordinate: Partial<Coordinate> = coordinate ?? { x: this._crosshair.x ?? this._totalBarSpace / 2 }
 
-    if (position === 'xAxis') {
-      if (this._zoomAnchor.xAxis === 'last_bar') {
-        const lastBarX = this.dataIndexToCoordinate(this._dataList.length - 1)
-        if (lastBarX >= 0 && lastBarX <= this._totalBarSpace) {
-          zoomCoordinate.x = lastBarX
-        }
+    const anchor = anchorAtCursor ? 'cursor' : this._zoomAnchor[position]
+    if (anchor === 'last_bar') {
+      const lastBarX = this.dataIndexToCoordinate(this._dataList.length - 1)
+      if (lastBarX >= 0 && lastBarX <= this._totalBarSpace) {
+        zoomCoordinate.x = lastBarX
       }
-    } else {
-      if (this._zoomAnchor.main === 'last_bar') {
-        const lastBarX = this.dataIndexToCoordinate(this._dataList.length - 1)
-        if (lastBarX >= 0 && lastBarX <= this._totalBarSpace) {
-          zoomCoordinate.x = lastBarX
-        }
-      }
+    } else if (anchor === 'right_edge') {
+      // TradingView's right_bar_stays_on_scroll: the bar sitting at the right
+      // edge stays there, so a gap to the right of the last bar scales too.
+      zoomCoordinate.x = this._totalBarSpace
     }
     const x = zoomCoordinate.x!
     const floatIndex = this.coordinateToFloatIndex(x)

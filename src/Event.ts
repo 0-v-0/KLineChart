@@ -296,7 +296,17 @@ export default class Event implements EventHandler {
     const event = this._makeWidgetEvent(e, widget)
     const name = widget?.getName()
     if (name === WidgetNameConstants.MAIN) {
-      this._chart.getChartStore().zoom(scale, { x: event.x, y: event.y }, 'main')
+      // Cmd/Ctrl + wheel always zooms at the cursor, whatever anchor is configured.
+      const atCursor = event.metaKey === true || event.ctrlKey === true
+      this._chart.getChartStore().zoom(scale, { x: event.x, y: event.y }, 'main', atCursor)
+      return true
+    }
+    if (name === WidgetNameConstants.X_AXIS && widget !== null) {
+      // The wheel over the time axis zooms around the right edge; Cmd/Ctrl zooms
+      // at the cursor instead, matching the main pane's behaviour.
+      const atCursor = event.metaKey === true || event.ctrlKey === true
+      const x = atCursor ? event.x : widget.getBounding().width
+      this._chart.getChartStore().zoom(scale, { x }, 'xAxis', atCursor)
       return true
     }
     if (name === WidgetNameConstants.Y_AXIS) {
