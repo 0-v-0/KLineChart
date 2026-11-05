@@ -297,13 +297,23 @@ export interface CandleTooltipStyle extends TooltipStyle {
   rect: CandleTooltipRectStyle
 }
 
-export type CandleType = 'candle_solid' | 'candle_stroke' | 'candle_up_stroke' | 'candle_down_stroke' | 'ohlc' | 'area' | 'heikin_ashi' | 'footprint' | 'line' | 'line_markers' | 'step_line' | 'hlc_area' | 'baseline'
+export type CandleType = 'candle_solid' | 'candle_stroke' | 'candle_up_stroke' | 'candle_down_stroke' | 'ohlc' | 'area' | 'heikin_ashi' | 'footprint' | 'line' | 'line_markers' | 'step_line' | 'hlc_area' | 'baseline' | 'column' | 'high_low'
 
 /** Types drawn as one continuous series by `CandleLineView`, rather than per-bar shapes. */
 export type CandleLineSeriesType = 'line' | 'line_markers' | 'step_line' | 'hlc_area' | 'baseline'
 
 export function isLineSeriesType(type: CandleType): type is CandleLineSeriesType {
   return type === 'line' || type === 'line_markers' || type === 'step_line' || type === 'hlc_area' || type === 'baseline'
+}
+
+/**
+ * Whether a chart type draws the bar's high and low, rather than only its
+ * close. A close-only series has nothing for a high/low price mark to point at,
+ * and must not stretch the price axis to wicks it never draws. `hlc_area` and
+ * `high_low` are line-ish renderers but do draw both, hence the explicit opt-in.
+ */
+export function candleTypeUsesHighLow(type: CandleType): boolean {
+  return type === 'hlc_area' || type === 'high_low' || !(type === 'area' || type === 'column' || isLineSeriesType(type))
 }
 
 /**

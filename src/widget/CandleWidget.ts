@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-import { isLineSeriesType } from '../common/Styles'
+import { candleTypeUsesHighLow, isLineSeriesType } from '../common/Styles'
 import type { YAxis } from '../component/YAxis'
 import type AxisPane from '../pane/DrawPane'
 import CandleAreaView from '../view/CandleAreaView'
@@ -51,7 +51,11 @@ export default class CandleWidget extends IndicatorWidget {
       } else {
         this._candleBarView.draw(ctx)
       }
-      this._candleHighLowPriceView.draw(ctx)
+      // A close-only series (area, column, line, step, baseline) has no wick
+      // for a high/low label to point at. `hlc_area` and `high_low` do.
+      if (candleTypeUsesHighLow(type)) {
+        this._candleHighLowPriceView.draw(ctx)
+      }
     }
     this._candleLastPriceLineView.draw(ctx)
   }

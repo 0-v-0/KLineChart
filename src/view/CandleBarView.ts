@@ -114,6 +114,7 @@ export default class CandleBarView extends ChildrenView {
         halfOhlcSize = Math.floor(ohlcSize / 2)
       }
       const yAxis = pane.getAxisComponent()
+      const boundingHeight = this.getWidget().getBounding().height
       const footprint = this._createFootprintFrame(type, isMain)
       const batch = new RectBatch()
       this.eachChildren((visibleData, barSpace) => {
@@ -130,7 +131,9 @@ export default class CandleBarView extends ChildrenView {
             colors[1] = result.borderColor
             colors[2] = result.wickColor
           } else {
-            const comparePrice = styles.compareRule === 'current_open' ? open : (prev?.close ?? close)
+            // These two have no open-to-close body, so their direction is the
+            // day's move rather than the bar's own shape.
+            const comparePrice = type === 'column' || type === 'high_low' ? (prev?.close ?? open) : styles.compareRule === 'current_open' ? open : (prev?.close ?? close)
             if (close > comparePrice) {
               colors[0] = styles.upColor
               colors[1] = styles.upBorderColor
@@ -183,6 +186,15 @@ export default class CandleBarView extends ChildrenView {
                 } else {
                   layers = this._createSolidBar(x, priceY, barSpace, colors, correction)
                 }
+                break
+              }
+              case 'column': {
+                // A column runs from the close down to the floor of the pane.
+                layers = [{ attrs: [{ x: x - barSpace.halfGapBar, y: closeY, width: barSpace.gapBar + correction, height: Math.max(1, boundingHeight - closeY) }], color: colors[0], borderColor: null }]
+                break
+              }
+              case 'high_low': {
+                layers = [{ attrs: [{ x: x - barSpace.halfGapBar, y: priceY[0], width: barSpace.gapBar + correction, height: Math.max(1, priceY[3] - priceY[0]) }], color: colors[0], borderColor: null }]
                 break
               }
               case 'ohlc': {

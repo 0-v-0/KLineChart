@@ -16,6 +16,7 @@ import type Coordinate from '../common/Coordinate'
 import type { CandleHighLowPriceMarkStyle } from '../common/Styles'
 import { SymbolDefaultPrecisionConstants } from '../common/SymbolInfo'
 import { formatPrecision } from '../common/utils/format'
+import { visibleHighLowMarks } from '../common/utils/highLowMarks'
 import type { YAxis } from '../component/YAxis'
 import View from './View'
 
@@ -28,20 +29,21 @@ export default class CandleHighLowPriceView extends View<YAxis> {
     const highPriceMarkStyles = priceMarkStyles.high
     const lowPriceMarkStyles = priceMarkStyles.low
     if (priceMarkStyles.show && (highPriceMarkStyles.show || lowPriceMarkStyles.show)) {
-      const highestLowestPrice = chartStore.getVisibleRangeHighLowPrice()
+      const highLow = chartStore.getVisibleRangeHighLowPrice()
       const precision = chartStore.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE
       const yAxis = pane.getYAxisComponentById()
 
-      const { price: high, x: highX } = highestLowestPrice[0]
-      const { price: low, x: lowX } = highestLowestPrice[1]
-      const highY = yAxis.convertToPixel(high)
-      const lowY = yAxis.convertToPixel(low)
+      const { high, low } = visibleHighLowMarks(highLow)
+      const highX = highLow[0]?.x ?? 0
+      const lowX = highLow[1]?.x ?? 0
+      const highY = yAxis.convertToPixel(high ?? 0)
+      const lowY = yAxis.convertToPixel(low ?? 0)
       const decimalFold = chartStore.getDecimalFold()
       const thousandsSeparator = chartStore.getThousandsSeparator()
-      if (highPriceMarkStyles.show && high !== Number.MIN_SAFE_INTEGER) {
+      if (highPriceMarkStyles.show && high !== null) {
         this._drawMark(ctx, decimalFold.format(thousandsSeparator.format(formatPrecision(high, precision))), { x: highX, y: highY }, highY < lowY ? [-2, -5] : [2, 5], highPriceMarkStyles)
       }
-      if (lowPriceMarkStyles.show && low !== Number.MAX_SAFE_INTEGER) {
+      if (lowPriceMarkStyles.show && low !== null) {
         this._drawMark(ctx, decimalFold.format(thousandsSeparator.format(formatPrecision(low, precision))), { x: lowX, y: lowY }, highY < lowY ? [2, 5] : [-2, -5], lowPriceMarkStyles)
       }
     }

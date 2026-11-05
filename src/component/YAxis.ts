@@ -15,6 +15,7 @@
 import type Bounding from '../common/Bounding'
 import type Nullable from '../common/Nullable'
 import { SymbolDefaultPrecisionConstants } from '../common/SymbolInfo'
+import { candleTypeUsesHighLow } from '../common/Styles'
 import { calcTextWidth } from '../common/utils/canvas'
 import { formatPrecision } from '../common/utils/format'
 import { getPrecision, index10, log10, nice, round } from '../common/utils/number'
@@ -187,10 +188,12 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
     }
     const visibleRangeDataList = chartStore.getVisibleRangeDataList()
     const candleStyles = chart.getStyles().candle
-    const isArea = candleStyles.type === 'area'
-    const areaValueKey = candleStyles.area.value
+    const candleType = candleStyles.type
+    // A close-only series must not stretch the range to wicks it never draws.
+    const usesHighLow = candleTypeUsesHighLow(candleType)
+    const closeValueKey = candleType === 'area' ? candleStyles.area.value : 'close'
     const shouldUseCandleData = this._shouldUseCandleData()
-    const shouldCompareHighLow = (shouldUseCandleData && !isArea) || (!inCandle && shouldOhlc)
+    const shouldCompareHighLow = (shouldUseCandleData && usesHighLow) || (!inCandle && shouldOhlc)
     visibleRangeDataList.forEach((visibleData) => {
       const dataIndex = visibleData.dataIndex
       const data = visibleData.data.current
@@ -199,8 +202,8 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
           min = Math.min(min, data.low)
           max = Math.max(max, data.high)
         }
-        if (shouldUseCandleData && isArea) {
-          const value = data[areaValueKey]
+        if (shouldUseCandleData && !usesHighLow) {
+          const value = data[closeValueKey]
           if (isNumber(value)) {
             min = Math.min(min, value)
             max = Math.max(max, value)

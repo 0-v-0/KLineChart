@@ -86,13 +86,13 @@ function harness(bars: VisibleRangeData[], options: HarnessOptions = {}): Harnes
     getChart: () => chart,
     getAxisComponent: () => ({ convertToPixel: (value: number) => 100 - value })
   }
-  const view = new CandleBarView({ getPane: () => pane } as never)
+  const view = new CandleBarView({ getPane: () => pane, getBounding: () => ({ width: 300, height: 100 }) } as never)
   view.drawImp(ctx as unknown as CanvasRenderingContext2D)
   return { view, ops, actions }
 }
 
-function bar(x: number, low: number, high: number, open = low, close = high): VisibleRangeData {
-  return { x, data: { prev: null, current: { open, close, high, low, timestamp: x, volume: 1 } } } as unknown as VisibleRangeData
+function bar(x: number, low: number, high: number, open = low, close = high, prev: { close: number } | null = null): VisibleRangeData {
+  return { x, data: { prev, current: { open, close, high, low, timestamp: x, volume: 1 } } } as unknown as VisibleRangeData
 }
 
 const click = (x: number, y: number) => ({ x, y, pageX: x, pageY: y }) as MouseTouchEvent
@@ -225,5 +225,28 @@ describe('CandleBarView footprint', () => {
     expect(ops).toContain('lineTo(160,40.5)')
     // No numbers in this variant, however tall the rows are.
     expect(ops.some((op) => op.startsWith('text('))).toBe(false)
+  })
+})
+
+describe('CandleBarView column and high-low', () => {
+  it('runs a column from the close to the floor of the pane', () => {
+    const { ops } = harness([bar(10, 30, 70, 40, 50)], { type: 'column' })
+    expect(ops).toContain('rect(6,50,9,50)')
+  })
+
+  it('draws a high-low bar as one rect from high to low', () => {
+    const { ops } = harness([upBar(10)], { type: 'high_low' })
+    expect(ops).toContain('rect(6,30,9,40)')
+    // One rect, no wick: the bar is the range itself.
+    expect(ops.filter((op) => op.startsWith('rect(')).length).toBe(1)
+  })
+
+  it('colours them by the day rather than by open against close', () => {
+    // Closing above the open but below the previous close: a down day.
+    const down = harness([bar(20, 40, 60, 45, 55, { close: 58 })], { type: 'column' })
+    // A candle with the same prices but no body rule reads it as up.
+    const up = harness([bar(20, 40, 60, 45, 55, { close: 58 })], { type: 'candle_solid' })
+    expect(down.ops).toContain('fill(#F92855)')
+    expect(up.ops).toContain('fill(#2DC08E)')
   })
 })
