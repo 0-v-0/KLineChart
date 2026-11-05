@@ -13,6 +13,7 @@
  */
 
 import type Coordinate from '../common/Coordinate'
+import type Eventful from '../common/Eventful'
 import type { EventHandler, EventName, MouseTouchEvent, MouseTouchEventCallback } from '../common/EventHandler'
 import type Nullable from '../common/Nullable'
 import type Point from '../common/Point'
@@ -26,6 +27,8 @@ import type OverlayImp from '../component/Overlay'
 import type { Overlay, OverlayExtraHandle, OverlayFigure, OverlayMode } from '../component/Overlay'
 import { checkOverlayFigureEvent, OVERLAY_FIGURE_KEY_PREFIX } from '../component/Overlay'
 import { setDrawingOverlay } from '../component/Figure'
+import type Figure from '../component/Figure'
+import type { FigureCreate } from '../component/Figure'
 import type { YAxis } from '../component/YAxis'
 import type { TextAttrs } from '../extension/figure/text'
 import { getTextRect } from '../extension/figure/text'
@@ -75,6 +78,16 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
    * they travel with it; empty unless a group drag is in progress.
    */
   private _coDraggedOverlays: OverlayImp[] = []
+
+  /**
+   * Which drawing each hit-testable figure belongs to, and whether it is one of
+   * that drawing's handles. Filled while drawing, read by the hit-priority pass
+   * in `_drawPass`.
+   */
+  private readonly _figureOwners = new WeakMap<Eventful, { overlay: OverlayImp; handle: boolean }>()
+
+  /** The drawing whose figures are being created right now; see `createFigure`. */
+  private _drawingOwner: Nullable<{ overlay: OverlayImp; handle: boolean }> = null
 
   constructor(widget: DrawWidget<DrawPane<C>>) {
     super(widget)
@@ -1123,13 +1136,36 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     try {
       const chartStore = this.getWidget().getPane().getChart().getChartStore()
       const overlays = this.getCompleteOverlays()
+      // Hit priority without changing what paints on top: the handles of the
+      // selected drawings, and then of the hovered one, are hit-tested before
+      // everything else in this pass. Otherwise a drawing painted above the
+      // selected one takes the press on the selected one's handle, and the
+      // drag moves the wrong drawing. Handles only — raising a whole selected
+      // drawing let one with a large hit area cover every other drawing, so
+      // none of them could be clicked.
+      const selectedId = chartStore.getClickOverlayInfo().overlay?.id
+      const hoveredId = chartStore.getHoverOverlayInfo().overlay?.id
+      const raisedSelected = new Set<Eventful>()
+      const raisedHovered = new Set<Eventful>()
       overlays.forEach((overlay) => {
         // `zLevel` is opt-in: a drawing that does not ask to sit above the
         // crosshair stays in the first pass, which is where they all were.
         if (chartStore.isOverlayShown(overlay) && overlay.zLevel >= OVERLAY_Z_LEVEL_ABOVE_CROSSHAIR === aboveCrosshair) {
+          const start = this.getChildren().length
           this._drawOverlay(ctx, overlay)
+          const selected = overlay.id === selectedId || chartStore.isOverlaySelected(overlay.id)
+          if (!selected && overlay.id !== hoveredId) {
+            return
+          }
+          const handles = this.getChildren()
+            .slice(start)
+            .filter((child) => this._figureOwners.get(child)?.handle === true)
+          handles.forEach((child) => (selected ? raisedSelected : raisedHovered).add(child))
         }
       })
+      this.raiseChildren(raisedSelected)
+      this.raiseChildren(raisedHovered)
+
       // The drawing in progress belongs under the crosshair: the user is
       // placing its points with the crosshair, so it must not cover them.
       const progressOverlay = this.getProgressOverlay()
@@ -1196,10 +1232,30 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- ignore
       // @ts-expect-error
       const figures = [].concat(this.getFigures(overlay, coordinates))
-      this.drawFigures(ctx, overlay, figures)
-      this._drawEditableTextPlaceholders(ctx, overlay, figures)
+      // Everything created in here is the drawing's shape, not a handle.
+      this._drawingOwner = { overlay, handle: false }
+      try {
+        this.drawFigures(ctx, overlay, figures)
+        this._drawEditableTextPlaceholders(ctx, overlay, figures)
+      } finally {
+        this._drawingOwner = null
+      }
     }
-    this.drawDefaultFigures(ctx, overlay, coordinates)
+    this._drawingOwner = { overlay, handle: true }
+    try {
+      this.drawDefaultFigures(ctx, overlay, coordinates)
+    } finally {
+      this._drawingOwner = null
+    }
+  }
+
+  /** A figure is created: remember whose it is, so the hit order can be sorted by owner. */
+  protected override createFigure(create: FigureCreate, eventHandler?: EventHandler): Nullable<Figure> {
+    const figure = super.createFigure(create, eventHandler)
+    if (figure !== null && isValid(eventHandler) && this._drawingOwner !== null) {
+      this._figureOwners.set(figure as unknown as Eventful, this._drawingOwner)
+    }
+    return figure
   }
 
   /**
