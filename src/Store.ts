@@ -2201,6 +2201,16 @@ export default class StoreImp implements Store {
       if (overlay?.id !== infoOverlay?.id) {
         if (isValid(overlay)) {
           processOnDeselectedEvent(overlay, figure)
+          // Handles are drawn for the hovered drawing too. A mouse has moved
+          // off this one before clicking elsewhere; a tap is a click with no
+          // move before it, so the drawing the finger last touched is still
+          // "hovered" and would keep its handles once deselected. Take that
+          // leftover hover with the selection. Hover is a sort key now, so a
+          // stale one would also leave the drawing painted on top — re-sort.
+          if (this._hoverOverlayInfo.overlay?.id === overlay.id) {
+            this._hoverOverlayInfo = { paneId: this._hoverOverlayInfo.paneId, overlay: null, figureType: 'none', figureIndex: -1, figure: null }
+            this._sortOverlays()
+          }
         }
         if (isValid(infoOverlay)) {
           processOnSelectedEvent(infoOverlay, info.figure)

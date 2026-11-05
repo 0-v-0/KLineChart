@@ -34,6 +34,10 @@ function createRig(selected: string[] = ['a']): Rig {
   const store = Object.assign(Object.create(ChartStore.prototype) as object, {
     _chart: { updatePane },
     _clickOverlayInfo: { paneId: 'candle_pane', overlay, figureType: 'line', figureIndex: 0, figure: null },
+    // A deselect also checks for a leftover touch hover, and a stale one
+    // triggers a re-sort because hover is a sort key.
+    _hoverOverlayInfo: { paneId: 'candle_pane', overlay: null, figureType: 'none', figureIndex: -1, figure: null },
+    _overlays: new Map(),
     _selectedOverlayIds: new Set(selected),
     executeAction
   }) as unknown as ChartStore
