@@ -18,6 +18,8 @@ outline: deep
   - `needWidget` Whether to create an axis widget.
   - `position` Position, supports `left` and `right`.
   - `scrollZoomEnabled` Whether scrolling and zooming are enabled on the Y-axis. When enabled, users can drag to scroll the axis or use the mouse wheel to zoom.
+  - `scaleSeriesOnly` Whether auto scale looks at the series alone; with it on, the candle pane's indicators no longer stretch the range.
+  - `priceToBarRatio` The price span one bar width covers, which locks the price scale; see [overrideYAxis](/en-US/api/instance/overrideYAxis).
   - `gap` Top and bottom margin configuration.
     - `top` Top margin.
     - `bottom` Bottom margin.

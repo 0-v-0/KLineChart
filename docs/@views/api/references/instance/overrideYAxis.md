@@ -9,6 +9,8 @@
     needWidget?: boolean
     position?: 'left' | 'right'
     scrollZoomEnabled?: boolean
+    scaleSeriesOnly?: boolean
+    priceToBarRatio?: number | null
     gap?: {
       top?: number
       bottom?: number
