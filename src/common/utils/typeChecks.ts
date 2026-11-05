@@ -22,7 +22,10 @@ export function merge(target: any, source: any): void {
     if (Object.prototype.hasOwnProperty.call(source, key) as boolean) {
       const targetProp = target[key]
       const sourceProp = source[key]
-      if (isObject(sourceProp) && isObject(targetProp)) {
+      // Arrays are values, not records: a new list replaces the old one.
+      // Merging by index left stale entries behind — unchecking one stat turned
+      // ['priceRange', 'percentRange'] into ['percentRange', 'percentRange'].
+      if (isObject(sourceProp) && isObject(targetProp) && !isArray(sourceProp) && !isArray(targetProp)) {
         merge(targetProp, sourceProp)
       } else {
         target[key] = clone(sourceProp)
