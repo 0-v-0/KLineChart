@@ -949,24 +949,35 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
 
   private _figureMouseRightClickEvent(overlay: OverlayImp, _figureType: EventOverlayInfoFigureType, _figureIndex: number, figure: OverlayFigure): MouseTouchEventCallback {
     return (event: MouseTouchEvent) => {
-      if (checkOverlayFigureEvent('onRightClick', figure)) {
-        let prevented = false
-        overlay.onRightClick?.({
-          chart: this.getWidget().getPane().getChart(),
-          overlay,
-          figure,
-          ...event,
-          preventDefault: () => {
-            prevented = true
-          }
-        })
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
-        if (!prevented) {
-          this.getWidget().getPane().getChart().getChartStore().removeOverlay(overlay)
-        }
-        return !overlay.isDrawing()
+      const chartStore = this.getWidget().getPane().getChart().getChartStore()
+      const selectedIds = chartStore.getSelectedOverlayIds()
+      const isSelected = chartStore.getClickOverlayInfo().overlay?.id === overlay.id || selectedIds.includes(overlay.id)
+      // A selected drawing can also be removed through one of its label tags,
+      // which opt out of events so they never steal a click from the shape.
+      if (!checkOverlayFigureEvent('onRightClick', figure) && !isSelected) {
+        return false
       }
-      return false
+      let prevented = false
+      overlay.onRightClick?.({
+        chart: this.getWidget().getPane().getChart(),
+        overlay,
+        figure,
+        ...event,
+        preventDefault: () => {
+          prevented = true
+        }
+      })
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- ignore
+      if (!prevented) {
+        // Right-clicking a member of a marquee selection clears the whole
+        // group in one gesture; otherwise only the drawing under the cursor.
+        if (isSelected && selectedIds.length > 1) {
+          selectedIds.forEach((id) => chartStore.removeOverlay({ id }))
+        } else {
+          chartStore.removeOverlay(overlay)
+        }
+      }
+      return !overlay.isDrawing()
     }
   }
 
