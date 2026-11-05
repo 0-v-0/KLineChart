@@ -138,6 +138,11 @@ export interface Store {
    */
   setFootprintResolver: (resolver: Nullable<(data: KLineData) => Nullable<FootprintBarData>>) => void
   getFootprint: (data: KLineData) => Nullable<FootprintBarData>
+  /**
+   * A colour for one bar, overriding the candle style for it. A bar the
+   * resolver answers `null` for keeps the style's colour.
+   */
+  setBarColorResolver: (resolver: Nullable<(data: KLineData) => Nullable<string>>) => void
   setOffsetRightDistance: (distance: number) => void
   getOffsetRightDistance: () => number
   setMaxOffsetLeftDistance: (distance: number) => void
@@ -270,6 +275,9 @@ export default class StoreImp implements Store {
    * resolver is expected to answer the same way for the same bar.
    */
   private _footprintResolver: Nullable<(data: KLineData) => Nullable<FootprintBarData>> = null
+
+  /** A host's colour for individual bars; see `setBarColorResolver`. */
+  private _barColorResolver: Nullable<(data: KLineData) => Nullable<string>> = null
 
   /**
    * A host's second opinion on whether a drawing is on screen; see
@@ -762,6 +770,15 @@ export default class StoreImp implements Store {
 
   getFootprint(data: KLineData): Nullable<FootprintBarData> {
     return this._footprintResolver?.(data) ?? null
+  }
+
+  setBarColorResolver(resolver: Nullable<(data: KLineData) => Nullable<string>>): void {
+    this._barColorResolver = resolver
+    this._chart.updatePane(UpdateLevel.Main, PaneIdConstants.CANDLE)
+  }
+
+  getBarColor(data: KLineData): Nullable<string> {
+    return this._barColorResolver?.(data) ?? null
   }
 
   setOverlayVisibilityResolver(resolver: Nullable<(overlay: Overlay) => boolean>): void {

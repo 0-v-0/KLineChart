@@ -148,6 +148,13 @@ export default class CandleBarView extends ChildrenView {
               colors[2] = styles.noChangeWickColor
             }
           }
+          // A host's colour for this bar wins outright, body and wick: it was
+          // asked for by bar, so it beats both the fixed style and the up/down
+          // rule. Only the candle pane: an indicator's bar is not a bar.
+          const barColor = isMain ? chartStore.getBarColor(current) : null
+          if (isValid(barColor)) {
+            colors.fill(barColor)
+          }
           const openY = yAxis.convertToPixel(open)
           const closeY = yAxis.convertToPixel(close)
           const priceY = [openY, closeY, yAxis.convertToPixel(high), yAxis.convertToPixel(low)]

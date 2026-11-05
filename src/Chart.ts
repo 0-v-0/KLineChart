@@ -870,6 +870,10 @@ export default class ChartImp implements Chart {
     return this._chartStore.getFootprint(data)
   }
 
+  setBarColorResolver(resolver: Nullable<(data: KLineData) => Nullable<string>>): void {
+    this._chartStore.setBarColorResolver(resolver)
+  }
+
   setOverlayVisibilityResolver(resolver: Nullable<(overlay: Overlay) => boolean>): void {
     this._chartStore.setOverlayVisibilityResolver(resolver)
   }

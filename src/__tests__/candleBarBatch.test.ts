@@ -28,6 +28,8 @@ interface HarnessOptions {
   variant?: CandleFootprintVariant
   /** Footprint rows by bar timestamp. */
   footprint?: Map<number, FootprintBarData>
+  /** Host-supplied bar colours by bar timestamp. */
+  barColors?: Map<number, string>
 }
 
 const barSpace: BarSpace = { bar: 10, halfBar: 5, gapBar: 8, halfGapBar: 4 }
@@ -37,6 +39,7 @@ function harness(bars: VisibleRangeData[], options: HarnessOptions = {}): Harnes
   const { type = 'candle_solid', isMain = true, upBorder, variant } = options
   const space = options.space ?? barSpace
   const footprint = options.footprint ?? new Map<number, FootprintBarData>()
+  const barColors = options.barColors ?? new Map<number, string>()
   const ops: string[] = []
   const actions: Array<{ type: string; data: unknown }> = []
   const styles = getDefaultStyles()
@@ -77,6 +80,7 @@ function harness(bars: VisibleRangeData[], options: HarnessOptions = {}): Harnes
     getBarSpace: () => space,
     getVisibleRangeDataList: () => bars,
     getFootprint: (data: { timestamp: number }) => footprint.get(data.timestamp) ?? null,
+    getBarColor: (data: { timestamp: number }) => barColors.get(data.timestamp) ?? null,
     executeAction: (action: string, data?: unknown) => actions.push({ type: action, data })
   }
   const chart = { getStyles: () => styles, getChartStore: () => chartStore }
@@ -120,6 +124,24 @@ describe('CandleBarView batch', () => {
     // The wick is still filled; the body is outline only.
     expect(stroke.ops.filter((op) => op.startsWith('fill('))).toEqual(['fill(#2DC08E)'])
     expect(stroke.ops.filter((op) => op.startsWith('stroke('))).toEqual(['stroke(#2DC08E)'])
+  })
+
+  it('takes the colour the host asked for, body and wick', () => {
+    const { ops } = harness([upBar(10)], { barColors: new Map([[10, '#ABCDEF']]) })
+    expect(ops.filter((op) => op.startsWith('fill('))).toEqual(['fill(#ABCDEF)', 'fill(#ABCDEF)'])
+    expect(ops.filter((op) => op.startsWith('stroke('))).toEqual(['stroke(#ABCDEF)'])
+  })
+
+  it('leaves a bar the host said nothing about to the up/down rule', () => {
+    const { ops } = harness([upBar(10), upBar(60)], { barColors: new Map([[10, '#ABCDEF']]) })
+    // One path per colour per layer, so the wick layer carries both colours and
+    // then the body layer does the same.
+    expect(ops.filter((op) => op.startsWith('fill('))).toEqual(['fill(#ABCDEF)', 'fill(#2DC08E)', 'fill(#ABCDEF)', 'fill(#2DC08E)'])
+  })
+
+  it('does not ask for a bar colour on an indicator pane', () => {
+    const { ops } = harness([upBar(10)], { isMain: false, barColors: new Map([[10, '#ABCDEF']]) })
+    expect(ops.filter((op) => op.includes('#ABCDEF'))).toEqual([])
   })
 
   it('fills a body too thin to outline instead of stroking nothing', () => {
