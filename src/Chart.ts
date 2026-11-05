@@ -115,6 +115,8 @@ export interface Chart extends Store {
   getVisibleRangeTimestamps: () => Nullable<{ from: number; to: number }>
   setShowSeconds: (show: boolean) => void
   getShowSeconds: () => boolean
+  setShowSelectedOverlayLabel: (show: boolean) => void
+  getShowSelectedOverlayLabel: () => boolean
   convertToPixel: (points: Partial<Point> | Array<Partial<Point>>, filter?: ConvertFilter) => Partial<Coordinate> | Array<Partial<Coordinate>>
   convertFromPixel: (coordinates: Array<Partial<Coordinate>>, filter?: ConvertFilter) => Partial<Point> | Array<Partial<Point>>
   executeAction: (type: ActionType, data: Crosshair) => void
@@ -712,6 +714,16 @@ export default class ChartImp implements Chart {
 
   getShowSeconds(): boolean {
     return this._chartStore.getShowSeconds()
+  }
+
+  setShowSelectedOverlayLabel(show: boolean): void {
+    this._setOptions(() => {
+      this._chartStore.setShowSelectedOverlayLabel(show)
+    })
+  }
+
+  getShowSelectedOverlayLabel(): boolean {
+    return this._chartStore.getShowSelectedOverlayLabel()
   }
 
   setHotkey(hotkey: Partial<Hotkey>): void {

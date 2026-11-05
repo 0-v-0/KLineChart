@@ -30,11 +30,19 @@ export default class OverlayYAxisView<C extends Axis = YAxis> extends OverlayVie
     return false
   }
 
+  /** The host can hide every label the selected drawing puts on an axis. */
+  protected showSelectedOverlayLabel(): boolean {
+    return this.getWidget().getPane().getChart().getChartStore().getShowSelectedOverlayLabel()
+  }
+
   override drawDefaultFigures(ctx: CanvasRenderingContext2D, overlay: OverlayImp, coordinates: Coordinate[]): void {
     this.drawFigures(ctx, overlay, this.getDefaultFigures(overlay, coordinates))
   }
 
   protected getDefaultFigures(overlay: Overlay, coordinates: Coordinate[]): OverlayFigure[] {
+    if (!this.showSelectedOverlayLabel()) {
+      return []
+    }
     const widget = this.getWidget()
     const pane = widget.getPane()
     const chartStore = pane.getChart().getChartStore()
@@ -77,6 +85,9 @@ export default class OverlayYAxisView<C extends Axis = YAxis> extends OverlayVie
   }
 
   override getFigures(overlay: Overlay, coordinates: Coordinate[]): OverlayFigure | OverlayFigure[] {
+    if (!this.showSelectedOverlayLabel()) {
+      return []
+    }
     const widget = this.getWidget()
     const pane = widget.getPane()
     const chart = pane.getChart()

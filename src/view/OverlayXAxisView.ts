@@ -41,6 +41,9 @@ export default class OverlayXAxisView extends OverlayYAxisView<XAxis> {
   }
 
   override getDefaultFigures(overlay: Overlay, coordinates: Coordinate[]): OverlayFigure[] {
+    if (!this.showSelectedOverlayLabel()) {
+      return []
+    }
     const figures: OverlayFigure[] = []
     const widget = this.getWidget()
     const pane = widget.getPane()
@@ -66,6 +69,9 @@ export default class OverlayXAxisView extends OverlayYAxisView<XAxis> {
   }
 
   override getFigures(o: Overlay, coordinates: Coordinate[]): OverlayFigure | OverlayFigure[] {
+    if (!this.showSelectedOverlayLabel()) {
+      return []
+    }
     const widget = this.getWidget()
     const pane = widget.getPane()
     const chart = pane.getChart()

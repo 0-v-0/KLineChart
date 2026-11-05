@@ -120,4 +120,6 @@ export interface Options {
   // Shortcut for `layout.barSpaceLimit`, kept for callers that set it before the layout option existed.
   barSpaceLimit?: Partial<BarSpaceLimit>
   debug?: boolean
+  /** Show the selected drawing's axis labels (price / time / name tags). Defaults to true. */
+  showSelectedOverlayLabel?: boolean
 }

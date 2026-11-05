@@ -137,6 +137,9 @@ export interface Store {
   /** Show seconds on the crosshair's time label for minute/hour periods. */
   setShowSeconds: (show: boolean) => void
   getShowSeconds: () => boolean
+  /** Show the selected drawing's axis labels (price / time / name tags). */
+  setShowSelectedOverlayLabel: (show: boolean) => void
+  getShowSelectedOverlayLabel: () => boolean
   getDataList: (mutateToCandleType?: boolean) => KLineData[]
   /**
    * Per-bar footprint data for `candle.type: 'footprint'`; a bar the resolver
@@ -427,6 +430,9 @@ export default class StoreImp implements Store {
   /** Whether the crosshair's time label carries seconds. */
   private _showSeconds = false
 
+  /** Whether the selected drawing's axis labels are drawn. */
+  private _showSelectedOverlayLabel = true
+
   /**
    * Actions
    */
@@ -567,6 +573,10 @@ export default class StoreImp implements Store {
 
     if (isValid(hotkey)) {
       this.setHotkey(hotkey)
+    }
+
+    if (typeof options?.showSelectedOverlayLabel === 'boolean') {
+      this._showSelectedOverlayLabel = options.showSelectedOverlayLabel
     }
 
     this._taskScheduler = new TaskScheduler(() => {
@@ -2113,6 +2123,14 @@ export default class StoreImp implements Store {
 
   getShowSeconds(): boolean {
     return this._showSeconds
+  }
+
+  setShowSelectedOverlayLabel(show: boolean): void {
+    this._showSelectedOverlayLabel = show
+  }
+
+  getShowSelectedOverlayLabel(): boolean {
+    return this._showSelectedOverlayLabel
   }
 
   overrideOverlay(override: OverlayOverride): boolean {
