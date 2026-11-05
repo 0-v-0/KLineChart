@@ -2340,6 +2340,9 @@ export default class StoreImp implements Store {
       }
       if (overlay.isDrawing()) {
         this._progressOverlayInfo = null
+        // A touch drawing cancelled from outside: its crosshair and step guide go.
+        const chart = this._chart as unknown as { progressOverlayRemoved: () => void }
+        chart.progressOverlayRemoved()
       } else {
         const index = paneOverlays.findIndex((o) => o.id === overlay.id)
         if (index > -1) {

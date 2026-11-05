@@ -33,6 +33,7 @@ export type ActionType =
   | 'onSelectedOverlaysChange'
   | 'onYAxisRightClick'
   | 'onYAxisAutoScaleRelease'
+  | 'onTouchDrawingChange'
 export default class Action {
   private _callbacks: ActionCallback[] = []
 
