@@ -258,6 +258,18 @@ export interface CandleHighLowPriceMarkStyle {
   textWeight: string
 }
 
+/**
+ * High and low of the visible range as price-axis labels and lines. `show` is
+ * the master switch; `text.show` and `line.show` pick the parts.
+ */
+export interface CandleHighLowAxisStyle {
+  show: boolean
+  text: LastValueMarkTextStyle
+  line: Omit<StateLineStyle, 'color'>
+  /** Label background and line colour. */
+  color: string
+}
+
 export type CandleLastPriceMarkLineStyle = Omit<StateLineStyle, 'color'> & { color: Nullable<string | CompareColorCallback> }
 
 export type CandleLastPriceMarkExtendTextPosition = 'above_price' | 'below_price'
@@ -280,6 +292,7 @@ export interface CandlePriceMarkStyle {
   show: boolean
   high: CandleHighLowPriceMarkStyle
   low: CandleHighLowPriceMarkStyle
+  highLowAxis: CandleHighLowAxisStyle
   last: CandleLastPriceMarkStyle
 }
 
@@ -543,6 +556,23 @@ function getDefaultCandleStyle(): CandleStyle {
     textFamily: 'Helvetica Neue',
     textWeight: 'normal'
   }
+  const labelText = {
+    show: true,
+    style: 'fill' as const,
+    size: 12,
+    paddingLeft: 4,
+    paddingTop: 4,
+    paddingRight: 4,
+    paddingBottom: 4,
+    borderColor: 'transparent',
+    borderStyle: 'solid' as const,
+    borderSize: 0,
+    borderDashedValue: [2, 2],
+    color: Color.WHITE,
+    family: 'Helvetica Neue',
+    weight: 'normal',
+    borderRadius: 2
+  }
   return {
     type: 'candle_solid',
     bar: {
@@ -625,6 +655,17 @@ function getDefaultCandleStyle(): CandleStyle {
       show: true,
       high: { ...highLow },
       low: { ...highLow },
+      highLowAxis: {
+        show: false,
+        text: { ...labelText, borderDashedValue: [2, 2] },
+        line: {
+          show: true,
+          style: 'dashed',
+          dashedValue: [4, 4],
+          size: 1
+        },
+        color: Color.GREY
+      },
       last: {
         show: true,
         compareRule: 'current_open',

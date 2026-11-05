@@ -14,6 +14,7 @@
 
 import type { YAxis } from '../component/YAxis'
 import type DrawPane from '../pane/DrawPane'
+import CandleHighLowAxisLabelView from '../view/CandleHighLowAxisLabelView'
 import CandleLastPriceLabelView from '../view/CandleLastPriceLabelView'
 import CrosshairHorizontalLabelView from '../view/CrosshairHorizontalLabelView'
 import IndicatorLastValueView from '../view/IndicatorLastValueView'
@@ -26,6 +27,7 @@ export default class YAxisWidget extends DrawWidget<DrawPane<YAxis>> {
   private readonly _yAxis: YAxis
   private readonly _yAxisView = new YAxisView(this)
   private readonly _candleLastPriceLabelView = new CandleLastPriceLabelView(this)
+  private readonly _candleHighLowAxisLabelView = new CandleHighLowAxisLabelView(this)
   private readonly _indicatorLastValueView = new IndicatorLastValueView(this)
   private readonly _overlayYAxisView = new OverlayYAxisView(this)
   private readonly _crosshairHorizontalLabelView = new CrosshairHorizontalLabelView(this)
@@ -50,6 +52,7 @@ export default class YAxisWidget extends DrawWidget<DrawPane<YAxis>> {
     const pane = this.getPane()
     const isCandleLastPriceLabelVisibleYAxis = pane.isDefaultYAxis(this._yAxis.id) || pane.isManualYAxis(this._yAxis.id)
     if (isCandleLastPriceLabelVisibleYAxis && this.getAxisComponent().isInCandle()) {
+      this._candleHighLowAxisLabelView.draw(ctx)
       this._candleLastPriceLabelView.draw(ctx)
     }
     this._indicatorLastValueView.draw(ctx)

@@ -18,6 +18,7 @@ import type AxisPane from '../pane/DrawPane'
 import CandleAreaView from '../view/CandleAreaView'
 import CandleBarView from '../view/CandleBarView'
 import CandleHighLowPriceView from '../view/CandleHighLowPriceView'
+import CandleHighLowLineView from '../view/CandleHighLowLineView'
 import CandleLineView from '../view/CandleLineView'
 import CandleLastPriceLineView from '../view/CandleLastPriceLineView'
 import CandleTooltipView from '../view/CandleTooltipView'
@@ -30,6 +31,7 @@ export default class CandleWidget extends IndicatorWidget {
   private readonly _candleAreaView = new CandleAreaView(this)
   private readonly _candleLineView = new CandleLineView(this)
   private readonly _candleHighLowPriceView = new CandleHighLowPriceView(this)
+  private readonly _candleHighLowLineView = new CandleHighLowLineView(this)
   private readonly _candleLastPriceLineView = new CandleLastPriceLineView(this)
   private readonly _crosshairFeatureView = new CrosshairFeatureView(this)
 
@@ -57,6 +59,7 @@ export default class CandleWidget extends IndicatorWidget {
         this._candleHighLowPriceView.draw(ctx)
       }
     }
+    this._candleHighLowLineView.draw(ctx)
     this._candleLastPriceLineView.draw(ctx)
   }
 
