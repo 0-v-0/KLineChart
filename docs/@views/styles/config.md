@@ -73,6 +73,38 @@ const styles = {
         textFamily: 'Helvetica Neue',
         textWeight: 'normal',
       },
+      // The visible range's high and low, tagged on the price axis and marked
+      // across the pane. Off by default.
+      highLowAxis: {
+        show: false,
+        color: '#76808F',
+        text: {
+          show: true,
+          // 'fill' | 'stroke' | 'stroke_fill'
+          style: 'fill',
+          size: 12,
+          paddingLeft: 4,
+          paddingTop: 4,
+          paddingRight: 4,
+          paddingBottom: 4,
+          borderColor: 'transparent',
+          // 'solid' | 'dashed'
+          borderStyle: 'solid',
+          borderSize: 0,
+          borderDashedValue: [2, 2],
+          color: '#FFFFFF',
+          family: 'Helvetica Neue',
+          weight: 'normal',
+          borderRadius: 2
+        },
+        line: {
+          show: true,
+          // 'solid' | 'dashed'
+          style: 'dashed',
+          dashedValue: [4, 4],
+          size: 1
+        }
+      },
       last: {
         show: true,
         // 'current_open' | 'previous_close'
@@ -105,7 +137,27 @@ const styles = {
           family: 'Helvetica Neue',
           weight: 'normal',
           borderRadius: 2
-        }
+        },
+        // The symbol ticker, flush with the axis at the last price. Off by default.
+        nameLabel: {
+          show: false,
+          // 'fill' | 'stroke' | 'stroke_fill'
+          style: 'fill',
+          size: 12,
+          paddingLeft: 4,
+          paddingTop: 4,
+          paddingRight: 4,
+          paddingBottom: 4,
+          borderColor: 'transparent',
+          // 'solid' | 'dashed'
+          borderStyle: 'solid',
+          borderSize: 0,
+          borderDashedValue: [2, 2],
+          color: '#FFFFFF',
+          family: 'Helvetica Neue',
+          weight: 'normal',
+          borderRadius: 2
+        },
         // e.g.
         // [{
         //   show: true,
@@ -309,6 +361,25 @@ const styles = {
         // 'solid' | 'dashed'
         borderStyle: 'solid',
         borderSize: 1,
+        borderDashedValue: [2, 2],
+        paddingLeft: 4,
+        paddingTop: 4,
+        paddingRight: 4,
+        paddingBottom: 4,
+        borderRadius: 2
+      },
+      // The indicator's short name at its first figure's last value, in that
+      // figure's colour. Off by default.
+      nameLabel: {
+        show: false,
+        style: 'fill',
+        color: '#FFFFFF',
+        size: 12,
+        family: 'Helvetica Neue',
+        weight: 'normal',
+        borderStyle: 'solid',
+        borderColor: 'transparent',
+        borderSize: 0,
         borderDashedValue: [2, 2],
         paddingLeft: 4,
         paddingTop: 4,
