@@ -29,6 +29,21 @@ export const PeriodTypeXAxisFormat: Record<PeriodType, string> = {
   year: 'YYYY'
 }
 
+/**
+ * The vertical crosshair's time label, which is a date-and-time stamp rather
+ * than the terse axis tick. `setShowSeconds(true)` appends `:ss` to the minute
+ * and hour forms; a `second` period already has them.
+ */
+export const PeriodTypeCrosshairLabelFormat: Record<PeriodType, string> = {
+  second: "DD MMM 'YY  HH:mm:ss",
+  minute: "DD MMM 'YY  HH:mm",
+  hour: "DD MMM 'YY  HH:mm",
+  day: "DD MMM 'YY",
+  week: "DD MMM 'YY",
+  month: "MMM 'YY",
+  year: 'YYYY'
+}
+
 export const PeriodTypeCrosshairTooltipFormat: Record<PeriodType, string> = {
   second: 'HH:mm:ss',
   minute: 'YYYY-MM-DD HH:mm',

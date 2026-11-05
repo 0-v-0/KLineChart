@@ -14,7 +14,7 @@
 
 import type Bounding from '../common/Bounding'
 import type Crosshair from '../common/Crosshair'
-import { PeriodTypeCrosshairTooltipFormat } from '../common/Period'
+import { PeriodTypeCrosshairLabelFormat } from '../common/Period'
 import type { CrosshairDirectionStyle, CrosshairStyle, StateTextStyle } from '../common/Styles'
 import { isValid } from '../common/utils/typeChecks'
 import type { Axis } from '../component/Axis'
@@ -34,7 +34,14 @@ export default class CrosshairVerticalLabelView extends CrosshairHorizontalLabel
 
   override getText(crosshair: Crosshair, chartStore: ChartStore): string {
     const timestamp = crosshair.timestamp!
-    return chartStore.getInnerFormatter().formatDate(timestamp, PeriodTypeCrosshairTooltipFormat[chartStore.getPeriod()?.type ?? 'day'], 'crosshair')
+    const type = chartStore.getPeriod()?.type ?? 'day'
+    let format = PeriodTypeCrosshairLabelFormat[type]
+    // A host showing seconds wants them on minute/hour bars too; `second`
+    // already has them, and a day-or-longer label has no time to append to.
+    if (chartStore.getShowSeconds() && (type === 'minute' || type === 'hour')) {
+      format = `${format}:ss`
+    }
+    return chartStore.getInnerFormatter().formatDate(timestamp, format, 'crosshair')
   }
 
   override getTextAttrs(text: string, textWidth: number, crosshair: Crosshair, bounding: Bounding, _axis: Axis, styles: StateTextStyle): TextAttrs {

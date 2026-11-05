@@ -113,6 +113,8 @@ export interface Chart extends Store {
   setVisibleRange: (range: { from: number; to: number }) => Promise<void>
   resetView: () => Promise<void>
   getVisibleRangeTimestamps: () => Nullable<{ from: number; to: number }>
+  setShowSeconds: (show: boolean) => void
+  getShowSeconds: () => boolean
   convertToPixel: (points: Partial<Point> | Array<Partial<Point>>, filter?: ConvertFilter) => Partial<Coordinate> | Array<Partial<Coordinate>>
   convertFromPixel: (coordinates: Array<Partial<Coordinate>>, filter?: ConvertFilter) => Partial<Point> | Array<Partial<Point>>
   executeAction: (type: ActionType, data: Crosshair) => void
@@ -700,6 +702,16 @@ export default class ChartImp implements Chart {
 
   getDecimalFold(): DecimalFold {
     return this._chartStore.getDecimalFold()
+  }
+
+  setShowSeconds(show: boolean): void {
+    this._setOptions(() => {
+      this._chartStore.setShowSeconds(show)
+    })
+  }
+
+  getShowSeconds(): boolean {
+    return this._chartStore.getShowSeconds()
   }
 
   setHotkey(hotkey: Partial<Hotkey>): void {

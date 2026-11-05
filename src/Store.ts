@@ -131,6 +131,9 @@ export interface Store {
   getSymbol: () => Nullable<SymbolInfo>
   setPeriod: (period: Period) => void
   getPeriod: () => Nullable<Period>
+  /** Show seconds on the crosshair's time label for minute/hour periods. */
+  setShowSeconds: (show: boolean) => void
+  getShowSeconds: () => boolean
   getDataList: (mutateToCandleType?: boolean) => KLineData[]
   /**
    * Per-bar footprint data for `candle.type: 'footprint'`; a bar the resolver
@@ -417,6 +420,9 @@ export default class StoreImp implements Store {
    * drawing's own mode is `normal` — so the last non-normal mode is kept.
    */
   private _preferredMagnetMode: Exclude<OverlayMode, 'normal'> = 'weak_magnet'
+
+  /** Whether the crosshair's time label carries seconds. */
+  private _showSeconds = false
 
   /**
    * Actions
@@ -2075,6 +2081,18 @@ export default class StoreImp implements Store {
 
   getPreferredMagnetMode(): Exclude<OverlayMode, 'normal'> {
     return this._preferredMagnetMode
+  }
+
+  /**
+   * Pure state mutation: the caller (`Chart.setShowSeconds`) runs a layout pass
+   * so the x-axis tick cache is rebuilt with the new format string.
+   */
+  setShowSeconds(show: boolean): void {
+    this._showSeconds = show
+  }
+
+  getShowSeconds(): boolean {
+    return this._showSeconds
   }
 
   overrideOverlay(override: OverlayOverride): boolean {
