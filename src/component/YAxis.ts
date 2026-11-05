@@ -33,6 +33,7 @@ export type YAxisOverride = AxisOverride & { needWidget?: boolean }
 export const Y_AXIS_ID_PREFIX = 'yAxis_'
 
 export interface YAxis extends Axis, Required<YAxisTemplate> {
+  getPriceToBarRatio: () => Nullable<number>
   isFromZero: () => boolean
   isInCandle: () => boolean
   convertToNicePixel: (value: number) => number
@@ -73,11 +74,17 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
   paneId = ''
   reverse = false
   inside = false
+  scaleSeriesOnly = false
+  priceToBarRatio: Nullable<number> = null
   position: AxisPosition = 'right'
   gap = {
     top: 0.2,
     bottom: 0.1
   }
+
+  // `priceToBarRatio: null` arrived before the first layout, so the range to
+  // read the ratio from did not exist yet.
+  private _lockPending = false
 
   private _settledWidth: Nullable<number> = null
   private _settledWidthLastNeededAt = 0
@@ -117,7 +124,7 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
   }
 
   override(yAxis: AxisOverride): void {
-    const { id, name, gap, ...others } = yAxis
+    const { id, name, gap, priceToBarRatio, ...others } = yAxis
     if (isValid(id) && this.id.length === 0) {
       this.id = id
     }
@@ -126,6 +133,93 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
     }
     merge(this.gap, gap)
     merge(this, others)
+    if (priceToBarRatio !== undefined) {
+      this._lockPriceToBar(priceToBarRatio)
+    }
+  }
+
+  getPriceToBarRatio(): Nullable<number> {
+    return this.priceToBarRatio
+  }
+
+  override setAutoCalcTickFlag(flag: boolean): void {
+    if (flag) {
+      this.priceToBarRatio = null
+      this._lockPending = false
+    }
+    super.setAutoCalcTickFlag(flag)
+  }
+
+  override setRange(range: AxisRange): void {
+    super.setRange(range)
+    if (this.priceToBarRatio !== null || this._lockPending) {
+      this._lockFromRange(range)
+    }
+  }
+
+  override buildTicks(force: boolean): boolean {
+    if (this.priceToBarRatio !== null || this._lockPending) {
+      this._deriveLockedRange()
+    }
+    return super.buildTicks(force)
+  }
+
+  private _lockPriceToBar(ratio: Nullable<number>): void {
+    if (isNumber(ratio) && ratio > 0 && Number.isFinite(ratio)) {
+      this.priceToBarRatio = ratio
+      this._lockPending = false
+    } else {
+      this._lockPending = true
+    }
+    super.setAutoCalcTickFlag(false)
+    if (this._lockPending) {
+      this._lockFromRange(this.getRange())
+    }
+  }
+
+  // Ratio is in real space, the space the pixel mapping is linear in.
+  private _lockFromRange(range: AxisRange): void {
+    const height = this.getBounding().height
+    const barSpace = this.getParent().getChart().getChartStore().getBarSpace().bar
+    if (height > 0 && barSpace > 0 && range.realRange > 0) {
+      this.priceToBarRatio = (range.realRange / height) * barSpace
+      this._lockPending = false
+    }
+  }
+
+  private _deriveLockedRange(): void {
+    const height = this.getBounding().height
+    const barSpace = this.getParent().getChart().getChartStore().getBarSpace().bar
+    if (height <= 0 || barSpace <= 0) {
+      return
+    }
+    const current = this.getRange()
+    const base = current.realRange > 0 ? current : this.createRangeImp()
+    if (this._lockPending) {
+      this._lockFromRange(base)
+    }
+    if (this.priceToBarRatio === null) {
+      return
+    }
+    const centre = (base.realFrom + base.realTo) / 2
+    const half = ((this.priceToBarRatio / barSpace) * height) / 2
+    const realFrom = centre - half
+    const realTo = centre + half
+    const from = this.realValueToValue(realFrom, { range: base })
+    const to = this.realValueToValue(realTo, { range: base })
+    const displayFrom = this.realValueToDisplayValue(realFrom, { range: base })
+    const displayTo = this.realValueToDisplayValue(realTo, { range: base })
+    this.assignRange({
+      from,
+      to,
+      range: to - from,
+      realFrom,
+      realTo,
+      realRange: realTo - realFrom,
+      displayFrom,
+      displayTo,
+      displayRange: displayTo - displayFrom
+    })
   }
 
   private _getIndicatorsByYAxisIds(): Indicator[] {
@@ -161,9 +255,14 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
     let specifyMax = Number.MIN_SAFE_INTEGER
     let indicatorPrecision = Number.MAX_SAFE_INTEGER
     const indicators = this._getIndicatorsByYAxisIds()
+    // Only the candle pane has a price series to scale to; elsewhere the flag is moot.
+    const seriesOnly = this.scaleSeriesOnly && this.isInCandle()
     indicators.forEach((indicator) => {
       shouldOhlc ||= indicator.shouldOhlc
       indicatorPrecision = Math.min(indicatorPrecision, indicator.precision)
+      if (seriesOnly) {
+        return
+      }
       if (isNumber(indicator.minValue)) {
         specifyMin = Math.min(specifyMin, indicator.minValue)
       }
@@ -209,6 +308,9 @@ export default abstract class YAxisImp extends AxisImp implements YAxis {
             max = Math.max(max, value)
           }
         }
+      }
+      if (seriesOnly) {
+        return
       }
       indicators.forEach(({ result, figures }) => {
         const data = result[dataIndex] ?? {}

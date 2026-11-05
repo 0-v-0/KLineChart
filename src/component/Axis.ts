@@ -75,6 +75,15 @@ export interface AxisOverride {
   inside?: boolean
   position?: AxisPosition
   scrollZoomEnabled?: boolean
+  /** Candle pane only: auto range ignores indicator values (and their min/max) so the price series alone sets the range. */
+  scaleSeriesOnly?: boolean
+  /**
+   * Locks price per bar width (`pricePerPixel * barSpace`), which turns auto
+   * scale off. A number sets the ratio; `null` locks at the ratio of the range
+   * showing now. Setting it is one-shot: it is not kept in the pane options.
+   * Turning auto scale on releases the lock.
+   */
+  priceToBarRatio?: number | null
   gap?: AxisGap
   createRange?: AxisCreateRangeCallback
   createTicks?: AxisCreateTicksCallback
@@ -151,6 +160,11 @@ export default abstract class AxisImp implements Axis {
 
   setRange(range: AxisRange): void {
     this._autoCalcTickFlag = false
+    this._range = range
+  }
+
+  // Replaces the range without touching the auto flag.
+  protected assignRange(range: AxisRange): void {
     this._range = range
   }
 

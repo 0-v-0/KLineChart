@@ -111,7 +111,11 @@ export default abstract class DrawPane<C extends Axis = Axis> extends Pane {
     if (!isValid(yAxis)) {
       throw new Error('create yAxis failed.')
     }
-    ;(yAxis as unknown as YAxisImp).setAutoCalcTickFlag(true)
+    // A manual range survives an override of the same axis — gap, reverse or
+    // position — and is dropped only when the axis itself is (re)created.
+    if (shouldCreateYAxis) {
+      ;(yAxis as unknown as YAxisImp).setAutoCalcTickFlag(true)
+    }
     yAxis.override({
       ...axis,
       name: yAxisName

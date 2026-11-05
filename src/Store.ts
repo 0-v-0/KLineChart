@@ -555,6 +555,8 @@ export default class StoreImp implements Store {
       position: 'right',
       scrollZoomEnabled: true,
       needWidget: true,
+      scaleSeriesOnly: false,
+      priceToBarRatio: null,
       gap: {
         top: 0.2,
         bottom: 0.1
