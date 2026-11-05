@@ -33,6 +33,14 @@ export interface MouseTouchEvent extends Coordinate {
   pageX: number
   pageY: number
   isTouch?: boolean
+  /**
+   * Modifier keys as of this event. Drawing reads them live rather than
+   * tracking key state: Shift locks a drag to one axis, and Meta/Ctrl inverts
+   * the magnet for as long as it is held.
+   */
+  shiftKey?: boolean
+  metaKey?: boolean
+  ctrlKey?: boolean
   preventDefault?: () => void
 }
 
@@ -937,6 +945,10 @@ export default class EventHandlerImp {
       pageX: eventLike.pageX,
       pageY: eventLike.pageY,
       isTouch: !event.type.startsWith('mouse') && event.type !== 'contextmenu' && event.type !== 'click' && event.type !== 'wheel',
+      // A TouchEvent carries no modifier state, so these read false there.
+      shiftKey: (event as MouseEvent).shiftKey === true,
+      metaKey: (event as MouseEvent).metaKey === true,
+      ctrlKey: (event as MouseEvent).ctrlKey === true,
 
       preventDefault: () => {
         if (event.type !== 'touchstart') {

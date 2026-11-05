@@ -29,6 +29,7 @@ import { setDrawingOverlay } from '../component/Figure'
 import type { YAxis } from '../component/YAxis'
 import type { TextAttrs } from '../extension/figure/text'
 import { getTextRect } from '../extension/figure/text'
+import { constrainToAxis, isDragBeyond } from '../extension/overlay/utils'
 import type DrawPane from '../pane/DrawPane'
 import { PaneIdConstants } from '../pane/types'
 import type { EventOverlayInfoFigureType } from '../Store'
@@ -44,6 +45,20 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     cleanup: () => void
   }> = null
 
+  /** Where the current drag started, pane-local, for Shift axis-locking. */
+  private _pressStart: Nullable<Coordinate> = null
+
+  /**
+   * The press that placed a point of the drawing in progress. Dragging from it
+   * moves the next point instead of panning, and releasing past
+   * `DRAG_DRAW_MIN_PX` places that point — TradingView's press-drag-release,
+   * alongside the click-then-click flow.
+   */
+  private _dragDraw: Nullable<{ overlay: OverlayImp; x: number; y: number; moved: boolean }> = null
+
+  /** The click that ends a press `_dragDraw` already handled. */
+  private _swallowClick = false
+
   constructor(widget: DrawWidget<DrawPane<C>>) {
     super(widget)
     this._initEvent()
@@ -55,6 +70,25 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
     const paneId = pane.getId()
     const chart = pane.getChart()
     const chartStore = chart.getChartStore()
+    /** Put the drawing's current point at `event` and step to the next; finish it if that was the last. */
+    const placePoint = (overlay: OverlayImp, event: MouseTouchEvent): void => {
+      overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
+      overlay.onDrawing?.({ chart, overlay, ...event })
+      overlay.nextStep()
+      if (!overlay.isDrawing()) {
+        chartStore.progressOverlayComplete()
+        // The tool tidies up what it was given — swapping the two corners so
+        // they read top-left to bottom-right, filling in extendData — while it
+        // is still the drawing the user made.
+        overlay.completeDrawing?.({ chart, overlay })
+        overlay.onDrawEnd?.({ chart, overlay, ...event })
+        // TradingView-style auto-edit: if the freshly-drawn overlay includes an
+        // editableText figure with empty text (i.e. a text annotation), mount
+        // the inline editor automatically so the user can start typing without
+        // first hovering the 50%-opacity "+ Add text" placeholder.
+        this._maybeAutoStartEditingAfterDraw(overlay)
+      }
+    }
     this.registerEvent('mouseMoveEvent', (event) => {
       const progressOverlayInfo = chartStore.getProgressOverlayInfo()
       if (progressOverlayInfo !== null) {
@@ -86,6 +120,11 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       return false
     })
       .registerEvent('mouseClickEvent', (event) => {
+        // The press already placed this drawing point; see `mouseDownEvent`.
+        if (this._swallowClick) {
+          this._swallowClick = false
+          return true
+        }
         const progressOverlayInfo = chartStore.getProgressOverlayInfo()
         if (progressOverlayInfo !== null) {
           const overlay = progressOverlayInfo.overlay
@@ -96,23 +135,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
           }
           const index = overlay.points.length - 1
           if (overlay.isDrawing() && progressOverlayPaneId === paneId) {
-            overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
-            overlay.onDrawing?.({ chart, overlay, ...event })
-            overlay.nextStep()
-            if (!overlay.isDrawing()) {
-              chartStore.progressOverlayComplete()
-              // The tool tidies up what it was given — swapping the two
-              // corners so they read top-left to bottom-right, filling in
-              // extendData — while it is still the drawing the user made.
-              overlay.completeDrawing?.({ chart, overlay })
-              overlay.onDrawEnd?.({ chart, overlay, ...event })
-              // TradingView-style auto-edit: if the freshly-drawn overlay
-              // includes an editableText figure with empty text (i.e. a
-              // text annotation), mount the inline editor automatically so
-              // the user can start typing without first hovering the
-              // 50%-opacity "+ Add text" placeholder.
-              this._maybeAutoStartEditingAfterDraw(overlay)
-            }
+            placePoint(overlay, event)
           }
           return this._figureMouseClickEvent(overlay, 'point', index, {
             key: `${OVERLAY_FIGURE_KEY_PREFIX}point_${index}`,
@@ -174,6 +197,8 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         return false
       })
       .registerEvent('mouseDownEvent', (event) => {
+        this._swallowClick = false
+        this._dragDraw = null
         // Handle continuous drawing mode - start drawing on mouse down
         const progressOverlayInfo = chartStore.getProgressOverlayInfo()
         if (progressOverlayInfo !== null) {
@@ -185,10 +210,37 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
             overlay.onDrawStart?.({ chart, overlay, ...event })
             return true
           }
+          // A point-by-point drawing takes its point on the press, so a drag
+          // from here draws instead of panning. Mouse only: touch places its
+          // points with the crosshair-and-tap flow.
+          if (event.isTouch !== true && !overlay.isContinuousDrawing() && overlay.isDrawing()) {
+            if (overlay.isStart()) {
+              chartStore.updateProgressOverlayInfo(paneId, true)
+            }
+            if (chartStore.getProgressOverlayInfo()?.paneId !== paneId) {
+              return false
+            }
+            placePoint(overlay, event)
+            if (overlay.isDrawing()) {
+              this._dragDraw = { overlay, x: event.x, y: event.y, moved: false }
+            }
+            this._swallowClick = true
+            return true
+          }
         }
         return false
       })
       .registerEvent('mouseUpEvent', (event) => {
+        const dragDraw = this._dragDraw
+        if (dragDraw !== null) {
+          this._dragDraw = null
+          // A drag places the next point where it was let go; a press that
+          // never travelled leaves it to follow the mouse, as a click does.
+          if (dragDraw.moved && dragDraw.overlay.isDrawing()) {
+            placePoint(dragDraw.overlay, event)
+          }
+          return true
+        }
         // Handle continuous drawing mode - complete on mouse up
         const progressOverlayInfo = chartStore.getProgressOverlayInfo()
         if (progressOverlayInfo !== null) {
@@ -201,6 +253,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
             return true
           }
         }
+        this._pressStart = null
         const { overlay, figure } = chartStore.getPressedOverlayInfo()
         if (overlay !== null) {
           if (checkOverlayFigureEvent('onPressedMoveEnd', figure)) {
@@ -217,6 +270,20 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         return false
       })
       .registerEvent('pressedMouseMoveEvent', (event) => {
+        const dragDraw = this._dragDraw
+        if (dragDraw !== null) {
+          const { overlay } = dragDraw
+          if (!overlay.isDrawing()) {
+            this._dragDraw = null
+            return true
+          }
+          if (isDragBeyond(dragDraw, event)) {
+            dragDraw.moved = true
+          }
+          overlay.eventMoveForDrawing(this._coordinateToPoint(overlay, event))
+          overlay.onDrawing?.({ chart, overlay, ...event })
+          return true
+        }
         // Handle continuous drawing mode - accumulate points while mouse is pressed
         const progressOverlayInfo = chartStore.getProgressOverlayInfo()
         if (progressOverlayInfo !== null) {
@@ -232,7 +299,11 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
         if (overlay !== null) {
           if (checkOverlayFigureEvent('onPressedMoving', figure)) {
             if (!overlay.lock) {
-              const point = this._coordinateToPoint(overlay, event)
+              // Shift on a body drag locks it to one axis. Not on a point
+              // handle: that one is where the user put it, and pinning it to a
+              // line through the press would fight the grab.
+              const moveEvent = event.shiftKey === true && figureType !== 'point' ? this._constrainToDragAxis(event) : event
+              const point = this._coordinateToPoint(overlay, moveEvent)
               // When the pressed figure declares `noTranslate`, the
               // engine skips the default point-translation step
               // entirely — the overlay's `onPressedMoving` handler
@@ -710,6 +781,7 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       }
       const pane = this.getWidget().getPane()
       const paneId = pane.getId()
+      this._pressStart = { x: event.x, y: event.y }
       overlay.startPressedMove(this._coordinateToPoint(overlay, event))
       if (checkOverlayFigureEvent('onPressedMoveStart', figure)) {
         overlay.onPressedMoveStart?.({ chart: pane.getChart(), overlay, figure, ...event })
@@ -795,6 +867,18 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       }
       return false
     }
+  }
+
+  /**
+   * Whichever axis the cursor has travelled further along wins, measured from
+   * where the press landed.
+   */
+  private _constrainToDragAxis(event: MouseTouchEvent): MouseTouchEvent {
+    const start = this._pressStart
+    if (start === null) {
+      return event
+    }
+    return { ...event, ...constrainToAxis(start, event) }
   }
 
   private _coordinateToPoint(o: Overlay, coordinate: Coordinate): Partial<Point> {

@@ -84,3 +84,19 @@ export function arrowHeadCoordinates(from: Coordinate, to: Coordinate, length: n
   const by = to.y - uy * length
   return [to, { x: bx - (uy * length) / 2, y: by + (ux * length) / 2 }, { x: bx + (uy * length) / 2, y: by - (ux * length) / 2 }]
 }
+
+/** How far a press must travel before its release places the next drawing point. */
+export const DRAG_DRAW_MIN_PX = 4
+
+/** Whether a press at `from` has travelled far enough to count as a drag rather than a click. */
+export function isDragBeyond(from: Coordinate, to: Coordinate, minPx = DRAG_DRAW_MIN_PX): boolean {
+  return Math.hypot(to.x - from.x, to.y - from.y) >= minPx
+}
+
+/**
+ * Lock a drag to the axis it has travelled further along, measured from where
+ * it was pressed: a horizontal drag keeps the press's y, a vertical one its x.
+ */
+export function constrainToAxis(from: Coordinate, to: Coordinate): Coordinate {
+  return Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? { x: to.x, y: from.y } : { x: from.x, y: to.y }
+}
