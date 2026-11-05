@@ -21,7 +21,7 @@ import type ExcludePickPartial from '../common/ExcludePickPartial'
 import type Nullable from '../common/Nullable'
 import type Point from '../common/Point'
 import type { OverlayStyle } from '../common/Styles'
-import { clone, isArray, isBoolean, isNumber, isString, isValid, merge } from '../common/utils/typeChecks'
+import { clone, isArray, isBoolean, isFunction, isNumber, isString, isValid, merge } from '../common/utils/typeChecks'
 import type ChartStore from '../Store'
 import type { XAxis } from './XAxis'
 import type { YAxis } from './YAxis'
@@ -448,18 +448,47 @@ export default class OverlayImp<E = unknown> implements Overlay<E> {
     }
 
     if (isArray(points) && points.length > 0) {
+      let repeatTotalStep = 0
       this.points = [...points]
-      this.currentStep = OVERLAY_DRAW_STEP_FINISHED
-      const lastIndex = this.points.length - 1
-      const lastPoint = this.points[lastIndex]
-      if (lastIndex > 0 && isValid(lastPoint)) {
-        this.performEventPressedMove?.({
-          currentStep: this.currentStep,
-          mode: this.mode,
-          points: this.points,
-          performPointIndex: lastIndex,
-          performPoint: lastPoint
-        })
+      // Variable-length tools (polyline, anyWaves, ...) have no fixed number of
+      // points to reach, so points handed in from a restore or an API create mean
+      // a finished drawing. Left "in progress", the next overlay created would
+      // replace this one.
+      const variableLength = this.totalStep === Number.MAX_SAFE_INTEGER
+      if (variableLength || points.length >= this.totalStep - 1) {
+        this.currentStep = OVERLAY_DRAW_STEP_FINISHED
+        repeatTotalStep = variableLength ? points.length : this.totalStep - 1
+      } else {
+        this.currentStep = points.length + 1
+        repeatTotalStep = points.length
+      }
+      // Replay the per-step hooks so templates that derive one point from another
+      // rebuild their geometry instead of drawing from half-initialised points.
+      const moveForDrawing = this.performEventMoveForDrawing
+      if (isFunction(moveForDrawing)) {
+        for (let i = 0; i < repeatTotalStep; i++) {
+          moveForDrawing({
+            currentStep: i + 2,
+            mode: this.mode,
+            points: this.points,
+            performPointIndex: i,
+            performPoint: this.points[i]
+          })
+        }
+      }
+
+      if (this.currentStep === OVERLAY_DRAW_STEP_FINISHED) {
+        const lastIndex = this.points.length - 1
+        const lastPoint = this.points[lastIndex]
+        if (isValid(lastPoint)) {
+          this.performEventPressedMove?.({
+            currentStep: this.currentStep,
+            mode: this.mode,
+            points: this.points,
+            performPointIndex: lastIndex,
+            performPoint: lastPoint
+          })
+        }
       }
     }
   }
