@@ -440,6 +440,16 @@ export default class StoreImp implements Store {
   private _showSelectedOverlayLabel = true
 
   /**
+   * While a period switch is loading, the overlay canvas is left exactly as it
+   * was: repainting moves drawings (the new visible range is applied before the
+   * new data), and skipping the draw erases them.
+   */
+  private _periodSwitchPending = false
+
+  /** Safety net: a loader that never calls back must not hide overlays forever. */
+  private _periodSwitchTimer: ReturnType<typeof setTimeout> | null = null
+
+  /**
    * Actions
    */
   private readonly _actions = new Map<ActionType, Action>()
@@ -757,7 +767,23 @@ export default class StoreImp implements Store {
     return this._symbol
   }
 
+  private _setPeriodSwitchPending(pending: boolean): void {
+    if (this._periodSwitchTimer !== null) {
+      clearTimeout(this._periodSwitchTimer)
+      this._periodSwitchTimer = null
+    }
+    this._periodSwitchPending = pending
+    if (pending) {
+      this._periodSwitchTimer = setTimeout(() => {
+        this._periodSwitchTimer = null
+        this._periodSwitchPending = false
+        this._chart.updatePane(UpdateLevel.Overlay)
+      }, 10000)
+    }
+  }
+
   setPeriod(period: Period): void {
+    this._setPeriodSwitchPending(true)
     if (this._replayEngine.isInReplay()) {
       // Playback mode: delegate to engine which handles period change logic
       this._replayEngine.handlePeriodChange(period, () => {
@@ -770,6 +796,11 @@ export default class StoreImp implements Store {
         this._period = period
       })
     }
+  }
+
+  /** True from `setPeriod` until the new period's init load has been applied. */
+  isPeriodSwitchPending(): boolean {
+    return this._periodSwitchPending
   }
 
   getPeriod(): Nullable<Period> {
@@ -912,6 +943,7 @@ export default class StoreImp implements Store {
           this.setOffsetRightDistance(this._offsetRightDistance)
           adjustFlag = true
           this._initLoadInFlight = false
+          this._setPeriodSwitchPending(false)
           this.executeAction('onInitLoadComplete', undefined)
           break
         }
@@ -1193,6 +1225,11 @@ export default class StoreImp implements Store {
         }
       }
       void this._dataLoader.getBars(params)
+    } else if (type === 'init') {
+      // Nothing is actually going to load (no loader configured yet, already
+      // loading, ...) — don't leave overlays hidden waiting for an init that
+      // never resolves.
+      this._setPeriodSwitchPending(false)
     }
   }
 
@@ -2557,6 +2594,7 @@ export default class StoreImp implements Store {
     // ticking forever and the subscription leaks every time a chart
     // is disposed.
     this._processDataUnsubscribe()
+    this._setPeriodSwitchPending(false)
     this._clearData()
     this._clearLastPriceMarkExtendTextUpdateTimer()
     this._calcFlushScheduled = false

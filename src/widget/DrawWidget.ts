@@ -79,13 +79,19 @@ export default abstract class DrawWidget<P extends DrawPane = DrawPane> extends 
       container.style.height = `${height}px`
       l = UpdateLevel.Drawer
     }
+    // During a period switch the overlay canvas keeps its previous frame: the
+    // new visible range is applied before the new candles arrive, so repainting
+    // would move drawings onto the wrong bars. A resize still goes through.
+    const frozen = this.getPane().getChart().getChartStore().isPeriodSwitchPending() && l !== UpdateLevel.Drawer
     switch (l) {
       case UpdateLevel.Main: {
         this._mainCanvas.update(width, height)
         break
       }
       case UpdateLevel.Overlay: {
-        this._overlayCanvas.update(width, height)
+        if (!frozen) {
+          this._overlayCanvas.update(width, height)
+        }
         break
       }
       case UpdateLevel.Drawer:
