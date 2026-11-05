@@ -165,6 +165,11 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
           (o, f) => this._processOverlaySelectedEvent(o, f, event),
           (o, f) => this._processOverlayDeselectedEvent(o, f, event)
         )
+        // A click on empty space drops the whole selection — but not when it
+        // ends a Cmd/Ctrl-drag, which is the marquee that just built one.
+        if (event.metaKey !== true && event.ctrlKey !== true) {
+          chartStore.setSelectedOverlayIds([])
+        }
         return false
       })
       .registerEvent('mouseDoubleClickEvent', (event) => {
@@ -856,6 +861,16 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       if (check) {
         overlay.onClick?.({ chart, overlay, figure, ...event })
       }
+
+      // Cmd/Ctrl-click extends the selection instead of replacing it, and
+      // leaves `clickOverlayInfo` alone so the additions don't each become "the"
+      // selected drawing. A plain click collapses the selection to just this one.
+      if (event.metaKey === true || event.ctrlKey === true) {
+        chartStore.toggleSelectedOverlayId(overlay.id)
+        return check
+      }
+      chartStore.setSelectedOverlayIds([overlay.id])
+
       chartStore.setClickOverlayInfo(
         { paneId, overlay, figureType, figureIndex, figure },
         (o, f) => this._processOverlaySelectedEvent(o, f, event),
@@ -1389,7 +1404,14 @@ export default class OverlayView<C extends Axis = YAxis> extends View<C> {
       const chartStore = this.getWidget().getPane().getChart().getChartStore()
       const hoverOverlayInfo = chartStore.getHoverOverlayInfo()
       const clickOverlayInfo = chartStore.getClickOverlayInfo()
-      if ((hoverOverlayInfo.overlay?.id === overlay.id && hoverOverlayInfo.figureType !== 'none') || (clickOverlayInfo.overlay?.id === overlay.id && clickOverlayInfo.figureType !== 'none')) {
+      if (
+        (hoverOverlayInfo.overlay?.id === overlay.id && hoverOverlayInfo.figureType !== 'none') ||
+        (clickOverlayInfo.overlay?.id === overlay.id && clickOverlayInfo.figureType !== 'none') ||
+        // Part of a multi-selection (Cmd-click or marquee): show the same
+        // handles a single click gives, so what is about to be moved or
+        // deleted is visible.
+        chartStore.isOverlaySelected(overlay.id)
+      ) {
         const defaultStyles = chartStore.getStyles().overlay
         const styles = overlay.styles
         // Derive point color from overlay's line/border color so points match the overlay
