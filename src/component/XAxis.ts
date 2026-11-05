@@ -240,11 +240,31 @@ export default abstract class XAxisImp extends AxisImp implements XAxis {
     const timeTicks = this._timeTickCache!.ticks
     const ticks: AxisTick[] = []
     const firstVisibleTick = findFirstVisibleTick(timeTicks, from)
+    const visibleTicks: TimeTick[] = []
     for (let i = firstVisibleTick; i < timeTicks.length; i++) {
-      const { dataIndex, timestamp, weight } = timeTicks[i]
-      if (dataIndex >= realTo) {
+      const tick = timeTicks[i]
+      if (tick.dataIndex >= realTo) {
         break
       }
+      visibleTicks.push(tick)
+    }
+    // The heaviest boundary among those on screen is drawn bold (`2026` among
+    // months) — only when they are not all of one weight, which would bold the
+    // whole axis.
+    let maxWeight: number = TimeWeight.Unknown
+    let minWeight = Infinity
+    for (const tick of visibleTicks) {
+      if (tick.weight > maxWeight) {
+        maxWeight = tick.weight
+      }
+      if (tick.weight < minWeight) {
+        minWeight = tick.weight
+      }
+    }
+    const boldWeight = minWeight < maxWeight ? maxWeight : Infinity
+    // "Show seconds" puts `:ss` on every time label, not just on second charts.
+    const withSeconds = chartStore.getShowSeconds() || period?.type === 'second'
+    for (const { dataIndex, timestamp, weight } of visibleTicks) {
       let template = PeriodTypeXAxisFormat[period?.type ?? 'day']
       switch (weight) {
         case TimeWeight.Year: {
@@ -261,7 +281,7 @@ export default abstract class XAxisImp extends AxisImp implements XAxis {
         }
         case TimeWeight.Hour:
         case TimeWeight.Minute: {
-          template = 'HH:mm'
+          template = withSeconds ? 'HH:mm:ss' : 'HH:mm'
           break
         }
         case TimeWeight.Second: {
@@ -272,7 +292,8 @@ export default abstract class XAxisImp extends AxisImp implements XAxis {
       ticks.push({
         coord: this.convertToPixel(dataIndex),
         value: timestamp,
-        text: formatDate(timestamp, template, 'xAxis')
+        text: formatDate(timestamp, template, 'xAxis'),
+        bold: weight === boldWeight
       })
     }
 

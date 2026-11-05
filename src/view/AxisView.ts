@@ -48,11 +48,25 @@ export default abstract class AxisView<C extends Axis = Axis> extends View<C> {
       }
       if (styles.tickText.show) {
         const texts = this.createTickTexts(ticks, bounding, styles)
-        this.createFigure({
-          name: 'text',
-          attrs: texts,
-          styles: styles.tickText
-        })?.draw(ctx)
+        // Heavier time boundaries (`2026` among months) are drawn in bold, and
+        // a text figure carries one weight, so the labels are drawn in two
+        // batches rather than one.
+        const regular = texts.filter((_, i) => ticks[i].bold !== true)
+        const bold = texts.filter((_, i) => ticks[i].bold === true)
+        if (regular.length > 0) {
+          this.createFigure({
+            name: 'text',
+            attrs: regular,
+            styles: styles.tickText
+          })?.draw(ctx)
+        }
+        if (bold.length > 0) {
+          this.createFigure({
+            name: 'text',
+            attrs: bold,
+            styles: { ...styles.tickText, weight: 'bold' }
+          })?.draw(ctx)
+        }
       }
     }
   }

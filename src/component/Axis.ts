@@ -22,6 +22,8 @@ export interface AxisTick {
   coord: number
   value: number | string
   text: string
+  /** Draw the label bold: the time axis uses it for its heaviest boundaries (`2026` among months). */
+  bold?: boolean
 }
 
 export interface AxisRange extends VisibleRange {
