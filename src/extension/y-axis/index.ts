@@ -13,6 +13,7 @@
  */
 
 import YAxisImp, { type YAxisConstructor, type YAxisTemplate } from '../../component/YAxis'
+import indexed100 from './indexed100'
 import logarithm from './logarithm'
 import normal from './normal'
 import percentage from './percentage'
@@ -20,7 +21,8 @@ import percentage from './percentage'
 const yAxises: Record<string, YAxisConstructor> = {
   normal: YAxisImp.extend(normal),
   percentage: YAxisImp.extend(percentage),
-  logarithm: YAxisImp.extend(logarithm)
+  logarithm: YAxisImp.extend(logarithm),
+  indexed100: YAxisImp.extend(indexed100)
 }
 
 function registerYAxis(axis: YAxisTemplate): void {
