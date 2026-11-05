@@ -13,6 +13,7 @@
  */
 
 import type { Locales } from '../../Options'
+import { logWarn } from '../../common/utils/logger'
 import enUS from './en-US'
 import zhCN from './zh-CN'
 
@@ -20,6 +21,9 @@ const locales: Record<string, Locales> = {
   'zh-CN': zhCN,
   'en-US': enUS
 }
+
+// 一个语言可能被每帧调用的渲染路径反复查询，告警只打一次，避免刷屏
+const warnedLocales: Record<string, boolean> = {}
 
 function registerLocale(locale: string, ls: Locales): void {
   locales[locale] = { ...locales[locale], ...ls }
@@ -30,7 +34,15 @@ function getSupportedLocales(): string[] {
 }
 
 function i18n(key: string, locale: string): string {
-  return locales[locale]?.[key] ?? key
+  const ls = locales[locale]
+  if (ls === undefined) {
+    if (!warnedLocales[locale]) {
+      warnedLocales[locale] = true
+      logWarn('i18n', 'locale', `locale ${locale} is not supported, returns the key itself!!!`)
+    }
+    return key
+  }
+  return ls[key] ?? key
 }
 
 export { getSupportedLocales, i18n, registerLocale }
