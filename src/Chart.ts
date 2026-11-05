@@ -939,6 +939,14 @@ export default class ChartImp implements Chart {
       let shouldSort = false
       let pane = this.getDrawPaneById(indicator.paneId)
       if (!isValid(pane)) {
+        // A new pane can't take any height while another pane is maximised:
+        // there is no pane in the normal state to give it room, so it would
+        // stay at 0px and the divider next to it could not be dragged. Restore
+        // the layout first, as TradingView does when an indicator is added.
+        const maximized = this._drawPanes.find((drawPane) => drawPane.getOptions().state === 'maximize')
+        if (isValid(maximized)) {
+          this.setPaneOptions({ id: maximized.getId(), state: 'normal' })
+        }
         pane = this._createPane(IndicatorPane, { ...this._chartStore.getLayoutOptions().pane, id: indicator.paneId })
         shouldSort = true
       }
@@ -1027,6 +1035,12 @@ export default class ChartImp implements Chart {
           panesChanged = true
         }
       })
+      if (this._drawPanes.length === 2) {
+        // The candle pane alone can't stay maximised: with no sibling the
+        // state means nothing, and it would outlive the pane it was set
+        // against and be saved with the layout.
+        this._candlePane.setOptions({ state: 'normal' })
+      }
       this.layout({
         sort: panesChanged,
         measureHeight: panesChanged,
