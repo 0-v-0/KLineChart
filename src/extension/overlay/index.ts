@@ -24,6 +24,7 @@ import box from './box'
 import brush from './brush'
 import callout from './callout'
 import circle from './circle'
+import crossLine from './crossLine'
 import comment from './comment'
 import eightWaves from './eightWaves'
 import emojiMarker from './emojiMarker'
@@ -126,6 +127,7 @@ const proExtensions = [
   tradeLine,
   timeLine,
   priceLevelLine,
+  crossLine,
   styledSegment,
   box,
   emojiMarker,

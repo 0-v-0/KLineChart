@@ -17,12 +17,53 @@ import type { LineStyle, TextStyle } from '../../common/Styles'
 import { SymbolDefaultPrecisionConstants } from '../../common/SymbolInfo'
 import { formatAxisPrice } from '../../common/utils/axisPrice'
 import { clone, isNumber, merge } from '../../common/utils/typeChecks'
+import type { OverlayCreateFiguresCallback } from '../../component/Overlay'
+
 import { computeTextPosition } from './textUtils'
 import type { OverlayProperties, ProOverlayTemplate } from './types'
 import { DEFAULT_OVERLAY_PROPERTIES } from './types'
 
 /** Which side the ray extends after its single-click anchor. */
 type RayDirection = 'left' | 'right'
+
+/**
+ * The price axis tag for a drawing that sits on one price: the anchor's value
+ * printed by `formatAxisPrice` — the chain the price scale and the last-price
+ * tag use — against the axis edge, inside a from-zero axis.
+ *
+ * Shared by the tools whose y-axis carries a single price, so a tag beside the
+ * scale reads like the scale. TV fills that tag with the line's colour; the
+ * tags on this branch's axes are plain text, and this keeps to them.
+ */
+export const anchorPriceAxisLabel = ({ chart, overlay, coordinates, bounding, yAxis }: Parameters<OverlayCreateFiguresCallback<unknown>>[0]): Array<{ type: string; attrs: Record<string, unknown> }> => {
+  if (coordinates.length === 0) {
+    return []
+  }
+
+  const isFromZero = yAxis?.isFromZero() ?? false
+  const textAlign: CanvasTextAlign = isFromZero ? 'left' : 'right'
+  const x = isFromZero ? 0 : bounding.width
+
+  const precision = chart.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE
+  const value = overlay.points[0]?.value
+  if (!isNumber(value)) {
+    return []
+  }
+  const labelText = formatAxisPrice(chart, yAxis, value, precision)
+
+  return [
+    {
+      type: 'text',
+      attrs: {
+        x,
+        y: coordinates[0].y,
+        text: labelText,
+        align: textAlign,
+        baseline: 'middle' as CanvasTextBaseline
+      }
+    }
+  ]
+}
 
 const horizontalRayLine = (): ProOverlayTemplate => {
   const properties = new Map<string, DeepPartial<OverlayProperties>>()
@@ -119,38 +160,12 @@ const horizontalRayLine = (): ProOverlayTemplate => {
     // spec Style-tab checkbox. Printed by `formatAxisPrice`, the chain the
     // price scale and the last-price tag use, so a tag beside the scale reads
     // like the scale.
-    createYAxisFigures: ({ chart, overlay, coordinates, bounding, yAxis }) => {
-      const ext = overlay.extendData as { showPriceLabels?: boolean } | undefined
+    createYAxisFigures: (params) => {
+      const ext = params.overlay.extendData as { showPriceLabels?: boolean } | undefined
       if (ext?.showPriceLabels !== true) {
         return []
       }
-      if (coordinates.length === 0) {
-        return []
-      }
-
-      const isFromZero = yAxis?.isFromZero() ?? false
-      const textAlign: CanvasTextAlign = isFromZero ? 'left' : 'right'
-      const x = isFromZero ? 0 : bounding.width
-
-      const precision = chart.getSymbol()?.pricePrecision ?? SymbolDefaultPrecisionConstants.PRICE
-      const value = overlay.points[0]?.value
-      if (!isNumber(value)) {
-        return []
-      }
-      const labelText = formatAxisPrice(chart, yAxis, value, precision)
-
-      return [
-        {
-          type: 'text',
-          attrs: {
-            x,
-            y: coordinates[0].y,
-            text: labelText,
-            align: textAlign,
-            baseline: 'middle' as CanvasTextBaseline
-          }
-        }
-      ]
+      return anchorPriceAxisLabel(params)
     },
     performEventPressedMove: ({ points, performPoint }) => {
       // Anchor is one point now, but the engine's move handler
