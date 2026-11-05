@@ -60,6 +60,7 @@ import priceLevelLine from './priceLevelLine'
 import priceLine from './priceLine'
 import { multiPoint } from './polyline'
 import priceNote from './priceNote'
+import { rangeTool } from './rangeTools'
 import rayLine from './rayLine'
 import rect from './rect'
 import segment from './segment'
@@ -142,6 +143,9 @@ const proExtensions = [
   multiPoint('polyline'),
   multiPoint('path'),
   curve,
+  rangeTool('price'),
+  rangeTool('date'),
+  rangeTool('dateAndPrice'),
   styledSegment,
   box,
   emojiMarker,
